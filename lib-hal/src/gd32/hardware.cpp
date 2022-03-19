@@ -62,11 +62,26 @@ Hardware::Hardware() {
     micros_init();
 
 #if !defined (GD32F4XX)
+	rcu_periph_clock_enable (RCU_BKPI);
+	rcu_periph_clock_enable (RCU_PMU);
+	pmu_backup_write_enable();
+	bkp_deinit();
 #else
 	rcu_periph_clock_enable(RCU_PMU);
 	pmu_backup_ldo_config(PMU_BLDOON_ON);
 	rcu_periph_clock_enable(RCU_BKPSRAM);
 	pmu_backup_write_enable();
+#endif
+	bkp_data_write(BKP_DATA_1, 0x0);
+
+#if !defined (GD32F4XX)
+	// There is no tightly coupled RAM
+#else
+	// clear TCM SRAM
+	extern unsigned char _stcmsram;
+	extern unsigned char _etcmsram;
+	DEBUG_PRINTF("%p:%u", &_stcmsram, &_etcmsram - &_stcmsram);
+	memset (&_stcmsram, 0, &_etcmsram - &_stcmsram);
 #endif
 
 	rcu_periph_clock_enable(RCU_TIMER5);
@@ -94,14 +109,6 @@ Hardware::Hardware() {
 	const struct timeval tv = { .tv_sec = seconds, .tv_usec = 0 };
 
 	settimeofday(&tv, nullptr);
-
-#if !defined (GD32F4XX)
-	rcu_periph_clock_enable (RCU_BKPI);
-	rcu_periph_clock_enable (RCU_PMU);
-	pmu_backup_write_enable();
-	bkp_deinit();
-#endif
-	bkp_data_write(BKP_DATA_1, 0x0);
 
 	gd32_i2c_begin();
 

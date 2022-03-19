@@ -2,7 +2,7 @@
  * @file main.cpp
  *
  */
-/* Copyright (C) 2021 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2022 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,35 +24,42 @@
  */
 
 #include <cstdint>
-#include <cstdio>
 
 #include "hardware.h"
 #include "network.h"
 #include "networkconst.h"
 #include "ledblink.h"
 
+#if defined (ENABLE_HTTPD)
+# include "mdns.h"
+# include "mdnsservices.h"
+#endif
+
 #include "displayudf.h"
 #include "displayudfparams.h"
 #include "displayhandler.h"
+#include "display_timeout.h"
 
+#include "e131.h"
 #include "e131bridge.h"
 #include "e131params.h"
-#include "e131reboot.h"
 #include "e131msgconst.h"
-#include "lightset.h"
 
-#include "pixeltestpattern.h"
+#include "pixeldmxconfiguration.h"
 #include "pixeltype.h"
+#include "pixeltestpattern.h"
 #include "ws28xxdmxparams.h"
 #include "ws28xxdmxmulti.h"
 #include "ws28xxdmxstartstop.h"
 
-// RDMNet LLRP Device Only
-#include "rdmnetdevice.h"
-#include "rdmpersonality.h"
-#include "rdm_e120.h"
-#include "factorydefaults.h"
-#include "rdmdeviceparams.h"
+#if defined (NODE_RDMNET_LLRP_ONLY)
+# include "rdmdeviceparams.h"
+# include "rdmnetdevice.h"
+# include "rdmnetconst.h"
+# include "rdmpersonality.h"
+# include "rdm_e120.h"
+# include "factorydefaults.h"
+#endif
 
 #include "remoteconfig.h"
 #include "remoteconfigparams.h"
@@ -62,24 +69,19 @@
 #include "storedisplayudf.h"
 #include "storee131.h"
 #include "storenetwork.h"
-#include "storerdmdevice.h"
+#if defined (NODE_RDMNET_LLRP_ONLY)
+# include "storerdmdevice.h"
+#endif
 #include "storeremoteconfig.h"
 #include "storews28xxdmx.h"
-// Version control
+
 #include "firmwareversion.h"
 #include "software_version.h"
-// HTTP/JSON Remote configuration
-#if defined (ENABLE_HTTPD)
-# include "mdns.h"
-# include "mdnsservices.h"
-#endif
 
-class Reboot final : public RebootHandler {
+class Reboot final: public RebootHandler {
 public:
-	Reboot() {}
-	~Reboot() override {}
-
 	void Run() override {
+		E131Bridge::Get()->Stop();
 		WS28xxMulti::Get()->Blackout();
 	}
 };
@@ -94,9 +96,10 @@ void main(void) {
 	FlashRom flashRom;
 	SpiFlashStore spiFlashStore;
 
-	fw.Print("Ethernet sACN E1.31 " "\x1b[32m" "Pixel controller {8x 4 Universes}" "\x1b[37m");
+	fw.Print("sACN E1.31 " "\x1b[32m" "Pixel controller {8x 4 Universes}" "\x1b[37m");
 
 	hw.SetLed(hardware::LedStatus::ON);
+	hw.SetRebootHandler(new Reboot);
 	lb.SetLedBlinkDisplay(new DisplayHandler);
 
 	display.TextStatus(NetworkConst::MSG_NETWORK_INIT, Display7SegmentMessage::INFO_NETWORK_INIT, CONSOLE_YELLOW);
@@ -107,6 +110,7 @@ void main(void) {
 	nw.Print();
 
 #if defined (ENABLE_HTTPD)
+	display.TextStatus(NetworkConst::MSG_MDNS_CONFIG, Display7SegmentMessage::INFO_MDNS_CONFIG, CONSOLE_YELLOW);
 	MDNS mDns;
 	mDns.Start();
 	mDns.AddServiceRecord(nullptr, MDNS_SERVICE_CONFIG, 0x2905);
@@ -116,10 +120,10 @@ void main(void) {
 
 	display.TextStatus(E131MsgConst::PARAMS, Display7SegmentMessage::INFO_BRIDGE_PARMAMS, CONSOLE_YELLOW);
 
-	E131Bridge bridge;
-
 	StoreE131 storeE131;
 	E131Params e131params(&storeE131);
+
+	E131Bridge bridge;
 
 	if (e131params.Load()) {
 		e131params.Set(&bridge);
@@ -131,18 +135,13 @@ void main(void) {
 	StoreWS28xxDmx storeWS28xxDmx;
 	WS28xxDmxParams ws28xxparms(&storeWS28xxDmx);
 
-	DEBUG_PUTS("");
-
 	if (ws28xxparms.Load()) {
 		ws28xxparms.Set(&pixelDmxConfiguration);
 		ws28xxparms.Dump();
 	}
 
-
 	WS28xxDmxMulti pixelDmxMulti(pixelDmxConfiguration);
 	pixelDmxMulti.SetPixelDmxHandler(new PixelDmxStartStop);
-
-	bridge.SetOutput(&pixelDmxMulti);
 
 	const auto nUniverses = pixelDmxMulti.GetUniverses();
 	const auto nActivePorts = pixelDmxMulti.GetOutputPorts();
@@ -150,34 +149,34 @@ void main(void) {
 	uint32_t nPortProtocolIndex = 0;
 
 	for (uint32_t nOutportIndex = 0; nOutportIndex < nActivePorts; nOutportIndex++) {
-		auto isSet = false;
-		const auto nStartUniversePort = ws28xxparms.GetStartUniversePort(nOutportIndex, isSet);
+		bool isPixelUniverseSet;
+		const auto nStartUniversePort = ws28xxparms.GetStartUniversePort(nOutportIndex, isPixelUniverseSet);
+
 		for (uint32_t u = 0; u < nUniverses; u++) {
-			if (isSet) {
-				DEBUG_PRINTF("%u:%u", nPortProtocolIndex, static_cast<uint16_t>(nStartUniversePort + u));
+			if (isPixelUniverseSet) {
 				bridge.SetUniverse(nPortProtocolIndex, lightset::PortDir::OUTPUT, static_cast<uint16_t>(nStartUniversePort + u));
 			}
 			nPortProtocolIndex++;
 		}
 	}
 
-	uint8_t nTestPattern;
+	const auto nTestPattern = static_cast<pixelpatterns::Pattern>(ws28xxparms.GetTestPattern());
 	PixelTestPattern *pPixelTestPattern = nullptr;
 
-	if ((nTestPattern = ws28xxparms.GetTestPattern()) != 0) {
-		pPixelTestPattern = new PixelTestPattern(static_cast<pixelpatterns::Pattern>(nTestPattern), nActivePorts);
+	if (nTestPattern != pixelpatterns::Pattern::NONE) {
+		pPixelTestPattern = new PixelTestPattern(nTestPattern, nActivePorts);
 		bridge.SetOutput(nullptr);
-		hw.SetRebootHandler(new Reboot);
-
 	} else {
-		hw.SetRebootHandler(new E131Reboot);
+		bridge.SetOutput(&pixelDmxMulti);
 	}
 
+#if defined (NODE_RDMNET_LLRP_ONLY)
+	display.TextStatus(RDMNetConst::MSG_CONFIG, Display7SegmentMessage::INFO_RDMNET_CONFIG, CONSOLE_YELLOW);
 	char aDescription[rdm::personality::DESCRIPTION_MAX_LENGTH + 1];
 	snprintf(aDescription, sizeof(aDescription) - 1, "sACN Pixel %d-%s:%d", nActivePorts, PixelType::GetType(WS28xxMulti::Get()->GetType()), WS28xxMulti::Get()->GetCount());
 
 	char aLabel[RDM_DEVICE_LABEL_MAX_LENGTH + 1];
-	const auto nLength = snprintf(aLabel, sizeof(aLabel) - 1, "GigaDevice Pixel");
+	const auto nLength = snprintf(aLabel, sizeof(aLabel) - 1, GD32_BOARD_NAME " Pixel");
 
 	RDMPersonality *pPersonalities[1] = { new RDMPersonality(aDescription, nullptr) };
 	RDMNetDevice llrpOnlyDevice(pPersonalities, 1);
@@ -198,34 +197,44 @@ void main(void) {
 
 	llrpOnlyDevice.SetRDMDeviceStore(&storeRdmDevice);
 	llrpOnlyDevice.Print();
+#endif
 
 	bridge.Print();
 	pixelDmxMulti.Print();
 
-	display.SetTitle("sACN Pixel 8:%dx%d", nActivePorts, WS28xxMulti::Get()->GetCount());
-	display.Set(2, displayudf::Labels::HOSTNAME);
-	display.Set(3, displayudf::Labels::IP);
+	display.SetTitle("sACN Pixel %ux4U", nActivePorts);
+	display.Set(2, displayudf::Labels::IP);
+	display.Set(3, displayudf::Labels::HOSTNAME);
 	display.Set(4, displayudf::Labels::VERSION);
 	display.Set(5, displayudf::Labels::UNIVERSE);
 	display.Set(6, displayudf::Labels::BOARDNAME);
-	display.Printf(7, "%d-%s:%d G%d", nActivePorts, PixelType::GetType(pixelDmxConfiguration.GetType()), pixelDmxConfiguration.GetCount(), pixelDmxConfiguration.GetGroupingCount());
+	display.Printf(7, "%s:%d G%d %s",
+		PixelType::GetType(pixelDmxConfiguration.GetType()),
+		pixelDmxConfiguration.GetCount(),
+		pixelDmxConfiguration.GetGroupingCount(),
+		PixelType::GetMap(pixelDmxConfiguration.GetMap()));
 
 	StoreDisplayUdf storeDisplayUdf;
 	DisplayUdfParams displayUdfParams(&storeDisplayUdf);
 
-	if(displayUdfParams.Load()) {
+	if (displayUdfParams.Load()) {
 		displayUdfParams.Set(&display);
 		displayUdfParams.Dump();
 	}
 
 	display.Show(&bridge);
 
+	if (nTestPattern != pixelpatterns::Pattern::NONE) {
+		display.ClearLine(6);
+		display.Printf(6, "%s:%u", PixelPatterns::GetName(nTestPattern), static_cast<uint32_t>(nTestPattern));
+	}
+
 	RemoteConfig remoteConfig(remoteconfig::Node::E131, remoteconfig::Output::PIXEL, bridge.GetActiveOutputPorts());
 
 	StoreRemoteConfig storeRemoteConfig;
 	RemoteConfigParams remoteConfigParams(&storeRemoteConfig);
 
-	if(remoteConfigParams.Load()) {
+	if (remoteConfigParams.Load()) {
 		remoteConfigParams.Set(&remoteConfig);
 		remoteConfigParams.Dump();
 	}
@@ -233,10 +242,17 @@ void main(void) {
 	while (spiFlashStore.Flash())
 		;
 
+#if defined (NODE_RDMNET_LLRP_ONLY)
+	display.TextStatus(RDMNetConst::MSG_START, Display7SegmentMessage::INFO_RDMNET_START, CONSOLE_YELLOW);
+
+	llrpOnlyDevice.Start();
+
+	display.TextStatus(RDMNetConst::MSG_STARTED, Display7SegmentMessage::INFO_RDMNET_STARTED, CONSOLE_GREEN);
+#endif
+
 	display.TextStatus(E131MsgConst::START, Display7SegmentMessage::INFO_BRIDGE_START, CONSOLE_YELLOW);
 
 	bridge.Start();
-	llrpOnlyDevice.Start();
 
 	display.TextStatus(E131MsgConst::STARTED, Display7SegmentMessage::INFO_BRIDGE_STARTED, CONSOLE_GREEN);
 
@@ -247,7 +263,9 @@ void main(void) {
 		nw.Run();
 		bridge.Run();
 		remoteConfig.Run();
+#if defined (NODE_RDMNET_LLRP_ONLY)
 		llrpOnlyDevice.Run();
+#endif
 		spiFlashStore.Flash();
 		lb.Run();
 		display.Run();

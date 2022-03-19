@@ -1,8 +1,8 @@
 /**
- * @file software_version.h
+ * @file display_timeout.h
  *
  */
-/* Copyright (C) 2021-2022 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2022 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,28 @@
  * THE SOFTWARE.
  */
 
-#ifndef SOFTWARE_VERSION_H_
-#define SOFTWARE_VERSION_H_
+#ifndef DISPLAY_TIMEOUT_H_
+#define DISPLAY_TIMEOUT_H_
 
-constexpr char SOFTWARE_VERSION[] = "1.1";
+#include "gd32.h"
 
-#endif /* SOFTWARE_VERSION_H_ */
+namespace display {
+namespace timeout {
+
+void gpio_init() {
+    rcu_periph_clock_enable(KEY2_RCU_GPIOx);
+#if !defined (GD32F4XX)
+    ::gpio_init(KEY2_GPIOx, GPIO_MODE_IPU, GPIO_OSPEED_50MHZ, KEY2_PINx);
+#else
+    gpio_mode_set(KEY2_GPIOx, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, KEY2_PINx);
+#endif
+}
+
+bool gpio_renew() {
+	return (GPIO_ISTAT(KEY2_GPIOx) & KEY2_PINx) == 0;
+}
+
+}  // namespace timeout
+}  // namespace display
+
+#endif /* DISPLAY_TIMEOUT_H_ */

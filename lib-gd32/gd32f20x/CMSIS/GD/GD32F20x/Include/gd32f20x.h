@@ -51,9 +51,6 @@ OF SUCH DAMAGE.
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} EventStatus, ControlStatus;
 typedef enum {RESET = 0, SET = !RESET} FlagStatus;
 typedef enum {ERROR = 0, SUCCESS = !ERROR} ErrStatus;
-#if !__cplusplus
-typedef enum {FALSE = 0, TRUE = !FALSE} bool;
-#endif
 
 /* define value of high speed crystal oscillator (HXTAL) in Hz */
 #if !defined  HXTAL_VALUE    

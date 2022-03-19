@@ -202,8 +202,6 @@ void SpiFlashStore::Update(Store tStore, uint32_t nOffset, const void *pData, ui
 	assert(pData != nullptr);
 	assert((nOffset + nDataLength) <= s_aStorSize[static_cast<uint32_t>(tStore)]);
 
-//	debug_dump(const_cast<void*>(pData), static_cast<uint16_t>(nDataLength));
-
 	auto bIsChanged = false;
 
 	const auto nBase = nOffset + GetStoreOffset(tStore);
@@ -253,7 +251,7 @@ void SpiFlashStore::Copy(Store tStore, void *pData, uint32_t nDataLength, uint32
 
 	DEBUG_PRINTF("*pSet=0x%x", reinterpret_cast<uint32_t>(*pSet));
 
-	if ((__builtin_expect((s_bIsNew), 0)) || (__builtin_expect((*pSet == 0), 0))) {
+	if (__builtin_expect((*pSet == 0), 0)) {
 		Update(tStore, nOffset, pData, nDataLength);
 		DEBUG_EXIT
 		return;

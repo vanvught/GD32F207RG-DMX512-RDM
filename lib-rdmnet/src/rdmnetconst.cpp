@@ -1,8 +1,8 @@
 /**
- * @file software_version.h
+ * @file rdmnetconst.cpp
  *
  */
-/* Copyright (C) 2021-2022 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2022 by Arjan van Vught mailto:info@orangepi-dmx.nl
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef SOFTWARE_VERSION_H_
-#define SOFTWARE_VERSION_H_
+#include "rdmnetconst.h"
 
-constexpr char SOFTWARE_VERSION[] = "1.1";
-
-#endif /* SOFTWARE_VERSION_H_ */
+const char RDMNetConst::MSG_CONFIG[] = "Configuring RDMNet";
+const char RDMNetConst::MSG_START[] = "Starting RDMNet";
+const char RDMNetConst::MSG_STARTED[] = "RDMNet started";

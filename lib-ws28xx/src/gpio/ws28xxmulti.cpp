@@ -38,18 +38,26 @@
 #include "debug.h"
 
 #if defined (GD32F4XX)
-# define DMA_PARAMETER_STRUCT				dma_multi_data_parameter_struct
+// DMA
+# define DMA_PARAMETER_STRUCT				dma_single_data_parameter_struct
 # define DMA_CHMADDR						DMA_CHM0ADDR
 # define DMA_MEMORY_TO_PERIPHERAL			DMA_MEMORY_TO_PERIPH
-# define DMA_PERIPHERAL_WIDTH_32BIT			DMA_PERIPH_WIDTH_32BIT
-# define dma_init							dma_multi_data_mode_init
-# define dma_struct_para_init				dma_multi_data_para_struct_init
+# define dma_init							dma_single_data_mode_init
+# define dma_struct_para_init				dma_single_data_para_struct_init
 # define dma_memory_to_memory_disable(x,y)
+// GPIO
+# define GPIOx_BOP_OFFSET					0x18U;
+# define GPIOx_BC_OFFSET					0x28U;
 #else
+// DMA
 # define DMA_PARAMETER_STRUCT				dma_parameter_struct
+# define dma_interrupt_flag_clear(x,y,z)
+// GPIO
+# define GPIOx_BOP_OFFSET					0x10U;
+# define GPIOx_BC_OFFSET					0x14U;
 #endif
 
-static const uint32_t s_GPIO_PINs[] = { GPIO_PINx };
+static const uint16_t s_GPIO_PINs[] = { GPIO_PINx };
 static uint16_t s_T0H[(640 * 24)]__attribute__ ((aligned (4)));		//FIXME Use define's
 
 static constexpr uint32_t MASTER_TIMER_PERIOD = (0.00000125f * MASTER_TIMER_CLOCK) - 1U;
@@ -67,8 +75,6 @@ void TIMER4_IRQHandler() { // Slave
 		TIMER_DMAINTEN(TIMER7) &= (~(uint32_t) (TIMER_DMA_CH0D));
 		TIMER_DMAINTEN(TIMER7) &= (~(uint32_t) (TIMER_DMA_CH1D));
 		TIMER_DMAINTEN(TIMER7) &= (~(uint32_t) (TIMER_DMA_CH2D));
-
-		GPIO_BC(GPIOx) = GPIO_PINx;
 
 		sv_isRunning = false;
 	}
@@ -96,10 +102,9 @@ WS28xxMulti::WS28xxMulti(PixelConfiguration& pixelConfiguration) {
 	m_nCount = pixelConfiguration.GetCount();
 	m_Map = pixelConfiguration.GetMap();
 	m_nBufSize = m_nCount * nLedsPerPixel;
-
 	m_nBufSize *= 8;
 
-	DEBUG_PRINTF("m_nBufSize=%u [%u]", m_nBufSize, (m_nBufSize + 1024)/1024);
+	DEBUG_PRINTF("m_nBufSize=%u [%u]", m_nBufSize, (m_nBufSize + 1024) / 1024);
 
 	const auto nT0H = (__builtin_popcount(pixelConfiguration.GetLowCode()) * (MASTER_TIMER_PERIOD + 1)) / 8;
 	const auto nT1H = (__builtin_popcount(pixelConfiguration.GetHighCode()) * (MASTER_TIMER_PERIOD + 1)) / 8;
@@ -114,6 +119,7 @@ WS28xxMulti::WS28xxMulti(PixelConfiguration& pixelConfiguration) {
 #if !defined (GD32F4XX)
 	gpio_init(GPIOx, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GPIO_PINx);
 #else
+	gpio_af_set(GPIOx, GPIO_AF_0, GPIO_PINx);
     gpio_mode_set(GPIOx, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLDOWN, GPIO_PINx);
     gpio_output_options_set(GPIOx, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PINx);
 #endif
@@ -137,7 +143,6 @@ WS28xxMulti::WS28xxMulti(PixelConfiguration& pixelConfiguration) {
 	rcu_periph_clock_enable(RCU_TIMER7);
 
 	timer_deinit(TIMER7);
-	TIMER_CNT(TIMER7) = 0;
 
 	timer_initpara.prescaler = 0;
 	timer_initpara.alignedmode = TIMER_COUNTER_EDGE;
@@ -163,7 +168,6 @@ WS28xxMulti::WS28xxMulti(PixelConfiguration& pixelConfiguration) {
 	rcu_periph_clock_enable(RCU_TIMER4);
 
 	timer_deinit(TIMER4);
-	TIMER_CNT(TIMER4) = 0;
 
 	timer_initpara.prescaler = 0;
 	timer_initpara.alignedmode = TIMER_COUNTER_EDGE;
@@ -178,7 +182,7 @@ WS28xxMulti::WS28xxMulti(PixelConfiguration& pixelConfiguration) {
 	timer_input_trigger_source_select(TIMER4, TIMER_SMCFG_TRGSEL_ITI3);
 
 	timer_channel_output_mode_config(TIMER4, TIMER_CH_0, TIMER_OC_MODE_ACTIVE);
-	timer_channel_output_pulse_value_config(TIMER4, TIMER_CH_0, m_nBufSize);
+	timer_channel_output_pulse_value_config(TIMER4, TIMER_CH_0, 1 + m_nBufSize);
 
 	timer_interrupt_enable(TIMER4, TIMER_INT_CH0);
 
@@ -206,10 +210,16 @@ WS28xxMulti::WS28xxMulti(PixelConfiguration& pixelConfiguration) {
 	dma_init_struct.memory0_addr = (uint32_t) s_GPIO_PINs;
 #endif
 	dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_DISABLE;
-	dma_init_struct.memory_width = DMA_MEMORY_WIDTH_32BIT;
-	dma_init_struct.periph_addr = GPIOx + 0x10U;
+#if !defined (GD32F4XX)
+	dma_init_struct.memory_width = DMA_MEMORY_WIDTH_16BIT;
+#endif
+	dma_init_struct.periph_addr = GPIOx + GPIOx_BOP_OFFSET;
 	dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
-	dma_init_struct.periph_width = DMA_PERIPHERAL_WIDTH_32BIT;
+#if !defined (GD32F4XX)
+	dma_init_struct.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
+#else
+	dma_init_struct.periph_memory_width = DMA_PERIPH_WIDTH_16BIT;
+#endif
 	dma_init_struct.priority = DMA_PRIORITY_HIGH;
 	dma_init(TIMER7_DMAx, TIMER7_CH0_DMA_CHx, &dma_init_struct);
 	/* configure DMA mode */
@@ -229,10 +239,17 @@ WS28xxMulti::WS28xxMulti(PixelConfiguration& pixelConfiguration) {
 	dma_init_struct.memory0_addr = (uint32_t) s_T0H;
 #endif
 	dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
+#if !defined (GD32F4XX)
 	dma_init_struct.memory_width = DMA_MEMORY_WIDTH_16BIT;
-	dma_init_struct.periph_addr = GPIOx + 0x14U;
+#endif
+	dma_init_struct.periph_addr = GPIOx + GPIOx_BC_OFFSET;
 	dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
-	dma_init_struct.periph_width = DMA_PERIPHERAL_WIDTH_32BIT;
+#if !defined (GD32F4XX)
+	dma_init_struct.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
+#else
+	dma_init_struct.periph_memory_width = DMA_PERIPH_WIDTH_16BIT;
+#endif
+	dma_init_struct.priority = DMA_PRIORITY_HIGH;
 	dma_init(TIMER7_DMAx, TIMER7_CH1_DMA_CHx, &dma_init_struct);
 	/* configure DMA mode */
 	dma_circulation_disable(TIMER7_DMAx, TIMER7_CH1_DMA_CHx);
@@ -251,10 +268,16 @@ WS28xxMulti::WS28xxMulti(PixelConfiguration& pixelConfiguration) {
 	dma_init_struct.memory0_addr = (uint32_t) s_GPIO_PINs;
 #endif
 	dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_DISABLE;
-	dma_init_struct.memory_width = DMA_MEMORY_WIDTH_32BIT;
-	dma_init_struct.periph_addr = GPIOx + 0x14U;
+#if !defined (GD32F4XX)
+	dma_init_struct.memory_width = DMA_MEMORY_WIDTH_16BIT;
+#endif
+	dma_init_struct.periph_addr = GPIOx + GPIOx_BC_OFFSET;
 	dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
-	dma_init_struct.periph_width = DMA_PERIPHERAL_WIDTH_32BIT;
+#if !defined (GD32F4XX)
+	dma_init_struct.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
+#else
+	dma_init_struct.periph_memory_width = DMA_PERIPH_WIDTH_16BIT;
+#endif
 	dma_init_struct.priority = DMA_PRIORITY_HIGH;
 	dma_init(TIMER7_DMAx, TIMER7_CH2_DMA_CHx, &dma_init_struct);
 	/* configure DMA mode */
@@ -286,23 +309,26 @@ void WS28xxMulti::Update() {
 
 	sv_isRunning = true;
 
-	timer_disable(TIMER4);
+	TIMER_CTL0(TIMER4) &= ~(uint32_t)TIMER_CTL0_CEN;
 	TIMER_CNT(TIMER4) = 0;
 
-	timer_disable(TIMER7);
+	TIMER_CTL0(TIMER7) &= ~(uint32_t)TIMER_CTL0_CEN;
 	TIMER_CNT(TIMER7) = 0;
 
 	DMA_CHCTL(TIMER7_DMAx, TIMER7_CH0_DMA_CHx) &= ~DMA_CHXCTL_CHEN;
+	dma_interrupt_flag_clear(TIMER7_DMAx, TIMER7_CH0_DMA_CHx, DMA_INTF_FTFIF);
 	DMA_CHMADDR(TIMER7_DMAx, TIMER7_CH0_DMA_CHx) = (uint32_t) s_GPIO_PINs;
 	DMA_CHCNT(TIMER7_DMAx, TIMER7_CH0_DMA_CHx) = (m_nBufSize & DMA_CHXCNT_CNT);
 	DMA_CHCTL(TIMER7_DMAx, TIMER7_CH0_DMA_CHx) |= DMA_CHXCTL_CHEN;
 
 	DMA_CHCTL(TIMER7_DMAx, TIMER7_CH1_DMA_CHx) &= ~DMA_CHXCTL_CHEN;
+	dma_interrupt_flag_clear(TIMER7_DMAx, TIMER7_CH1_DMA_CHx, DMA_INTF_FTFIF);
 	DMA_CHMADDR(TIMER7_DMAx, TIMER7_CH1_DMA_CHx) = (uint32_t) s_T0H;
 	DMA_CHCNT(TIMER7_DMAx, TIMER7_CH1_DMA_CHx) = ((m_nBufSize) & DMA_CHXCNT_CNT);
 	DMA_CHCTL(TIMER7_DMAx, TIMER7_CH1_DMA_CHx) |= DMA_CHXCTL_CHEN;
 
 	DMA_CHCTL(TIMER7_DMAx, TIMER7_CH2_DMA_CHx) &= ~DMA_CHXCTL_CHEN;
+	dma_interrupt_flag_clear(TIMER7_DMAx, TIMER7_CH2_DMA_CHx, DMA_INTF_FTFIF);
 	DMA_CHMADDR(DMA1, TIMER7_CH2_DMA_CHx) = (uint32_t) s_GPIO_PINs;
 	DMA_CHCNT(TIMER7_DMAx, TIMER7_CH2_DMA_CHx) = ((m_nBufSize) & DMA_CHXCNT_CNT);
 	DMA_CHCTL(TIMER7_DMAx, TIMER7_CH2_DMA_CHx) |= DMA_CHXCTL_CHEN;
@@ -311,8 +337,8 @@ void WS28xxMulti::Update() {
 	timer_dma_enable(TIMER7, TIMER_DMA_CH1D);
 	timer_dma_enable(TIMER7, TIMER_DMA_CH2D);
 
-	timer_enable(TIMER4);
-	timer_enable(TIMER7);
+	TIMER_CTL0(TIMER4) |= (uint32_t)TIMER_CTL0_CEN;
+	TIMER_CTL0(TIMER7) |= (uint32_t)TIMER_CTL0_CEN;
 }
 
 void WS28xxMulti::Blackout() {
@@ -356,9 +382,6 @@ void WS28xxMulti::SetColour(uint32_t nPortIndex, uint32_t nPixelIndex, uint8_t n
 	uint32_t j = 0;
 	const auto k = nPixelIndex * pixel::single::RGB;
 	const auto nBit = nPortIndex + GPIO_PIN_OFFSET;
-
-	assert(nBit < 8);
-
 	auto *p = &s_T0H[k];
 
 	for (uint8_t mask = 0x80; mask != 0; mask = static_cast<uint8_t>(mask >> 1)) {
@@ -383,9 +406,6 @@ void WS28xxMulti::SetColour(uint32_t nPortIndex, uint32_t nPixelIndex, uint8_t n
 }
 
 void WS28xxMulti::SetPixel(uint32_t nPortIndex, uint32_t nPixelIndex, uint8_t nRed, uint8_t nGreen, uint8_t nBlue) {
-	assert(nPortIndex < 8);
-	assert(nPixelIndex < m_nBufSize / 8);
-
 	switch (m_Map) {
 	case Map::RGB:
 		SetColour(nPortIndex, nPixelIndex, nRed, nGreen, nBlue);
@@ -421,9 +441,6 @@ void WS28xxMulti::SetPixel(uint32_t nPortIndex, uint32_t nPixelIndex, uint8_t nR
 	uint32_t j = 0;
 	const auto k = nPixelIndex * pixel::single::RGBW;
 	const auto nBit = nPortIndex + GPIO_PIN_OFFSET;
-
-	assert(nBit < 8);
-
 	auto *p = &s_T0H[k];
 
 	for (uint8_t mask = 0x80; mask != 0; mask = static_cast<uint8_t>(mask >> 1)) {

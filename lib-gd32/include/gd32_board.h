@@ -42,6 +42,8 @@
 # error Board is unknown / not defined
 #endif
 
+#include "board/logic_analyzer.h"
+
 #if defined(USART0_REMAP) && !defined (I2C0_REMAP)
 # error Configuration error
 #endif

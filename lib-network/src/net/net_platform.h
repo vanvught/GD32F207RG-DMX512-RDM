@@ -1,8 +1,8 @@
 /**
- * @file software_version.h
+ * @file net_platform.h
  *
  */
-/* Copyright (C) 2021-2022 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2022 by Arjan van Vught mailto:info@orangepi-dmx.nl
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,18 @@
  * THE SOFTWARE.
  */
 
-#ifndef SOFTWARE_VERSION_H_
-#define SOFTWARE_VERSION_H_
+#ifndef NET_PLATFORM_H_
+#define NET_PLATFORM_H_
 
-constexpr char SOFTWARE_VERSION[] = "1.1";
+#if defined (GD32)
+# include "gd32.h"
+# if !defined (GD32F4XX)
+#  define SECTION_NETWORK
+# else
+#  define SECTION_NETWORK __attribute__ ((section (".network")))
+# endif
+#else
+# define SECTION_NETWORK
+#endif
 
-#endif /* SOFTWARE_VERSION_H_ */
+#endif /* NET_PLATFORM_H_ */
