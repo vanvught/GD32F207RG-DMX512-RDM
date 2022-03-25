@@ -8,13 +8,13 @@
 # GD32F207RG DMX512 RDM Pixel Ethernet
 The master source code is available here -> [https://github.com/vanvught/rpidmx512](https://github.com/vanvught/rpidmx512)
 
-A development board is available here -> [https://github.com/vanvught/GD32F103R-GD32F107R-GD32F207R-dev-board](https://github.com/vanvught/GD32F103R-GD32F107R-GD32F207R-dev-board)
+A development board is available here -> [https://github.com/vanvught/GD32FxxxR-dev-board](https://github.com/vanvught/GD32FxxxR-dev-board)
 
 Full documentation will be available here -> [https://www.gd32-dmx.org](https://www.gd32-dmx.org)
 
 [PayPal.Me Donate](https://paypal.me/AvanVught?locale.x=nl_NL)
 
-The ready to use firmware is build to use with the bootloader TFTP server -> [https://github.com/vanvught/GD32F207x-Bootloader-TFTP](https://github.com/vanvught/GD32F207x-Bootloader-TFTP)
+The ready to use firmware is build to use with the bootloader TFTP server -> [https://github.com/vanvught/GD32F207RG-Bootloader-TFTP](https://github.com/vanvught/GD32F207RG-Bootloader-TFTP)
 
 ### Art-Net 4 DMX/RDM 1-4 ports
 * Full Art-Net 4 implementation
