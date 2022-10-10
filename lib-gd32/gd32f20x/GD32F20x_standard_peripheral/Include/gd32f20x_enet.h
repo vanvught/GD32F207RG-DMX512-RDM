@@ -113,7 +113,7 @@ OF SUCH DAMAGE.
 #define PHY_DUPLEX_STATUS                ((uint16_t)0x0004)                     /*!< configured information of duplex: full-duplex */
 #elif(PHY_TYPE == RTL8201F)	/** AvV **/
 # define PHY_SR                          0U                                     /*!< tranceiver status register */
-# define PHY_SPEED_STATUS                ((uint16_t)0x0000)                     /*!< configured information of speed: 10Mbit/s */
+# define PHY_SPEED_STATUS                ((uint16_t)0x2000)                     /*!< configured information of speed: 100Mbit/s */
 # define PHY_DUPLEX_STATUS               ((uint16_t)0x0100)                     /*!< configured information of duplex: full-duplex */
 #endif /* PHY_TYPE */
 
@@ -1291,10 +1291,6 @@ typedef enum{
 #define ENET_DELAY_TO                             ((uint32_t)0x0004FFFFU)                       /*!< ENET delay timeout */
 #define ENET_RESET_TO                             ((uint32_t)0x000004FFU)                       /*!< ENET reset timeout */
 
-#ifdef __cplusplus
- extern "C" {
-#endif
-
 /* function declarations */
 /* main function */
 /* deinitialize the ENET, and reset structure parameters for ENET initialization */
@@ -1507,7 +1503,4 @@ static void enet_delay(uint32_t ncount);
 #define _ENET_DELAY_                              enet_delay
 #endif
 
-#ifdef __cplusplus
-}
-#endif
 #endif /* GD32F20X_ENET_H */

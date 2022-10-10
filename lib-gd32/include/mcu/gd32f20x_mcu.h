@@ -23,8 +23,8 @@
  * THE SOFTWARE.
  */
 
-#ifndef MCU_GD32F20X_H_
-#define MCU_GD32F20X_H_
+#ifndef MCU_GD32F20X_MCU_H_
+#define MCU_GD32F20X_MCU_H_
 
 #if !defined(GD32F20X_CL)
 # error This file should not be included
@@ -35,8 +35,14 @@
 #define MCU_CLOCK_FREQ		(uint32_t)(120000000)
 #define APB1_CLOCK_FREQ		(uint32_t)(60000000)
 #define APB2_CLOCK_FREQ		(uint32_t)(120000000)
-#define TIMER_PSC_1MHZ		(uint16_t)(119)		///< TIMER2CLK = MCU_CLOCK_FREQ / 120 -> 1MHz => us ticker
-#define TIMER_PSC_10KHZ		(uint16_t)(11999)	///< TIMER2CLK = MCU_CLOCK_FREQ / 11999 -> 10 KHz
+#define TIMER_PSC_1MHZ		(uint16_t)(119)
+#define TIMER_PSC_10KHZ		(uint16_t)(11999)
+
+#include "gd32f20x_libopt.h"
+
+/**
+ *
+ */
 
 #define BITBAND_SRAM_BASE	(uint32_t)0x22000000
 
@@ -277,6 +283,14 @@
 #endif
 
 /**
+ * TIMER GPIO
+ */
+
+#define TIMER2CH0_RCU_GPIOx		RCU_GPIOA
+#define TIMER2CH0_GPIOx			GPIOA
+#define TIMER2CH0_GPIO_PINx		GPIO_PIN_6
+
+/**
  * DMA
  */
 
@@ -288,6 +302,13 @@
 
 #define SPI2_DMAx			DMA1
 #define SPI2_TX_DMA_CHx		DMA_CH1
+
+#define TIMER2_RCU_DMAx		RCU_DMA0
+#define TIMER2_DMAx			DMA0
+#define TIMER2_CH0_DMA_CHx	DMA_CH5
+// #define TIMER2_CH1_DMA_CHx
+#define TIMER2_CH2_DMA_CHx	DMA_CH1
+#define TIMER2_CH3_DMA_CHx	DMA_CH2
 
 #define TIMER7_RCU_DMAx		RCU_DMA1
 #define TIMER7_DMAx			DMA1
@@ -327,4 +348,4 @@
 #define UART7_TX_DMA_CH		DMA_CH3
 #define UART7_RX_DMA_CH		DMA_CH1
 
-#endif /* MCU_GD32F20X_H_ */
+#endif /* MCU_GD32F20X_MCU_H_ */

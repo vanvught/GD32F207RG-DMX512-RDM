@@ -3,7 +3,7 @@ PATH=".:./../scripts:$PATH"
 echo $1
 
 DIR=../gd32_emac*
-BIN=gd32f20x.bin
+BIN=gd32f207.bin
 
 array=('rconfig.txt' 'display.txt' 'network.txt' 'artnet.txt' 'e131.txt' 'devices.txt' 'params.txt')
 

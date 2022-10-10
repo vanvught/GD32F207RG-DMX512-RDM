@@ -7,7 +7,7 @@ LD	 = $(PREFIX)ld
 AR	 = $(PREFIX)ar
 
 FAMILY?=gd32f20x
-BOARD?=BOARD_GD32F207R
+BOARD?=BOARD_GD32F207RG
 
 FAMILY:=$(shell echo $(FAMILY) | tr A-Z a-z)
 FAMILY_UC=$(shell echo $(FAMILY) | tr a-w A-W)
@@ -16,7 +16,7 @@ $(info $$FAMILY [${FAMILY}])
 $(info $$FAMILY_UC [${FAMILY_UC}])
 
 # Output 
-TARGET=$(FAMILY).bin
+TARGET=gd32f207.bin
 LIST=$(FAMILY).list
 MAP=$(FAMILY).map
 BUILD=build_gd32/

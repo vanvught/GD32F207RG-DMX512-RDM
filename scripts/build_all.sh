@@ -35,11 +35,11 @@ do
 			exit $retVal
 		fi
 
-		cp gd32f20x.bin /tmp/$f.bin
+		cp gd32f207.bin /tmp/$f.bin
 		
 		cd -
 	fi
 done
 
-find . -name gd32f20x.bin | sort | xargs ls -al
-find . -name gd32f20x.bin | xargs ls -al | wc -l
+find . -name gd32f207.bin | sort | xargs ls -al
+find . -name gd32f207.bin | xargs ls -al | wc -l

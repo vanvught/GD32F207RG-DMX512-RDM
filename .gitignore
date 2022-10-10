@@ -32,12 +32,12 @@
 *.app
 
 .DS_Store
+._*
+._*.*
+*._gd32
 
 lib_gd32
 build_gd32
-
-._*.*
-*._gd32
 
 gd32f10x*.*
 lib-gd32/gd32f10x/*
@@ -46,10 +46,11 @@ lib-gd32/gd32f30x/*
 gd32f4xx*.*
 lib-gd32/gd32f4xx/*
 
-udp_send
-
 lib-*/src/esp8266/*
 lib-*/include/esp8266/*
 
 lib-*/src/h3/*
 lib-*/include/h3/*
+
+udp_send
+0/*
