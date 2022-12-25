@@ -31,13 +31,29 @@
 *.out
 *.app
 
-.DS_Store
+# Linux 
+.nfs*
+.nfs.*
+
+# Apple
+.DS*
+._.DS*
 ._*
 ._*.*
-*._gd32
 
-lib_gd32
-build_gd32
+# Eclipse
+.tracecompass
+*/.tracecompass
+
+# Build
+*/build_gd32/*
+*/lib_gd32/*
+*.su
+*.list
+
+*.bin
+udp_send
+0/*
 
 gd32f10x*.*
 lib-gd32/gd32f10x/*
@@ -51,6 +67,3 @@ lib-*/include/esp8266/*
 
 lib-*/src/h3/*
 lib-*/include/h3/*
-
-udp_send
-0/*

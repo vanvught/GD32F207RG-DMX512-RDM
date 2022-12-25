@@ -45,8 +45,7 @@
 #include "artnet4node.h"
 #include "artnetparams.h"
 #include "artnetmsgconst.h"
-#include "artnetdiscovery.h"
-#include "artnet/displayudfhandler.h"
+#include "artnetrdmcontroller.h"
 
 #include "dmxparams.h"
 #include "dmxsend.h"
@@ -58,8 +57,7 @@
 #include "remoteconfig.h"
 #include "remoteconfigparams.h"
 
-#include "flashrom.h"
-#include "spiflashstore.h"
+#include "configstore.h"
 #include "storeartnet.h"
 #include "storedisplayudf.h"
 #include "storedmxsend.h"
@@ -82,8 +80,7 @@ void main() {
 	DisplayUdf display;
 	FirmwareVersion fw(SOFTWARE_VERSION, __DATE__, __TIME__);
 
-	FlashRom flashRom;
-	SpiFlashStore spiFlashStore;
+	ConfigStore configStore;
 
 	fw.Print("\x1b[32m" "Art-Net 4 DMX/RDM controller {4 Universes}" "\x1b[37m");
 
@@ -123,9 +120,6 @@ void main() {
 		artnetParams.Set();
 	}
 
-	DisplayUdfHandler displayUdfHandler;
-	node.SetArtNetDisplay(&displayUdfHandler);
-
 	node.SetArtNetStore(&storeArtNet);
 
 	for (uint32_t nPortIndex = 0; nPortIndex < artnetnode::MAX_PORTS; nPortIndex++) {
@@ -164,32 +158,31 @@ void main() {
 
 	StoreRDMDevice storeRdmDevice;
 
-	if (node.GetActiveOutputPorts() != 0) {
-		if (artnetParams.IsRdm()) {
-			auto pDiscovery = new ArtNetRdmController(node.GetActiveOutputPorts());
-			assert(pDiscovery != nullptr);
+	if (artnetParams.IsRdm()) {
+		auto pDiscovery = new ArtNetRdmController;
+		assert(pDiscovery != nullptr);
 
-			RDMDeviceParams rdmDeviceParams(&storeRdmDevice);
+		RDMDeviceParams rdmDeviceParams(&storeRdmDevice);
 
-			if (rdmDeviceParams.Load()) {
-				rdmDeviceParams.Dump();
-				rdmDeviceParams.Set(pDiscovery);
-			}
-
-			pDiscovery->Init();
-			pDiscovery->Print();
-
-			display.TextStatus(ArtNetMsgConst::RDM_RUN, Display7SegmentMessage::INFO_RDM_RUN, CONSOLE_YELLOW);
-
-			for (uint32_t nPortIndex = 0; nPortIndex < artnetnode::MAX_PORTS; nPortIndex++) {
-				uint8_t nAddress;
-				if (node.GetUniverseSwitch(nPortIndex, nAddress, lightset::PortDir::OUTPUT)) {
-					pDiscovery->Full(nPortIndex);
-				}
-			}
-
-			node.SetRdmHandler(pDiscovery);
+		if (rdmDeviceParams.Load()) {
+			rdmDeviceParams.Dump();
+			rdmDeviceParams.Set(pDiscovery);
 		}
+
+		pDiscovery->Init();
+		pDiscovery->Print();
+
+		display.TextStatus(ArtNetMsgConst::RDM_RUN, Display7SegmentMessage::INFO_RDM_RUN, CONSOLE_YELLOW);
+
+		for (uint32_t nPortIndex = 0; nPortIndex < artnetnode::MAX_PORTS; nPortIndex++) {
+			uint8_t nAddress;
+
+			if (node.GetRdm(nPortIndex) && (node.GetUniverseSwitch(nPortIndex, nAddress, lightset::PortDir::OUTPUT))) {
+				pDiscovery->Full(nPortIndex);
+			}
+		}
+
+		node.SetRdmHandler(pDiscovery);
 	}
 
 	node.Print();
@@ -223,7 +216,7 @@ void main() {
 		remoteConfigParams.Set(&remoteConfig);
 	}
 
-	while (spiFlashStore.Flash())
+	while (configStore.Flash())
 		;
 
 	display.TextStatus(ArtNetMsgConst::START, Display7SegmentMessage::INFO_NODE_START, CONSOLE_YELLOW);
@@ -239,7 +232,7 @@ void main() {
 		nw.Run();
 		node.Run();
 		remoteConfig.Run();
-		spiFlashStore.Flash();
+		configStore.Flash();
 		if (pDmxConfigUdp != nullptr) {
 			pDmxConfigUdp->Run();
 		}

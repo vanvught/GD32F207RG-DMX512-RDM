@@ -59,12 +59,32 @@
 #define LED_BLINK_GPIO_CLK	LED1_RCU_GPIOx
 
 /**
+ * LEDs 595	--> Using SPI2 pin's: MOSI, SCK and NSS
+ */
+
+#define LED595_DATA_GPIO_PINx	GPIO_PIN_5
+#define LED595_DATA_RCU_GPIOx	RCU_GPIOB
+#define LED595_DATA_GPIOx		GPIOB
+
+#define LED595_CLK_GPIO_PINx	GPIO_PIN_3
+#define LED595_CLK_RCU_GPIOx	RCU_GPIOB
+#define LED595_CLK_GPIOx		GPIOB
+
+#define LED595_LOAD_GPIO_PINx	GPIO_PIN_15
+#define LED595_LOAD_RCU_GPIOx	RCU_GPIOA
+#define LED595_LOAD_GPIOx		GPIOA
+
+/**
  * KEYs
  */
 
-#define KEY2_PINx			GPIO_PIN_14
-#define KEY2_GPIOx			GPIOB
-#define KEY2_RCU_GPIOx		RCU_GPIOB
+#define KEY2_PINx						GPIO_PIN_11
+#define KEY2_GPIOx						GPIOA
+#define KEY2_RCU_GPIOx					RCU_GPIOA
+
+#define KEY_BOOTLOADER_TFTP_GPIO_PINx	KEY2_PINx
+#define KEY_BOOTLOADER_TFTP_GPIOx		KEY2_GPIOx
+#define KEY_BOOTLOADER_TFTP_RCU_GPIOx	KEY2_RCU_GPIOx
 
 /**
  * I2C
@@ -103,7 +123,7 @@
  * U(S)ART
  */
 
-// #define USART0_REMAP
+#define USART0_REMAP
 // #define USART1_REMAP
 #define USART2_PARTIAL_REMAP
 // #define UART3_REMAP
@@ -134,6 +154,42 @@ static constexpr uint32_t INVERTED = 0;
 }  // namespace hal
 #endif
 
+/**
+ * SPI flash
+ */
+
+#define SPI_FLASH_CS_GPIOx		GPIOB
+#define SPI_FLASH_CS_RCU_GPIOx	RCU_GPIOB
+#define SPI_FLASH_CS_GPIO_PINx	GPIO_PIN_1
+
+/**
+ * EXT PHY
+ */
+
+#define LINK_CHECK_GPIO_CLK				RCU_GPIOB
+#define LINK_CHECK_GPIO_PORT			GPIOB
+#define LINK_CHECK_GPIO_PIN 			GPIO_PIN_0
+#define LINK_CHECK_EXTI_LINE			EXTI_0
+#define LINK_CHECK_EXTI_IRQn			EXTI0_IRQn
+#define LINK_CHECK_IRQ_HANDLE			EXTI0_IRQHandler
+#if !defined (GD32F4XX)
+# define LINK_CHECK_EXTI_CLK			RCU_AF
+# define LINK_CHECK_EXTI_PORT_SOURCE	GPIO_PORT_SOURCE_GPIOB
+# define LINK_CHECK_EXTI_PIN_SOURCE		GPIO_PIN_SOURCE_0
+# define LINK_CHECK_EXTI_SOURCE_CONFIG	gpio_exti_source_select
+# define LINK_CHECK_GPIO_CONFIG			gpio_init(LINK_CHECK_GPIO_PORT, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, LINK_CHECK_GPIO_PIN);
+#else
+# define LINK_CHECK_EXTI_CLK			RCU_SYSCFG
+# define LINK_CHECK_EXTI_PORT_SOURCE	EXTI_SOURCE_GPIOB
+# define LINK_CHECK_EXTI_PIN_SOURCE		EXTI_SOURCE_PIN0
+# define LINK_CHECK_EXTI_SOURCE_CONFIG	syscfg_exti_line_config
+# define LINK_CHECK_GPIO_CONFIG			gpio_mode_set(LINK_CHECK_GPIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, LINK_CHECK_GPIO_PIN);
+#endif
+
+/**
+ * MCU and BOARD name
+ */
+
 #if defined (GD32F20X_CL)
 # include "mcu/gd32f20x_mcu.h"
 # define GD32_MCU_NAME	"GD32F207RG"
@@ -144,13 +200,25 @@ static constexpr uint32_t INVERTED = 0;
 # error MCU is not supported
 #endif
 
+#define GD32_BOARD_NAME			"BW_OPIDMX4"
+
 #include "gd32_gpio.h"
 
-#define GD32_BOARD_NAME			"BW_OPIDMX4"
 #define GD32_BOARD_LED1			GD32_PORT_TO_GPIO(GD32_GPIO_PORTC, 0)
 #define GD32_BOARD_LED2			GD32_PORT_TO_GPIO(GD32_GPIO_PORTC, 2)
 #define GD32_BOARD_LED3			GD32_PORT_TO_GPIO(GD32_GPIO_PORTC, 3)
 #define GD32_BOARD_STATUS_LED	GD32_BOARD_LED1
+
+/**
+ * SPI LCD
+ */
+
+#define SPI_LCD_RST_PIN		GPIO_EXT_7
+#define SPI_LCD_DC_PIN 		GPIO_EXT_26
+#define SPI_LCD_BL_PIN		GPIO_EXT_22
+#if defined(SPI_LCD_HAVE_CS_PIN)
+# define SPI_LCD_CS_PIN		GPIO_EXT_24
+#endif
 
 #include "gpio_header.h"
 

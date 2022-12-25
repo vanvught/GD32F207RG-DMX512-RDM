@@ -24,6 +24,7 @@
  */
 
 #include <cstdint>
+#include <cassert>
 
 #include "hardware.h"
 #include "network.h"
@@ -44,7 +45,6 @@
 #include "artnet4node.h"
 #include "artnetparams.h"
 #include "artnetmsgconst.h"
-#include "artnet/displayudfhandler.h"
 #include "artnettriggerhandler.h"
 
 #include "pixeldmxconfiguration.h"
@@ -61,14 +61,12 @@
 # include "rdmnetconst.h"
 # include "rdmpersonality.h"
 # include "rdm_e120.h"
-# include "factorydefaults.h"
 #endif
 
 #include "remoteconfig.h"
 #include "remoteconfigparams.h"
 
-#include "flashrom.h"
-#include "spiflashstore.h"
+#include "configstore.h"
 #include "storeartnet.h"
 #include "storedisplayudf.h"
 #include "storenetwork.h"
@@ -93,8 +91,7 @@ void main() {
 	DisplayUdf display;
 	FirmwareVersion fw(SOFTWARE_VERSION, __DATE__, __TIME__);
 
-	FlashRom flashRom;
-	SpiFlashStore spiFlashStore;
+	ConfigStore configStore;
 
 	fw.Print("\x1b[32m" "Art-Net 4 Pixel controller {8x 4 Universes}" "\x1b[37m");
 
@@ -136,9 +133,6 @@ void main() {
 
 	node.SetArtNetStore(&storeArtNet);
 
-	DisplayUdfHandler displayUdfHandler;
-	node.SetArtNetDisplay(&displayUdfHandler);
-
 	PixelDmxConfiguration pixelDmxConfiguration;
 
 	StorePixelDmx storePixelDmx;
@@ -152,27 +146,42 @@ void main() {
 	WS28xxDmxMulti pixelDmxMulti(pixelDmxConfiguration);
 	pixelDmxMulti.SetPixelDmxHandler(new PixelDmxStartStop);
 
-	const auto nActivePorts = pixelDmxMulti.GetOutputPorts();
+	const auto nPixelActivePorts = pixelDmxMulti.GetOutputPorts();
 	const auto nUniverses = pixelDmxMulti.GetUniverses();
 
 	uint32_t nPortProtocolIndex = 0;
 
-	for (uint32_t nOutportIndex = 0; nOutportIndex < nActivePorts; nOutportIndex++) {
-		auto isSet = false;
-		const auto nStartUniversePort = pixelDmxParams.GetStartUniversePort(nOutportIndex, isSet);
-		if (isSet) {
-			for (uint16_t u = 0; u < nUniverses; u++) {
-				node.SetUniverse(nPortProtocolIndex, lightset::PortDir::OUTPUT, static_cast<uint16_t>(nStartUniversePort + u));
+	if (artnetnode::PAGE_SIZE==4) {
+		for (uint32_t nOutportIndex = 0; nOutportIndex < nPixelActivePorts; nOutportIndex++) {
+			auto isSet = false;
+			const auto nStartUniversePort = pixelDmxParams.GetStartUniversePort(nOutportIndex, isSet);
+			if (isSet) {
+				for (uint16_t u = 0; u < nUniverses; u++) {
+					node.SetUniverse(nPortProtocolIndex, lightset::PortDir::OUTPUT, static_cast<uint16_t>(nStartUniversePort + u));
+					nPortProtocolIndex++;
+				}
+				nPortProtocolIndex = nPortProtocolIndex + artnet::PORTS - nUniverses;
+			} else {
+				nPortProtocolIndex = nPortProtocolIndex + artnet::PORTS;
+			}
+		}
+	} else {
+		assert(artnetnode::PAGE_SIZE==1);
+
+		for (uint32_t nOutportIndex = 0; nOutportIndex < nPixelActivePorts; nOutportIndex++) {
+			auto isSet = false;
+			const auto nStartUniversePort = pixelDmxParams.GetStartUniversePort(nOutportIndex, isSet);
+			for (uint32_t u = 0; u < nUniverses; u++) {
+				if (isSet) {
+					node.SetUniverse(nPortProtocolIndex, lightset::PortDir::OUTPUT, static_cast<uint16_t>(nStartUniversePort + u));
+				}
 				nPortProtocolIndex++;
 			}
-			nPortProtocolIndex = nPortProtocolIndex + static_cast<uint8_t>(artnet::PORTS - nUniverses);
-		} else {
-			nPortProtocolIndex = nPortProtocolIndex + artnet::PORTS;
 		}
 	}
 
 	const auto nTestPattern = static_cast<pixelpatterns::Pattern>(pixelDmxParams.GetTestPattern());
-	PixelTestPattern pixelTestPattern(nTestPattern, nActivePorts);
+	PixelTestPattern pixelTestPattern(nTestPattern, nPixelActivePorts);
 	
 	if (PixelTestPattern::GetPattern() != pixelpatterns::Pattern::NONE) {
 		node.SetOutput(nullptr);
@@ -185,7 +194,7 @@ void main() {
 #if defined (NODE_RDMNET_LLRP_ONLY)
 	display.TextStatus(RDMNetConst::MSG_CONFIG, Display7SegmentMessage::INFO_RDMNET_CONFIG, CONSOLE_YELLOW);
 	char aDescription[rdm::personality::DESCRIPTION_MAX_LENGTH + 1];
-	snprintf(aDescription, sizeof(aDescription) - 1, "Art-Net Pixel %d-%s:%d", nActivePorts, PixelType::GetType(WS28xxMulti::Get()->GetType()), WS28xxMulti::Get()->GetCount());
+	snprintf(aDescription, sizeof(aDescription) - 1, "Art-Net 4 Pixel %d-%s:%d", nPixelActivePorts, PixelType::GetType(WS28xxMulti::Get()->GetType()), WS28xxMulti::Get()->GetCount());
 
 	char aLabel[RDM_DEVICE_LABEL_MAX_LENGTH + 1];
 	const auto nLength = snprintf(aLabel, sizeof(aLabel) - 1, GD32_BOARD_NAME " Pixel");
@@ -196,7 +205,6 @@ void main() {
 	llrpOnlyDevice.SetLabel(RDM_ROOT_DEVICE, aLabel, static_cast<uint8_t>(nLength));
 	llrpOnlyDevice.SetProductCategory(E120_PRODUCT_CATEGORY_FIXTURE);
 	llrpOnlyDevice.SetProductDetail(E120_PRODUCT_DETAIL_ETHERNET_NODE);
-	llrpOnlyDevice.SetRDMFactoryDefaults(new FactoryDefaults);
 
 	node.SetRdmUID(llrpOnlyDevice.GetUID(), true);
 
@@ -206,8 +214,8 @@ void main() {
 	RDMDeviceParams rdmDeviceParams(&storeRdmDevice);
 
 	if (rdmDeviceParams.Load()) {
-		rdmDeviceParams.Set(&llrpOnlyDevice);
 		rdmDeviceParams.Dump();
+		rdmDeviceParams.Set(&llrpOnlyDevice);
 	}
 
 	llrpOnlyDevice.SetRDMDeviceStore(&storeRdmDevice);
@@ -217,7 +225,7 @@ void main() {
 	node.Print();
 	pixelDmxMulti.Print();
 
-	display.SetTitle("ArtNet Pixel %dx%d", nActivePorts, WS28xxMulti::Get()->GetCount());
+	display.SetTitle("ArtNet 4 Pixel %dx%d", nPixelActivePorts, WS28xxMulti::Get()->GetCount());
 	display.Set(2, displayudf::Labels::IP);
 	display.Set(3, displayudf::Labels::NODE_NAME);
 	display.Set(4, displayudf::Labels::VERSION);
@@ -254,7 +262,7 @@ void main() {
 		remoteConfigParams.Set(&remoteConfig);
 	}
 
-	while (spiFlashStore.Flash())
+	while (configStore.Flash())
 		;
 
 #if defined (NODE_RDMNET_LLRP_ONLY)
@@ -278,7 +286,7 @@ void main() {
 		nw.Run();
 		node.Run();
 		remoteConfig.Run();
-		spiFlashStore.Flash();
+		configStore.Flash();
 		if (__builtin_expect((PixelTestPattern::GetPattern() != pixelpatterns::Pattern::NONE), 0)) {
 			pixelTestPattern.Run();
 		}
