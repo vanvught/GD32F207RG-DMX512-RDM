@@ -164,6 +164,6 @@ ifneq ($(findstring network,$(LIBS)),network)
 	LIBS+=network
 endif
 
-LIBS+=configstore flashcode properties lightset display hal
+LIBS+=configstore flash flashcode properties lightset display hal
 
 $(info $$LIBS [${LIBS}])

@@ -168,9 +168,9 @@ static constexpr uint32_t INVERTED = 0;
  * SPI flash
  */
 
-#define SPI_FLASH_CS_GPIOx		SPI_NSS_GPIOx
-#define SPI_FLASH_CS_RCU_GPIOx	SPI_NSS_RCU_GPIOx
-#define SPI_FLASH_CS_GPIO_PINx	SPI_NSS_GPIO_PINx
+#define SPI_FLASH_CS_GPIOx		GPIOB
+#define SPI_FLASH_CS_RCU_GPIOx	RCU_GPIOB
+#define SPI_FLASH_CS_GPIO_PINx	GPIO_PIN_1
 
 /**
  * EXT PHY

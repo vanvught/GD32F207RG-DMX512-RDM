@@ -33,7 +33,6 @@ LIBS+=c++ c gd32
 $(info [${LIBS}])
 	
 DEFINES:=$(addprefix -D,$(DEFINES))
-DEFINES+=-DCONFIG_STORE_USE_ROM
 
 include ../firmware-template-gd32/Includes.mk
 

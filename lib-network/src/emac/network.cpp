@@ -41,6 +41,10 @@
 
 #include "debug.h"
 
+namespace net {
+void __attribute__((weak)) phy_customized_led() {}
+}  // namespace net
+
 #define TO_HEX(i)	static_cast<char>(((i) < 10) ? '0' + (i) : 'A' + ((i) - 10))
 
 int emac_start(uint8_t paddr[]);
@@ -84,6 +88,8 @@ void Network::Init(NetworkParamsStore *pNetworkParamsStore) {
 	m_fNtpUtcOffset = params.GetNtpUtcOffset();
 
 	emac_start(m_aNetMacaddr);
+
+	net::phy_customized_led();
 
 	const auto *p = params.GetHostName();
 

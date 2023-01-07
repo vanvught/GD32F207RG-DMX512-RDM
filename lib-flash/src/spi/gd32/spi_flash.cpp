@@ -30,6 +30,8 @@
 #include "gd32_spi.h"
 #include "gd32.h"
 
+#include "debug.h"
+
 int spi_init() {
 	gd32_spi_begin();
 	gd32_spi_chipSelect(GD32_SPI_CS_NONE);
@@ -39,14 +41,14 @@ int spi_init() {
 	rcu_periph_clock_enable(SPI_FLASH_CS_RCU_GPIOx);
 
 #if !defined (GD32F4XX)
-	gpio_init(SPI_FLASH_CS_GPIOx, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, SPI_FLASH_CS_GPIO_PINx);
+	gpio_init(SPI_FLASH_CS_GPIOx, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, SPI_FLASH_CS_GPIO_PINx);
 #else
 	gpio_af_set(SPI_FLASH_CS_GPIOx, GPIO_AF_0, SPI_FLASH_CS_GPIO_PINx);
 	gpio_mode_set(SPI_FLASH_CS_GPIOx, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, SPI_FLASH_CS_GPIO_PINx);
 	gpio_output_options_set(SPI_FLASH_CS_GPIOx, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, SPI_FLASH_CS_GPIO_PINx);
 #endif
 
-	GPIO_BOP(SPI_FLASH_CS_GPIOx) = SPI_FLASH_CS_GPIO_PINx;
+	gpio_bit_set(SPI_FLASH_CS_GPIOx, SPI_FLASH_CS_GPIO_PINx);
 
 	return 0;
 }
@@ -56,8 +58,9 @@ inline static void spi_transfern(char *pBuffer, uint32_t nLength) {
 }
 
 int spi_xfer(uint32_t nLength, const uint8_t *pOut, uint8_t *pIn, uint32_t nFlags) {
+
 	if (nFlags & SPI_XFER_BEGIN) {
-		GPIO_BC(SPI_FLASH_CS_GPIOx) = SPI_FLASH_CS_GPIO_PINx;
+		gpio_bit_reset(SPI_FLASH_CS_GPIOx, SPI_FLASH_CS_GPIO_PINx);
 	}
 
 	if (nLength != 0) {
@@ -71,7 +74,7 @@ int spi_xfer(uint32_t nLength, const uint8_t *pOut, uint8_t *pIn, uint32_t nFlag
 	}
 
 	if (nFlags & SPI_XFER_END) {
-		GPIO_BOP(SPI_FLASH_CS_GPIOx) = SPI_FLASH_CS_GPIO_PINx;
+		gpio_bit_set(SPI_FLASH_CS_GPIOx, SPI_FLASH_CS_GPIO_PINx);
 	}
 
 	return 0;

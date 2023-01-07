@@ -1,2 +1,2 @@
-// Generated zo 25 dec 2022 14:30:42 CET
-constexpr uint32_t DEVICE_SOFTWARE_VERSION_ID=1671975042;
+// Generated za 7 jan 2023 14:46:39 CET
+constexpr uint32_t DEVICE_SOFTWARE_VERSION_ID=1673099199;

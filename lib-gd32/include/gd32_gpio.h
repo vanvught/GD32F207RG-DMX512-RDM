@@ -52,6 +52,7 @@ typedef enum T_GD32_Port {
 # define GPIO_PULL_DOWN			GPIO_MODE_IPD
 # define GPIO_PULL_DISABLE		GPIO_MODE_IN_FLOATING
 # define GPIO_INT_CFG_NEG_EDGE	EXTI_TRIG_FALLING
+# define GPIO_INT_CFG_BOTH		EXTI_TRIG_BOTH
 #elif defined (GD32F407) || defined (GD32F450)
 # define GPIO_FSEL_OUTPUT	GPIO_MODE_OUTPUT
 # define GPIO_FSEL_INPUT	GPIO_MODE_INPUT
@@ -127,6 +128,15 @@ inline static void gd32_gpio_int_cfg(const uint32_t gpio, const uint32_t trig_ty
     default:
         break;
     }
+
+	const uint8_t output_port = GD32_GPIO_TO_PORT(gpio);
+	const uint8_t output_pin = GD32_GPIO_TO_NUMBER(gpio);
+
+#if defined  (GD32F10X) || defined (GD32F20X) || defined (GD32F30X)
+    gpio_exti_source_select(output_port, output_pin);
+#elif defined (GD32F4XX)
+    syscfg_exti_line_config(output_port, output_pin);
+#endif
 }
 
 inline static void gd32_gpio_clr(const uint32_t gpio) {
@@ -151,10 +161,10 @@ inline static void gd32_gpio_write(const uint32_t gpio, const uint32_t level) {
 	}
 }
 
-inline static uint8_t gd32_gpio_lev(const uint32_t gpio) {
+inline static uint32_t gd32_gpio_lev(const uint32_t gpio) {
 	const uint32_t gpio_periph = GPIOA + (GD32_GPIO_TO_PORT(gpio) * 0x400);
 	const uint32_t pin = BIT(GD32_GPIO_TO_NUMBER(gpio));
-	return (uint8_t) ((uint32_t) 0 != (GPIO_ISTAT(gpio_periph) & pin));
+	return (uint32_t) ((uint32_t) 0 != (GPIO_ISTAT(gpio_periph) & pin));
 }
 
 #ifdef __cplusplus
