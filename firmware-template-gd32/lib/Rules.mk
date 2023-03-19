@@ -6,8 +6,9 @@ AS	= $(CC)
 LD	= $(PREFIX)ld
 AR	= $(PREFIX)ar
 
-FAMILY?=gd32f20x
 BOARD?=BOARD_GD32F207RG
+ENET_PHY?=DP83848
+FAMILY?=gd32f20x
 
 FAMILY:=$(shell echo $(FAMILY) | tr A-Z a-z)
 FAMILY_UC=$(shell echo $(FAMILY) | tr a-w A-W)
@@ -22,12 +23,11 @@ include ../firmware-template-gd32/Includes.mk
 DEFINES:=$(addprefix -D,$(DEFINES))
 DEFINES+=-D_TIME_STAMP_YEAR_=$(shell date  +"%Y") -D_TIME_STAMP_MONTH_=$(shell date  +"%-m") -D_TIME_STAMP_DAY_=$(shell date  +"%-d")
 
-COPS=-DBARE_METAL -DGD32 -DGD32F20X_CL -D$(BOARD)
+COPS=-DBARE_METAL -DGD32 -DGD32F20X_CL -D$(BOARD) -DPHY_TYPE=$(ENET_PHY)
 COPS+=$(DEFINES) $(MAKE_FLAGS) $(INCLUDES)
 COPS+=-Os -mcpu=cortex-m3 -mthumb
 COPS+=-nostartfiles -ffreestanding -nostdlib
-COPS+=-fstack-usage
-COPS+=-Wstack-usage=10240
+COPS+=-fstack-usage -Wstack-usage=10240
 COPS+=-ffunction-sections -fdata-sections
 
 CPPOPS=-std=c++11 

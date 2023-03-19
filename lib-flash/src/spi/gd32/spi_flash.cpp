@@ -2,7 +2,7 @@
  * @file spi_flash.cpp
  *
  */
-/* Copyright (C) 2022 by Arjan van Vught mailto:info@orangepi-dmx.nl
+/* Copyright (C) 2022-2023 by Arjan van Vught mailto:info@orangepi-dmx.nl
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,16 +38,7 @@ int spi_init() {
 	gd32_spi_set_speed_hz(SPI_XFER_SPEED_HZ);
 	gd32_spi_setDataMode(GD32_SPI_MODE0);
 
-	rcu_periph_clock_enable(SPI_FLASH_CS_RCU_GPIOx);
-
-#if !defined (GD32F4XX)
-	gpio_init(SPI_FLASH_CS_GPIOx, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, SPI_FLASH_CS_GPIO_PINx);
-#else
-	gpio_af_set(SPI_FLASH_CS_GPIOx, GPIO_AF_0, SPI_FLASH_CS_GPIO_PINx);
-	gpio_mode_set(SPI_FLASH_CS_GPIOx, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, SPI_FLASH_CS_GPIO_PINx);
-	gpio_output_options_set(SPI_FLASH_CS_GPIOx, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, SPI_FLASH_CS_GPIO_PINx);
-#endif
-
+	gpio_fsel(SPI_FLASH_CS_GPIOx, SPI_FLASH_CS_GPIO_PINx, GPIO_FSEL_OUTPUT);
 	gpio_bit_set(SPI_FLASH_CS_GPIOx, SPI_FLASH_CS_GPIO_PINx);
 
 	return 0;
