@@ -49,11 +49,13 @@
 */build_gd32/*
 */lib_gd32/*
 *.su
+*.map
 *.list
+*.size
 
 *.bin
 udp_send
-0/*
+do-tftp.sh
 
 gd32f10x*.*
 lib-gd32/gd32f10x/*

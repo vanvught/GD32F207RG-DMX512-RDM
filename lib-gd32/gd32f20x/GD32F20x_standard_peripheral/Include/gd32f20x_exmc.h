@@ -383,7 +383,7 @@ typedef struct
     exmc_nand_pccard_timing_parameter_struct*  attribute_space_timing;  /*!< the timing parameters for NAND flash Attribute Space */  
     
     exmc_nand_pccard_timing_parameter_struct*  io_space_timing;         /*!< the timing parameters for NAND flash IO Space */
-}exmc_pccard_parameter_struct;;
+}exmc_pccard_parameter_struct;
 
 /* EXMC SDRAM timing initialize structure */
 typedef struct
