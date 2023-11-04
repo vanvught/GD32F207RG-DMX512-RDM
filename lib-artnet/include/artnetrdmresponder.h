@@ -30,8 +30,6 @@
 #include <cstring>
 #include <cassert>
 
-#include "artnetrdm.h"
-
 #include "rdmdeviceresponder.h"
 #include "rdmpersonality.h"
 #include "rdmhandler.h"
@@ -43,21 +41,12 @@
 # error "Cannot be both RDMNet Device and RDM Responder"
 #endif
 
-class ArtNetRdmResponder: public ArtNetRdm, public RDMDeviceResponder, RDMHandler {
+class ArtNetRdmResponder: public RDMDeviceResponder, RDMHandler {
 public:
 	ArtNetRdmResponder(RDMPersonality **pRDMPersonalities, uint32_t nPersonalityCount);
-	~ArtNetRdmResponder() override;
+	~ArtNetRdmResponder();
 
-	void Full(__attribute__((unused)) uint32_t nPortIndex) override {
-		// We are a Responder - no code needed
-	}
-
-	uint32_t GetUidCount(const uint32_t nPortIndex) override {
-		DEBUG_PRINTF("nPortIndex=%u", nPortIndex);
-		return nPortIndex == 0 ? 1 : 0; // We are a Responder
-	}
-
-	void TodCopy(const uint32_t nPortIndex, unsigned char *tod) override {
+	void TodCopy(const uint32_t nPortIndex, unsigned char *tod) {
 		DEBUG_PRINTF("nPortIndex=%u", nPortIndex);
 		if (nPortIndex == 0) {
 			memcpy(tod, RDMDeviceResponder::GetUID(), RDM_UID_SIZE);
@@ -66,10 +55,7 @@ public:
 		}
 	}
 
-	void TodReset(__attribute__((unused)) uint32_t nPortIndex) override {}
-	bool TodAddUid(__attribute__((unused)) uint32_t nPortIndex, __attribute__((unused)) const uint8_t *pUid) override { return false;}
-
-	const uint8_t *Handler(uint32_t nPortIndex, const uint8_t *) override;
+	const uint8_t *Handler(uint32_t nPortIndex, const uint8_t *);
 
 	uint16_t GetDmxStartAddress(uint16_t nSubDevice = RDM_ROOT_DEVICE) {
 		return RDMDeviceResponder::GetDmxStartAddress(nSubDevice);
@@ -77,12 +63,6 @@ public:
 
 	uint16_t GetDmxFootPrint(uint16_t nSubDevice = RDM_ROOT_DEVICE) {
 		return RDMDeviceResponder::GetDmxFootPrint(nSubDevice);
-	}
-
-	//
-
-	bool RdmReceive(__attribute__((unused)) uint32_t nPortIndex, __attribute__((unused)) uint8_t *pRdmData) override {
-		return false;
 	}
 
 	static ArtNetRdmResponder* Get() {

@@ -23,12 +23,21 @@
  * THE SOFTWARE.
  */
 
-#include <stdlib.h>
+#include <cstdlib>
+#include <cstddef>
 
 void operator delete(void *p) {
 	free(p);
 }
 
 void operator delete[](void *p) {
+	free(p);
+}
+
+void operator delete(void* p, __attribute__((unused)) std::size_t size) noexcept {
+	free(p);
+}
+
+void operator delete[](void* p, __attribute__((unused))std::size_t size) noexcept {
 	free(p);
 }
