@@ -41,6 +41,7 @@
 									<listOptionValue builtIn="false" value="DISABLE_FS"/>
 									<listOptionValue builtIn="false" value="DISABLE_TFTP"/>
 									<listOptionValue builtIn="false" value="DISABLE_SDCARD"/>
+									<listOptionValue builtIn="false" value="LIGHTSET_HAVE_RUN"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.32511284" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
@@ -67,6 +68,7 @@
 									<listOptionValue builtIn="false" value="DISABLE_FS"/>
 									<listOptionValue builtIn="false" value="DISABLE_TFTP"/>
 									<listOptionValue builtIn="false" value="DISABLE_SDCARD"/>
+									<listOptionValue builtIn="false" value="LIGHTSET_HAVE_RUN"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1797271055" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>

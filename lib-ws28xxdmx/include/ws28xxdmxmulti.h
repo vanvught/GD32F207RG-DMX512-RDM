@@ -30,6 +30,7 @@
 #include <cassert>
 
 #include "lightset.h"
+#include "lightsetdata.h"
 
 #include "ws28xxmulti.h"
 
@@ -39,7 +40,10 @@
 #include "pixeldmxhandler.h"
 
 namespace ws28xxdmxmulti {
-
+#if !defined (CONFIG_PIXELDMX_MAX_PORTS)
+# define CONFIG_PIXELDMX_MAX_PORTS	8
+#endif
+static constexpr auto MAX_PORTS = CONFIG_PIXELDMX_MAX_PORTS;
 }  // namespace ws28xxdmxmulti
 
 class WS28xxDmxMulti final: public LightSet {
@@ -50,11 +54,34 @@ public:
 	void Start(const uint32_t nPortIndex) override;
 	void Stop(const uint32_t nPortIndex) override;
 
-	void SetData(uint32_t nPortIndex, const uint8_t *pData, uint32_t nLength, const bool doUpdate = true) override;
-	void Sync(__attribute__((unused)) const uint32_t nPortIndex) override {}
+	void SetData(uint32_t nPortIndex, __attribute__((unused)) const uint8_t *pData, __attribute__((unused)) uint32_t nLength, const bool doUpdate) override {
+		if (!doUpdate) {
+			return;
+		}
+
+		if (nPortIndex == m_PortInfo.nProtocolPortIndexLast) {
+			while (m_pWS28xxMulti->IsUpdating()) {
+				// wait for completion
+			}
+
+			for (uint32_t nPortIndex =0 ; nPortIndex < m_PortInfo.nProtocolPortIndexLast;nPortIndex++) {
+				SetData(nPortIndex, lightset::Data::Backup(nPortIndex), lightset::Data::GetLength(nPortIndex));
+			}
+
+			m_pWS28xxMulti->Update();
+		}
+	}
+
+	void Sync(const uint32_t nPortIndex) override {
+		SetData(nPortIndex, lightset::Data::Backup(nPortIndex), lightset::Data::GetLength(nPortIndex));
+	}
+
 	void Sync(const bool doForce) override {
 		if (__builtin_expect((!doForce), 1)) {
 			assert(m_pWS28xxMulti != nullptr);
+			while (m_pWS28xxMulti->IsUpdating()) {
+				// wait for completion
+			}
 			m_pWS28xxMulti->Update();
 		}
 	}
@@ -121,6 +148,9 @@ public:
 	uint16_t GetDmxFootprint() override {
 		return 0;
 	}
+
+private:
+	void SetData(uint32_t nPortIndex, const uint8_t *pData, uint32_t nLength);
 
 private:
 	PixelDmxConfiguration m_pixelDmxConfiguration;
