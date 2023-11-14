@@ -38,6 +38,7 @@ endif
 COPS=-DBARE_METAL -DGD32 -DGD32F20X_CL -D$(MCU) -D$(BOARD) -DPHY_TYPE=$(ENET_PHY)
 COPS+=$(DEFINES) $(MAKE_FLAGS) $(INCLUDES)
 COPS+=-Os -mcpu=cortex-m3 -mthumb
+COPS+=-D__Vendor_SysTickConfig=0
 COPS+=-nostartfiles -ffreestanding -nostdlib
 COPS+=-fstack-usage
 COPS+=-ffunction-sections -fdata-sections

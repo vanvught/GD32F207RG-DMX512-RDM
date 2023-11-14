@@ -62,6 +62,7 @@ $(info $$LIBDEP [${LIBDEP}])
 COPS=-DBARE_METAL -DGD32 -D$(LINE_UC) -D$(MCU) -D$(BOARD) -DPHY_TYPE=$(ENET_PHY)
 COPS+=$(DEFINES) $(MAKE_FLAGS) $(INCLUDES) $(LIBINCDIRS)
 COPS+=-Os -mcpu=cortex-m3 -mthumb
+COPS+=-D__Vendor_SysTickConfig=0
 COPS+=-nostartfiles -ffreestanding -nostdlib
 COPS+=-fstack-usage
 COPS+=-ffunction-sections -fdata-sections
