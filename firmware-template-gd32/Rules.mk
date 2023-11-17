@@ -151,4 +151,4 @@ $(foreach bdir,$(SRCDIR),$(eval $(call compile-objects,$(bdir))))
 
 .PHONY: calculate_unused_ram
 calculate_unused_ram: $(FAMILY).size $(LINKER)
-	@$(FIRMWARE_DIR)/calculate_unused_ram.sh $(FAMILY).size $(LINKER)
+	@"$(FIRMWARE_DIR)/calculate_unused_ram.sh" $(FAMILY).size $(LINKER)

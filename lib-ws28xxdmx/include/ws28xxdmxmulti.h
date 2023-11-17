@@ -39,6 +39,8 @@
 
 #include "pixeldmxhandler.h"
 
+#include "logic_analyzer.h"
+
 namespace ws28xxdmxmulti {
 #if !defined (CONFIG_PIXELDMX_MAX_PORTS)
 # define CONFIG_PIXELDMX_MAX_PORTS	8
@@ -55,33 +57,52 @@ public:
 	void Stop(const uint32_t nPortIndex) override;
 
 	void SetData(uint32_t nPortIndex, __attribute__((unused)) const uint8_t *pData, __attribute__((unused)) uint32_t nLength, const bool doUpdate) override {
+		logic_analyzer::ch0_set();
+
 		if (!doUpdate) {
+			logic_analyzer::ch0_clear();
 			return;
 		}
 
 		if (nPortIndex == m_PortInfo.nProtocolPortIndexLast) {
+			logic_analyzer::ch3_set();
+
 			while (m_pWS28xxMulti->IsUpdating()) {
 				// wait for completion
 			}
 
-			for (uint32_t nPortIndex =0 ; nPortIndex < m_PortInfo.nProtocolPortIndexLast;nPortIndex++) {
+			logic_analyzer::ch3_clear();
+
+			for (uint32_t nPortIndex = 0 ; nPortIndex < m_PortInfo.nProtocolPortIndexLast;nPortIndex++) {
+				logic_analyzer::ch1_set();
 				SetData(nPortIndex, lightset::Data::Backup(nPortIndex), lightset::Data::GetLength(nPortIndex));
+				logic_analyzer::ch1_clear();
 			}
 
 			m_pWS28xxMulti->Update();
 		}
+
+		logic_analyzer::ch0_clear();
 	}
 
 	void Sync(const uint32_t nPortIndex) override {
+		logic_analyzer::ch2_set();
+
 		SetData(nPortIndex, lightset::Data::Backup(nPortIndex), lightset::Data::GetLength(nPortIndex));
+
+		logic_analyzer::ch2_clear();
 	}
 
 	void Sync(const bool doForce) override {
 		if (__builtin_expect((!doForce), 1)) {
-			assert(m_pWS28xxMulti != nullptr);
+			logic_analyzer::ch3_set();
+
 			while (m_pWS28xxMulti->IsUpdating()) {
 				// wait for completion
 			}
+
+			logic_analyzer::ch3_clear();
+
 			m_pWS28xxMulti->Update();
 		}
 	}
