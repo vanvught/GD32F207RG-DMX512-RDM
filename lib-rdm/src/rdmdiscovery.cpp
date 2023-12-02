@@ -523,7 +523,8 @@ void RDMDiscovery::Process() {
 			const auto pResponse = reinterpret_cast<struct TRdmMessage*>(m_pResponse);
 
 			if ((pResponse->command_class != E120_DISCOVERY_COMMAND_RESPONSE) || ((static_cast<uint16_t>((pResponse->param_id[0] << 8) + pResponse->param_id[1])) != E120_DISC_MUTE)) {
-				assert(0);
+				puts("QUICKFIND invalid response");
+				//assert(0);
 				return;
 			}
 

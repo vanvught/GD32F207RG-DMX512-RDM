@@ -308,6 +308,7 @@ void RDMHandler::HandleData(const uint8_t *pRdmDataIn, uint8_t *pRdmDataOut) {
 					p->checksum[2] = static_cast<uint8_t>((rdm_checksum & 0xFF) | 0xAA);
 					p->checksum[3] = static_cast<uint8_t>((rdm_checksum & 0xFF) | 0x55);
 
+					DEBUG_EXIT
 					return;
 				}
 			}

@@ -38,7 +38,7 @@ namespace rdmdiscovery {
  static constexpr uint32_t RECEIVE_TIME_OUT = 28000;
  static constexpr uint32_t LATE_RESPONSE_TIME_OUT = 40000;
 #else
- static constexpr uint32_t RECEIVE_TIME_OUT = 2800;
+ static constexpr uint32_t RECEIVE_TIME_OUT = 3000;//2800;
  static constexpr uint32_t LATE_RESPONSE_TIME_OUT = 1000;
 #endif
 static constexpr uint32_t UNMUTE_COUNTER = 3;

@@ -54,4 +54,6 @@ void Rdm::SendRaw(uint32_t nPortIndex, const uint8_t *pRdmData, uint32_t nLength
 	udelay(RDM_RESPONDER_DATA_DIRECTION_DELAY);
 
 	Dmx::Get()->SetPortDirection(nPortIndex, dmx::PortDirection::INP, true);
+
+	DEBUG_EXIT
 }

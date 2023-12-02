@@ -1,8 +1,8 @@
 /**
- * @file rdmsubdevicesconst.cpp
+ * @file rdm_subdevices.cpp
  *
  */
-/* Copyright (C) 2020-2023 by Arjan van Vught mailto:info@orangepi-dmx.nl
+/* Copyright (C) 2023 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,10 +24,39 @@
  */
 
 #include <cstdint>
+#include <cstring>
+#include <cassert>
 
-#include "rdmsubdevicesconst.h"
+#include "rdm _subdevices.h"
+#include "rdmsensorsconst.h"
 
-const char RDMSubDevicesConst::PARAMS_FILE_NAME[] = "subdev.txt";
+namespace rdm {
+namespace subdevices {
+static constexpr char TYPE[static_cast<uint32_t>(rdm::subdevices::Types::UNDEFINED)][9] = {
+		"bw7fets", "bwdimmer", "bwdio", "bwlcd", "bwrelay",
+		"mcp23s08", "mcp23s17",
+		"mcp4822", "mcp4902" };
 
 
+const char* get_type_string(rdm::subdevices::Types type) {
+	if (type < rdm::subdevices::Types::UNDEFINED) {
+		return TYPE[static_cast<uint8_t>(type)];
+	}
+
+	return "Unknown";
+}
+
+rdm::subdevices::Types get_type_string(const char *pValue) {
+	assert(pValue != nullptr);
+
+	for (uint32_t i = 0; i < static_cast<uint32_t>(rdm::subdevices::Types::UNDEFINED); i++) {
+		if (strcasecmp(pValue, TYPE[i]) == 0) {
+			return static_cast<rdm::subdevices::Types>(i);
+		}
+	}
+
+	return rdm::subdevices::Types::UNDEFINED;
+}
+}  // namespace subdevices
+}  // namespace rdm
 
