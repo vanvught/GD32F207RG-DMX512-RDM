@@ -30,10 +30,9 @@
 #include <cassert>
 
 #include "rdmsubdevice.h"
-#include "rdmsubdevicesconst.h"
 
 #ifndef NDEBUG
-# include "rdmsubdevicedummy.h"
+# include "subdevice/rdmsubdevicedummy.h"
 #endif
 
 #include "rdmpersonality.h"

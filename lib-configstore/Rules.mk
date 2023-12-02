@@ -135,6 +135,12 @@ ifneq ($(MAKE_FLAGS),)
 			RDM=1
 		endif
 		EXTRA_INCLUDES+=../lib-rdmresponder/include
+		EXTRA_INCLUDES+=../lib-rdmsensor/include
+		EXTRA_SRCDIR+=src/rdm/sensors
+		ifeq ($(findstring ENABLE_RDM_SUBDEVICES,$(MAKE_FLAGS)), ENABLE_RDM_SUBDEVICES)
+			EXTRA_SRCDIR+=src/rdm/subdevices
+			EXTRA_INCLUDES+=../lib-rdmsubdevice/include
+		endif
 	endif
 	
 	ifeq ($(findstring NODE_RDMNET_LLRP_ONLY,$(MAKE_FLAGS)), NODE_RDMNET_LLRP_ONLY)
@@ -151,7 +157,7 @@ ifneq ($(MAKE_FLAGS),)
 	
 	ifdef RDM
 		EXTRA_SRCDIR+=src/rdm
-		EXTRA_INCLUDES+=../lib-rdm/include ../lib-rdmsensor/include ../lib-rdmsubdevice/include
+		EXTRA_INCLUDES+=../lib-rdm/include
 	endif
 else
 	ifneq (, $(shell test -d '../lib-network/src/noemac' && echo -n yes))

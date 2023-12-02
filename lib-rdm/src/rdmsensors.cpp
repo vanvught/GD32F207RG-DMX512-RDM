@@ -1,8 +1,8 @@
 /**
- * @file rdmsensorprint.cpp
+ * @file rdmsensors.cpp
  *
  */
-/* Copyright (C) 2020 by Arjan van Vught mailto:info@orangepi-dmx.nl
+/* Copyright (C) 2018-2023 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,14 +23,7 @@
  * THE SOFTWARE.
  */
 
-#include <cstdio>
+#include "rdmsensors.h"
 
-#include "rdmsensor.h"
+RDMSensors *RDMSensors::s_pThis = nullptr;
 
-void RDMSensor::Print() {
-	printf("%d [%.*s]\n", m_tRDMSensorDefintion.sensor, m_tRDMSensorDefintion.nLength, m_tRDMSensorDefintion.description);
-	printf(" RangeMin  %d\n", m_tRDMSensorDefintion.range_min);
-	printf(" RangeMax  %d\n", m_tRDMSensorDefintion.range_max);
-	printf(" NormalMin %d\n", m_tRDMSensorDefintion.normal_min);
-	printf(" NormalMax %d\n", m_tRDMSensorDefintion.normal_max);
-}

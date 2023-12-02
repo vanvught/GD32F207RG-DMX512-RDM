@@ -35,6 +35,7 @@
 
 #include "rdmsubdevicesparams.h"
 #include "rdmsubdevices.h"
+#include "rdmsubdevicesconst.h"
 #include "rdm _subdevices.h"
 
 #include "readconfigfile.h"

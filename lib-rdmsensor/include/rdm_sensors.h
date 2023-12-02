@@ -1,8 +1,8 @@
 /**
- * @file rdmsensorsconst.cpp
+ * @file rdm_sensors.h
  *
  */
-/* Copyright (C) 2020-2023 by Arjan van Vught mailto:info@orangepi-dmx.nl
+/* Copyright (C) 2023 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +23,18 @@
  * THE SOFTWARE.
  */
 
-#include <cstdint>
+#ifndef RDM_SENSORS_H_
+#define RDM_SENSORS_H_
 
-#include "rdmsensorsconst.h"
+namespace rdm {
+namespace sensors {
+enum class Types {
+	BH170, HTU21D, INA219, MCP9808, SI7021, MCP3424, UNDEFINED
+};
 
-const char RDMSensorsConst::PARAMS_FILE_NAME[] = "sensors.txt";
+const char *get_type_string(rdm::sensors::Types type);
+rdm::sensors::Types get_type_string(const char *pValue);
+}  // namespace sensors
+}  // namespace rdm
+
+#endif /* RDM_SENSORS_H_ */

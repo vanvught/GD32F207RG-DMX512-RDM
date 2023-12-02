@@ -2,7 +2,7 @@
  * @file rdmsensorsparams.cpp
  *
  */
-/* Copyright (C) 2020-2023 by Arjan van Vught mailto:info@orangepi-dmx.nl
+/* Copyright (C) 2020-2023 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,9 @@
 
 #include "rdmsensorsparams.h"
 #include "rdmsensors.h"
+#include "rdmsensorsconst.h"
 #include "rdmsensorstore.h"
+#include "rdm_sensors.h"
 
 #include "readconfigfile.h"
 #include "sscan.h"
@@ -143,13 +145,13 @@ void RDMSensorsParams::Builder(const rdm::sensorsparams::Params *pParams, char *
 	PropertiesBuilder builder(RDMSensorsConst::PARAMS_FILE_NAME, pBuffer, nLength);
 
 	for (uint32_t i = 0; i < static_cast<uint32_t>(rdm::sensors::Types::UNDEFINED); i++) {
-		builder.AddHex8(RDMSensors::GetTypeString(static_cast<rdm::sensors::Types>(i)), 0xFF, false);		
+		builder.AddHex8(rdm::sensors::get_type_string(static_cast<rdm::sensors::Types>(i)), 0xFF, false);
 	}
 
 	for (uint32_t i = 0; i < m_Params.nDevices; i++) {
 		const auto type = static_cast<rdm::sensors::Types>(m_Params.Entry[i].nType);
 		if (type < rdm::sensors::Types::UNDEFINED) {
-			builder.AddHex8(RDMSensors::GetTypeString(type), m_Params.Entry[i].nAddress, true);	
+			builder.AddHex8(rdm::sensors::get_type_string(type), m_Params.Entry[i].nAddress, true);
 		}
 	}
 
@@ -164,7 +166,7 @@ void RDMSensorsParams::Dump() {
 	printf("%s::%s \'%s\':\n", __FILE__, __FUNCTION__, RDMSensorsConst::PARAMS_FILE_NAME);
 
 	for (uint32_t i = 0; i < m_Params.nDevices; i++) {
-		printf(" %s 0x%.2x\n", RDMSensors::GetTypeString(static_cast<rdm::sensors::Types>(m_Params.Entry[i].nType)), m_Params.Entry[i].nAddress);
+		printf(" %s 0x%.2x\n", rdm::sensors::get_type_string(static_cast<rdm::sensors::Types>(m_Params.Entry[i].nType)), m_Params.Entry[i].nAddress);
 	}
 
 	for (uint32_t i = 0; i < rdm::sensors::MAX; i++) {
@@ -281,7 +283,7 @@ void RDMSensorsParams::callbackFunction(const char *pLine) {
 
 		rdm::sensors::Types sensorType;
 
-		if ((sensorType = RDMSensors::GetTypeString(aSensorName)) == rdm::sensors::Types::UNDEFINED) {
+		if ((sensorType = rdm::sensors::get_type_string(aSensorName)) == rdm::sensors::Types::UNDEFINED) {
 			return;
 		}
 

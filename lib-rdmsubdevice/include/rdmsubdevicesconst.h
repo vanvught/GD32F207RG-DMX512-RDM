@@ -26,8 +26,6 @@
 #ifndef RDMSUBDEVICESCONST_H_
 #define RDMSUBDEVICESCONST_H_
 
-#include <cstdint>
-
 struct RDMSubDevicesConst {
 	static const char PARAMS_FILE_NAME[];
 };

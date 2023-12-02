@@ -28,7 +28,6 @@
 #include <cassert>
 
 #include "rdm _subdevices.h"
-#include "rdmsensorsconst.h"
 
 namespace rdm {
 namespace subdevices {
