@@ -1,8 +1,8 @@
 /**
- * @file rdm.cpp
+ * @file hal_api.h
  *
  */
-/* Copyright (C) 2021-2023 by Arjan van Vught mailto:info@orangepi-dmx.nl
+/* Copyright (C) 2023 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,37 +23,17 @@
  * THE SOFTWARE.
  */
 
-#include <cstdint>
-#include <cassert>
+#ifndef HAL_API_H_
+#define HAL_API_H_
 
-#include "rdm.h"
-#include "dmx.h"
+#if defined(__linux__) || defined (__APPLE__)
+# include "linux/hal_api.h"
+#elif defined(H3)
+# include "h3/hal_api.h"
+#elif defined(GD32)
+# include "gd32/hal_api.h"
+#else
+# include "rpi/hal_api.h"
+#endif
 
-#include "hardware.h"
-
-#include "debug.h"
-
-const uint8_t *Rdm::Receive(uint32_t nPortIndex) {
-	return Dmx::Get()->RdmReceive(nPortIndex);
-}
-
-const uint8_t *Rdm::ReceiveTimeOut(uint32_t nPortIndex, uint16_t nTimeOut) {
-	return Dmx::Get()->RdmReceiveTimeOut(nPortIndex, nTimeOut);
-}
-
-void Rdm::SendRaw(uint32_t nPortIndex, const uint8_t *pRdmData, uint32_t nLength) {
-	assert(pRdmData != nullptr);
-	assert(nLength != 0);
-
-	DEBUG_PRINTF("nPortIndex=%u", nPortIndex);
-
-	Dmx::Get()->SetPortDirection(nPortIndex, dmx::PortDirection::OUTP, false);
-
-	Dmx::Get()->RdmSendRaw(nPortIndex, pRdmData, nLength);
-
-	udelay(RDM_RESPONDER_DATA_DIRECTION_DELAY);
-
-	Dmx::Get()->SetPortDirection(nPortIndex, dmx::PortDirection::INP, true);
-
-	DEBUG_EXIT
-}
+#endif /* HAL_API_H_ */

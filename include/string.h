@@ -194,6 +194,20 @@ inline char *strcat(char *s1, const char *s2) {
 	return s1;
 }
 
+inline char *strchr(const char *p, int ch) {
+	char c = (char) ch;
+
+	for (;; ++p) {
+		if (*p == c) {
+			return (char *)p;
+		}
+		if (*p == '\0') {
+			return NULL;
+		}
+	}
+	/* NOTREACHED */
+}
+
 #ifdef __cplusplus
 }
 #endif
