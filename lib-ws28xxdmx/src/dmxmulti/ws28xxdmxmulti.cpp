@@ -41,7 +41,7 @@
 
 #include "debug.h"
 
-WS28xxDmxMulti::WS28xxDmxMulti(PixelDmxConfiguration& pixelDmxConfiguration): m_pixelDmxConfiguration(pixelDmxConfiguration) {
+WS28xxDmxMulti::WS28xxDmxMulti(PixelDmxConfiguration& pixelDmxConfiguration): m_pixelDmxConfiguration(pixelDmxConfiguration){
 	DEBUG_ENTRY
 
 	m_pixelDmxConfiguration.Validate(ws28xxdmxmulti::MAX_PORTS , m_nChannelsPerPixel, m_PortInfo);

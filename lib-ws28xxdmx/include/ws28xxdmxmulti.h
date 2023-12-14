@@ -65,6 +65,9 @@ public:
 		}
 
 		if (nPortIndex == m_PortInfo.nProtocolPortIndexLast) {
+			logic_analyzer::ch1_set();
+
+#if defined (GD32)
 			logic_analyzer::ch3_set();
 
 			while (m_pWS28xxMulti->IsUpdating()) {
@@ -72,14 +75,27 @@ public:
 			}
 
 			logic_analyzer::ch3_clear();
+#endif
 
-			for (uint32_t nPortIndex = 0 ; nPortIndex < m_PortInfo.nProtocolPortIndexLast;nPortIndex++) {
-				logic_analyzer::ch1_set();
-				SetData(nPortIndex, lightset::Data::Backup(nPortIndex), lightset::Data::GetLength(nPortIndex));
-				logic_analyzer::ch1_clear();
+			for (uint32_t nIndex = 0 ; nIndex <= m_PortInfo.nProtocolPortIndexLast;nIndex++) {
+				logic_analyzer::ch2_set();
+				SetData(nIndex, lightset::Data::Backup(nIndex), lightset::Data::GetLength(nIndex));
+				logic_analyzer::ch2_clear();
 			}
 
+#if defined (H3)
+			logic_analyzer::ch3_set();
+
+			while (m_pWS28xxMulti->IsUpdating()) {
+				// wait for completion
+			}
+
+			logic_analyzer::ch3_clear();
+#endif
+
 			m_pWS28xxMulti->Update();
+
+			logic_analyzer::ch1_clear();
 		}
 
 		logic_analyzer::ch0_clear();
@@ -95,6 +111,8 @@ public:
 
 	void Sync(const bool doForce) override {
 		if (__builtin_expect((!doForce), 1)) {
+			logic_analyzer::ch1_set();
+
 			logic_analyzer::ch3_set();
 
 			while (m_pWS28xxMulti->IsUpdating()) {
@@ -104,6 +122,8 @@ public:
 			logic_analyzer::ch3_clear();
 
 			m_pWS28xxMulti->Update();
+
+			logic_analyzer::ch1_clear();
 		}
 	}
 

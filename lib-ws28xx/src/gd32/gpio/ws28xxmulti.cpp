@@ -36,8 +36,8 @@
 #include "ws28xxmulti.h"
 #include "pixelconfiguration.h"
 #include "pixeltype.h"
-#include "gpio/pixelmulti_config.h"
 
+#include "gd32/gpio/pixelmulti_config.h"
 #include "gd32.h"
 
 #include "debug.h"
@@ -76,7 +76,7 @@ namespace pixel {
 static constexpr auto PORT_COUNT = __builtin_popcount(GPIO_PINx);
 static_assert(PORT_COUNT <= 16, "Too many ports");
 //
-static uint16_t s_DmaBuffer[1024 * 16] __attribute__ ((aligned (4))) SECTION_DMA_BUFFER;
+static uint16_t s_DmaBuffer[2 * 1024 * 16] __attribute__ ((aligned (4))) SECTION_DMA_BUFFER;
 static constexpr auto DMA_BUFFER_SIZE = sizeof(pixel::s_DmaBuffer) / sizeof(s_DmaBuffer[0]);
 // RTZ
 static const uint16_t s_GPIO_PINs[] __attribute__ ((aligned (4))) = { GPIO_PINx } ;
@@ -116,7 +116,7 @@ void TIMER3_IRQHandler() { // Slave
 }
 }
 
-WS28xxMulti *WS28xxMulti::s_pThis = nullptr;
+WS28xxMulti *WS28xxMulti::s_pThis;
 
 WS28xxMulti::WS28xxMulti(PixelConfiguration& pixelConfiguration): m_PixelConfiguration(pixelConfiguration) {
 	DEBUG_ENTRY
