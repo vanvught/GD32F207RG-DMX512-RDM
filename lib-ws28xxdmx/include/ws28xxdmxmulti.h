@@ -67,16 +67,6 @@ public:
 		if (nPortIndex == m_PortInfo.nProtocolPortIndexLast) {
 			logic_analyzer::ch1_set();
 
-#if defined (GD32)
-			logic_analyzer::ch3_set();
-
-			while (m_pWS28xxMulti->IsUpdating()) {
-				// wait for completion
-			}
-
-			logic_analyzer::ch3_clear();
-#endif
-
 			for (uint32_t nIndex = 0 ; nIndex <= m_PortInfo.nProtocolPortIndexLast;nIndex++) {
 				logic_analyzer::ch2_set();
 				SetData(nIndex, lightset::Data::Backup(nIndex), lightset::Data::GetLength(nIndex));

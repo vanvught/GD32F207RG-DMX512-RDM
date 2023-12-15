@@ -73,7 +73,9 @@ static bool is_circular_buffer_empty() {
 }
 
 void TIMER0_UP_TIMER9_IRQHandler() {
+#if defined (LED3_GPIO_PINx)
 	GPIO_BOP(LED3_GPIOx) = LED3_GPIO_PINx;
+#endif
 
 	switch (s_state) {
 	case SOFTUART_IDLE:
@@ -116,20 +118,24 @@ void TIMER0_UP_TIMER9_IRQHandler() {
 
 	timer_interrupt_flag_clear(TIMER9, TIMER_INT_FLAG_UP);
 
+#if defined (LED3_GPIO_PINx)
 	GPIO_BC(LED3_GPIOx) = LED3_GPIO_PINx;
+#endif
 }
 
 void uart0_init() {
+#if defined (LED3_GPIO_PINx)
 	rcu_periph_clock_enable (LED3_RCU_GPIOx);
-#if !defined (GD32F4XX)
+# if !defined (GD32F4XX)
 	gpio_init(LED3_GPIOx, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, LED3_GPIO_PINx);
-#else
+# else
 	gpio_mode_set(LED3_GPIOx, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLDOWN, LED3_GPIO_PINx);
 	gpio_output_options_set(LED3_GPIOx, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, LED3_GPIO_PINx);
 	gpio_af_set(LED3_GPIOx, GPIO_AF_0, LED3_GPIO_PINx);
-#endif
+# endif
 
 	GPIO_BC(LED3_GPIOx) = LED3_GPIO_PINx;
+#endif
 
 	rcu_periph_clock_enable (SOFTUART_TX_RCU_GPIOx);
 

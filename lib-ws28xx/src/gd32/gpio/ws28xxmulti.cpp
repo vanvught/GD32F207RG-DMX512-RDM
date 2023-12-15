@@ -39,6 +39,7 @@
 
 #include "gd32/gpio/pixelmulti_config.h"
 #include "gd32.h"
+#include "gd32_dma_memcpy32.h"
 
 #include "debug.h"
 
@@ -78,6 +79,7 @@ static_assert(PORT_COUNT <= 16, "Too many ports");
 //
 static uint16_t s_DmaBuffer[2 * 1024 * 16] __attribute__ ((aligned (4))) SECTION_DMA_BUFFER;
 static constexpr auto DMA_BUFFER_SIZE = sizeof(pixel::s_DmaBuffer) / sizeof(s_DmaBuffer[0]);
+auto *const s_pBuffer = reinterpret_cast<uint16_t *>(pixel::s_DmaBuffer + pixel::DMA_BUFFER_SIZE / 2);
 // RTZ
 static const uint16_t s_GPIO_PINs[] __attribute__ ((aligned (4))) = { GPIO_PINx } ;
 static const auto *s_pGPIO_PINs = reinterpret_cast<const uint32_t *>(&s_GPIO_PINs[0]);
@@ -150,6 +152,7 @@ WS28xxMulti::WS28xxMulti(PixelConfiguration& pixelConfiguration): m_PixelConfigu
 
 	m_nBufSize *= 8;
 
+	DEBUG_PRINTF("s_DmaBuffer=%p, s_pBuffer=%p", pixel::s_DmaBuffer, pixel::s_pBuffer);
 	DEBUG_PRINTF("m_nBufSize=%u [%u]", m_nBufSize, (m_nBufSize + 1024) / 1024);
 	assert(m_nBufSize <= pixel::DMA_BUFFER_SIZE);
 
@@ -186,6 +189,8 @@ WS28xxMulti::WS28xxMulti(PixelConfiguration& pixelConfiguration): m_PixelConfigu
 	} else {
 		Setup(pixelConfiguration.GetClockSpeedHz());
 	}
+
+	dma::memcpy32_init();
 
 	DEBUG_EXIT
 }
@@ -608,6 +613,11 @@ void WS28xxMulti::Print() {
 void WS28xxMulti::Update() {
 	assert(!sv_isRunning);
 
+	dma::memcpy32(reinterpret_cast<uint8_t *>(pixel::s_DmaBuffer), reinterpret_cast<uint8_t *>(pixel::s_DmaBuffer + pixel::DMA_BUFFER_SIZE / 2), m_nBufSize / 2);
+
+	while (dma::memcpy32_is_active())
+		;
+
 #ifndef NDEBUG
 	GPIO_BC(DEBUG_CS_GPIOx) = DEBUG_CS_GPIO_PINx;
 #endif
@@ -786,13 +796,12 @@ bool  WS28xxMulti::IsUpdating() {
 }
 
 void WS28xxMulti::SetColourRTZ(const uint32_t nPortIndex, const uint32_t nPixelIndex, const uint8_t nColour1, const uint8_t nColour2, const uint8_t nColour3) {
-	assert(nPortIndex < 16);
-	assert(nPixelIndex < m_nBufSize / 8);		//FIXME 8
+	assert(nPortIndex < pixel::PORT_COUNT);
 
 	uint32_t j = 0;
 	const auto k = nPixelIndex * pixel::single::RGB;
 	const auto nBit = nPortIndex + GPIO_PIN_OFFSET;
-	auto *p = &pixel::s_DmaBuffer[k];
+	auto *p = &pixel::s_pBuffer[k];
 
 	for (uint8_t mask = 0x80; mask != 0; mask = static_cast<uint8_t>(mask >> 1)) {
 		if (!(mask & nColour1)) {

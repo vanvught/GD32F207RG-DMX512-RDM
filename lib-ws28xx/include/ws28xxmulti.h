@@ -31,7 +31,7 @@
 #elif defined (GD32)
 # include "gd32/gpio/ws28xxmulti.h"
 #else
-# error
+# error Platform is not supported
 #endif
 
 #endif /* WS28XXMULTI_H_ */
