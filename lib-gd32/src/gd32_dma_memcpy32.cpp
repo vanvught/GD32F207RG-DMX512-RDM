@@ -20,7 +20,7 @@ void memcpy32_init() {
 //  dma_init_struct.memory_addr = destination;
     dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
     dma_init_struct.memory_width = DMA_MEMORY_WIDTH_32BIT;
-//  dma_init_struct.number = BUFFER_SIZE;
+    dma_init_struct.number = 0; // BUFFER_SIZE;
 //  dma_init_struct.periph_addr = source
     dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_ENABLE;
     dma_init_struct.periph_width = DMA_PERIPHERAL_WIDTH_32BIT;
@@ -43,10 +43,10 @@ void memcpy32_init() {
     dma_init_parameter.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
     dma_init_parameter.memory_burst_width = DMA_MEMORY_BURST_4_BEAT;
     dma_init_parameter.periph_burst_width = DMA_PERIPH_BURST_4_BEAT;
-    dma_init_parameter.critical_value = DMA_FIFO_2_WORD;
+    dma_init_parameter.critical_value = DMA_FIFO_4_WORD;
     dma_init_parameter.circular_mode = DMA_CIRCULAR_MODE_DISABLE;
     dma_init_parameter.direction = DMA_MEMORY_TO_MEMORY;
-//  dma_init_parameter.number = BUFFER_SIZE;
+    dma_init_parameter.number = 0; // BUFFER_SIZE;
     dma_init_parameter.priority = DMA_PRIORITY_ULTRA_HIGH;
 
     dma_multi_data_mode_init(DMA1, DMA_CH0, &dma_init_parameter);
