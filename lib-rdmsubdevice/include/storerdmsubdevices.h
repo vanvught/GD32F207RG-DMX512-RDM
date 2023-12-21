@@ -1,8 +1,8 @@
 /**
- * @file rdmsensorstore.h
+ * @file storerdmsubdevices.h
  *
  */
-/* Copyright (C) 2023 by Arjan van Vught mailto:info@orangepi-dmx.nl
+/* Copyright (C) 2020-2023 by Arjan van Vught mailto:info@orangepi-dmx.nl
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,14 +23,36 @@
  * THE SOFTWARE.
  */
 
-#ifndef RDMSENSORSTORE_H_
-#define RDMSENSORSTORE_H_
+#ifndef STORERDMSUBDEVICES_H_
+#define STORERDMSUBDEVICES_H_
 
-class RDMSensorStore {
+#include "rdmsubdevicesparams.h"
+
+#include "configstore.h"
+
+class StoreRDMSubDevices {
 public:
-	virtual ~RDMSensorStore() {}
+	static StoreRDMSubDevices& Get() {
+		static StoreRDMSubDevices instance;
+		return instance;
+	}
 
-	virtual void SaveCalibration(uint32_t nSensor, int32_t nCalibration)=0;
+	static void Update(const rdm::subdevicesparams::Params *pParams) {
+		Get().IUpdate(pParams);
+	}
+
+	static void Copy(rdm::subdevicesparams::Params *pParams) {
+		Get().ICopy(pParams);
+	}
+
+private:
+	void IUpdate(const rdm::subdevicesparams::Params *pParams)  {
+		ConfigStore::Get()->Update(configstore::Store::RDMSUBDEVICES, pParams, sizeof(struct rdm::subdevicesparams::Params));
+	}
+
+	void ICopy(rdm::subdevicesparams::Params *pParams) {
+		ConfigStore::Get()->Copy(configstore::Store::RDMSUBDEVICES, pParams, sizeof(struct rdm::subdevicesparams::Params));
+	}
 };
 
-#endif /* RDMSENSORSTORE_H_ */
+#endif /* STORERDMSUBDEVICES_H_ */

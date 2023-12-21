@@ -36,8 +36,9 @@
 #include "rdmsensorsparams.h"
 #include "rdmsensors.h"
 #include "rdmsensorsconst.h"
-#include "rdmsensorstore.h"
 #include "rdm_sensors.h"
+
+#include "storerdmsensors.h"
 
 #include "readconfigfile.h"
 #include "sscan.h"
@@ -70,7 +71,7 @@
 
 #include "debug.h"
 
-RDMSensorsParams::RDMSensorsParams(RDMSensorsParamsStore *pRDMSensorsParamsStore): m_pRDMSensorsParamsStore(pRDMSensorsParamsStore) {
+RDMSensorsParams::RDMSensorsParams() {
 	DEBUG_ENTRY
 
 	memset(&m_Params, 0, sizeof(struct rdm::sensorsparams::Params));
@@ -87,20 +88,13 @@ bool RDMSensorsParams::Load() {
 	ReadConfigFile configfile(RDMSensorsParams::staticCallbackFunction, this);
 
 	if (configfile.Read(RDMSensorsConst::PARAMS_FILE_NAME)) {
-		if (m_pRDMSensorsParamsStore != nullptr) {
-			m_pRDMSensorsParamsStore->Update(&m_Params);
-		}
+		StoreRDMSensors::Update(&m_Params);
 	} else
 #endif
-	if (m_pRDMSensorsParamsStore != nullptr) {
-		m_pRDMSensorsParamsStore->Copy(&m_Params);
-		// Sanity check
-		if (m_Params.nDevices >= rdm::sensors::devices::MAX) {
-			memset(&m_Params, 0, sizeof(struct rdm::sensorsparams::Params));
-		}
-	} else {
-		DEBUG_EXIT
-		return false;
+	StoreRDMSensors::Copy(&m_Params);
+	// Sanity check
+	if (m_Params.nDevices >= rdm::sensors::devices::MAX) {
+		memset(&m_Params, 0, sizeof(struct rdm::sensorsparams::Params));
 	}
 
 	DEBUG_EXIT
@@ -112,12 +106,6 @@ void RDMSensorsParams::Load(const char *pBuffer, uint32_t nLength) {
 
 	assert(pBuffer != nullptr);
 	assert(nLength != 0);
-	assert(m_pRDMSensorsParamsStore != nullptr);
-
-	if (m_pRDMSensorsParamsStore == nullptr) {
-		DEBUG_EXIT
-		return;
-	}
 
 	m_Params.nDevices = 0;
 
@@ -125,7 +113,7 @@ void RDMSensorsParams::Load(const char *pBuffer, uint32_t nLength) {
 
 	config.Read(pBuffer, nLength);
 
-	m_pRDMSensorsParamsStore->Update(&m_Params);
+	StoreRDMSensors::Update(&m_Params);
 
 	DEBUG_EXIT
 }
@@ -138,8 +126,7 @@ void RDMSensorsParams::Builder(const rdm::sensorsparams::Params *pParams, char *
 	if (pParams != nullptr) {
 		memcpy(&m_Params, pParams, sizeof(struct rdm::sensorsparams::Params));
 	} else {
-		assert(m_pRDMSensorsParamsStore != nullptr);
-		m_pRDMSensorsParamsStore->Copy(&m_Params);
+		StoreRDMSensors::Copy(&m_Params);
 	}
 
 	PropertiesBuilder builder(RDMSensorsConst::PARAMS_FILE_NAME, pBuffer, nLength);
@@ -190,7 +177,7 @@ bool RDMSensorsParams::Add(RDMSensor *pRDMSensor) {
 	return false;
 }
 
-void RDMSensorsParams::Set(__attribute__((unused)) RDMSensorStore *pRDMSensorStore) {
+void RDMSensorsParams::Set() {
 #if defined (RDM_SENSORS_ENABLE)
 	DEBUG_ENTRY
 
@@ -238,19 +225,19 @@ void RDMSensorsParams::Set(__attribute__((unused)) RDMSensorStore *pRDMSensorSto
 #endif
 #if !defined (CONFIG_RDM_SENSORS_DISABLE_THERMISTOR)
 		case rdm::sensors::Types::MCP3424:
-			if (!Add(new RDMSensorThermistor(nSensorNumber, nAddress, 0, m_Params.nCalibrate[nSensorNumber], pRDMSensorStore))) {
+			if (!Add(new RDMSensorThermistor(nSensorNumber, nAddress, 0, m_Params.nCalibrate[nSensorNumber]))) {
 				continue;
 			}
 			nSensorNumber++;
-			if (!Add(new RDMSensorThermistor(nSensorNumber, nAddress, 1, m_Params.nCalibrate[nSensorNumber], pRDMSensorStore))) {
+			if (!Add(new RDMSensorThermistor(nSensorNumber, nAddress, 1, m_Params.nCalibrate[nSensorNumber]))) {
 				continue;
 			}
 			nSensorNumber++;
-			if (!Add(new RDMSensorThermistor(nSensorNumber, nAddress, 2, m_Params.nCalibrate[nSensorNumber], pRDMSensorStore))) {
+			if (!Add(new RDMSensorThermistor(nSensorNumber, nAddress, 2, m_Params.nCalibrate[nSensorNumber]))) {
 				continue;
 			}
 			nSensorNumber++;
-			Add(new RDMSensorThermistor(nSensorNumber, nAddress, 3, m_Params.nCalibrate[nSensorNumber], pRDMSensorStore));
+			Add(new RDMSensorThermistor(nSensorNumber, nAddress, 3, m_Params.nCalibrate[nSensorNumber]));
 			break;
 #endif
 		default:

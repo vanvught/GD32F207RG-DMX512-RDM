@@ -136,9 +136,7 @@ ifneq ($(MAKE_FLAGS),)
 		endif
 		EXTRA_INCLUDES+=../lib-rdmresponder/include
 		EXTRA_INCLUDES+=../lib-rdmsensor/include
-		EXTRA_SRCDIR+=src/rdm/sensors
 		ifeq ($(findstring ENABLE_RDM_SUBDEVICES,$(MAKE_FLAGS)), ENABLE_RDM_SUBDEVICES)
-			EXTRA_SRCDIR+=src/rdm/subdevices
 			EXTRA_INCLUDES+=../lib-rdmsubdevice/include
 		endif
 	endif

@@ -27,6 +27,7 @@
 #define STOREPCA9685_H_
 
 #include <cstdint>
+#include <cstddef>
 
 #include "pca9685dmxparams.h"
 #include "pca9685dmxstore.h"
@@ -46,7 +47,7 @@ public:
 	}
 
 	void SaveDmxStartAddress(uint16_t nDmxStartAddress) override {
-		ConfigStore::Get()->Update(configstore::Store::PCA9685, __builtin_offsetof(struct pca9685dmxparams::Params, nDmxStartAddress), &nDmxStartAddress, sizeof(uint32_t), pca9685dmxparams::Mask::DMX_START_ADDRESS);
+		ConfigStore::Get()->Update(configstore::Store::PCA9685, offsetof(struct pca9685dmxparams::Params, nDmxStartAddress), &nDmxStartAddress, sizeof(uint32_t), pca9685dmxparams::Mask::DMX_START_ADDRESS);
 	}
 
 	static StorePCA9685 *Get() {

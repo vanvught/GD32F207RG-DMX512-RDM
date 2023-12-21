@@ -72,55 +72,58 @@ static bool is_circular_buffer_empty() {
 	return (!s_circular_buffer.full && (s_circular_buffer.head == s_circular_buffer.tail));
 }
 
+extern "C" {
 void TIMER0_UP_TIMER9_IRQHandler() {
+	if ((TIMER_INTF(TIMER9) & TIMER_INT_FLAG_UP) == TIMER_INT_FLAG_UP) {
 #if defined (LED3_GPIO_PINx)
-	GPIO_BOP(LED3_GPIOx) = LED3_GPIO_PINx;
+		GPIO_BOP(LED3_GPIOx) = LED3_GPIO_PINx;
 #endif
 
-	switch (s_state) {
-	case SOFTUART_IDLE:
-		break;
-	case SOFTUART_START_BIT:
-		GPIO_BC(SOFTUART_TX_GPIOx) = SOFTUART_TX_PINx;
-
-		s_state = SOFTUART_DATA;
-		s_data = s_circular_buffer.buffer[s_circular_buffer.tail];
-		s_circular_buffer.tail = (s_circular_buffer.tail + 1) & (BUFFER_SIZE - 1);
-		s_circular_buffer.full = false;
-		s_shift = 0;
-		break;
-	case SOFTUART_DATA:
-		if (s_data & (1U << s_shift)) {
-			GPIO_BOP(SOFTUART_TX_GPIOx) = SOFTUART_TX_PINx;
-		} else {
+		switch (s_state) {
+		case SOFTUART_IDLE:
+			break;
+		case SOFTUART_START_BIT:
 			GPIO_BC(SOFTUART_TX_GPIOx) = SOFTUART_TX_PINx;
+
+			s_state = SOFTUART_DATA;
+			s_data = s_circular_buffer.buffer[s_circular_buffer.tail];
+			s_circular_buffer.tail = (s_circular_buffer.tail + 1) & (BUFFER_SIZE - 1);
+			s_circular_buffer.full = false;
+			s_shift = 0;
+			break;
+		case SOFTUART_DATA:
+			if (s_data & (1U << s_shift)) {
+				GPIO_BOP(SOFTUART_TX_GPIOx) = SOFTUART_TX_PINx;
+			} else {
+				GPIO_BC(SOFTUART_TX_GPIOx) = SOFTUART_TX_PINx;
+			}
+
+			s_shift++;
+
+			if (s_shift == 8) {
+				s_state = SOFTUART_STOP_BIT;
+			}
+			break;
+		case SOFTUART_STOP_BIT:
+			GPIO_BOP(SOFTUART_TX_GPIOx) = SOFTUART_TX_PINx;
+
+			if (is_circular_buffer_empty()) {
+				s_state = SOFTUART_IDLE;
+				timer_disable(TIMER9);
+			} else {
+				s_state = SOFTUART_START_BIT;
+			}
+			break;
+		default:
+			break;
 		}
 
-		s_shift++;
-
-		if (s_shift == 8) {
-			s_state = SOFTUART_STOP_BIT;
-		}
-		break;
-	case SOFTUART_STOP_BIT:
-		GPIO_BOP(SOFTUART_TX_GPIOx) = SOFTUART_TX_PINx;
-
-		if (is_circular_buffer_empty()) {
-			s_state = SOFTUART_IDLE;
-			timer_disable(TIMER9);
-		} else {
-			s_state = SOFTUART_START_BIT;
-		}
-		break;
-	default:
-		break;
+#if defined (LED3_GPIO_PINx)
+		GPIO_BC(LED3_GPIOx) = LED3_GPIO_PINx;
+#endif
 	}
 
-	timer_interrupt_flag_clear(TIMER9, TIMER_INT_FLAG_UP);
-
-#if defined (LED3_GPIO_PINx)
-	GPIO_BC(LED3_GPIOx) = LED3_GPIO_PINx;
-#endif
+	timer_interrupt_flag_clear(TIMER9, ~0);
 }
 
 void uart0_init() {
@@ -192,4 +195,5 @@ void uart0_putc(int c) {
 	}
 
 	_putc(c);
+}
 }

@@ -27,41 +27,47 @@
 #define STORERDMSENSORS_H_
 
 #include <cstdint>
+#include <cstddef>
 #include <cassert>
 
 #include "rdmsensorsparams.h"
-#include "rdmsensorstore.h"
 #include "rdmsensors.h"
 
 #include "configstore.h"
 
-#include "debug.h"	//FIXME Remove
-
-class StoreRDMSensors final: public RDMSensorsParamsStore, public RDMSensorStore {
+class StoreRDMSensors {
 public:
-	StoreRDMSensors();
-
-	void Update(const rdm::sensorsparams::Params *pParams) override {
-		ConfigStore::Get()->Update(configstore::Store::RDMSENSORS, pParams, sizeof(struct rdm::sensorsparams::Params));
+	static StoreRDMSensors& Get() {
+		static StoreRDMSensors instance;
+		return instance;
 	}
 
-	void Copy(rdm::sensorsparams::Params *pParams) override {
-		ConfigStore::Get()->Copy(configstore::Store::RDMSENSORS, pParams, sizeof(struct rdm::sensorsparams::Params));
+	static void Update(const rdm::sensorsparams::Params *pParams) {
+		Get().IUpdate(pParams);
 	}
 
-	 void SaveCalibration(uint32_t nSensor, int32_t nCalibration) override {
-		 assert(nSensor < rdm::sensors::MAX);
-		 DEBUG_PRINTF("nSensor=%u, nCalibration=%d", nSensor, nCalibration);
-		 auto c = static_cast<int16_t>(nCalibration);
-		 ConfigStore::Get()->Update(configstore::Store::RDMSENSORS, (nSensor * sizeof(int16_t)) + __builtin_offsetof(struct rdm::sensorsparams::Params, nCalibrate), &c, sizeof(int16_t));
-	 }
+	static void Copy(rdm::sensorsparams::Params *pParams) {
+		Get().ICopy(pParams);
+	}
 
-	static StoreRDMSensors *Get() {
-		return s_pThis;
+	static void SaveCalibration(const uint32_t nSensor, const int32_t nCalibration) {
+		Get().ISaveCalibration(nSensor, nCalibration);
 	}
 
 private:
-	static StoreRDMSensors *s_pThis;
+	void IUpdate(const rdm::sensorsparams::Params *pParams) {
+		ConfigStore::Get()->Update(configstore::Store::RDMSENSORS, pParams, sizeof(struct rdm::sensorsparams::Params));
+	}
+
+	void ICopy(rdm::sensorsparams::Params *pParams) {
+		ConfigStore::Get()->Copy(configstore::Store::RDMSENSORS, pParams, sizeof(struct rdm::sensorsparams::Params));
+	}
+
+	void ISaveCalibration(const uint32_t nSensor, const int32_t nCalibration) {
+		assert(nSensor < rdm::sensors::MAX);
+		auto c = static_cast<int16_t>(nCalibration);
+		ConfigStore::Get()->Update(configstore::Store::RDMSENSORS, (nSensor * sizeof(int16_t)) + offsetof(struct rdm::sensorsparams::Params, nCalibrate), &c, sizeof(int16_t));
+	}
 };
 
 #endif /* STORERDMSENSORS_H_ */
