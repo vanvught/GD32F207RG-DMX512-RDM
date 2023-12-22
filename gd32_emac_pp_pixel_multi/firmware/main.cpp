@@ -145,15 +145,12 @@ void main() {
 	llrpOnlyDevice.SetProductDetail(E120_PRODUCT_DETAIL_LED);
 	llrpOnlyDevice.Init();
 
-
 	RDMDeviceParams rdmDeviceParams;
 
-	if (rdmDeviceParams.Load()) {
-		rdmDeviceParams.Dump();
-		rdmDeviceParams.Set(&llrpOnlyDevice);
-	}
+	rdmDeviceParams.Load();
+	rdmDeviceParams.Dump();
+	rdmDeviceParams.Set(&llrpOnlyDevice);
 
-	
 	llrpOnlyDevice.Print();
 #endif
 
