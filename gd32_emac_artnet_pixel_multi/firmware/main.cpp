@@ -197,15 +197,14 @@ void main() {
 	display.Set(4, displayudf::Labels::UNIVERSE_PORT_A);
 	display.Set(5, displayudf::Labels::BOARDNAME);
 
-	StoreDisplayUdf storeDisplayUdf;
-	DisplayUdfParams displayUdfParams(&storeDisplayUdf);
+	DisplayUdfParams displayUdfParams;
 
-	if (displayUdfParams.Load()) {
-		displayUdfParams.Dump();
-		displayUdfParams.Set(&display);
-	}
+	displayUdfParams.Load();
+	displayUdfParams.Dump();
+	displayUdfParams.Set(&display);
 
 	display.Show(&node, DMXPORT_OFFSET);
+
 	display.Printf(7, "%s:%d G%d %s",
 		PixelType::GetType(pixelDmxConfiguration.GetType()),
 		pixelDmxConfiguration.GetCount(),
@@ -222,10 +221,9 @@ void main() {
 	StoreRemoteConfig storeRemoteConfig;
 	RemoteConfigParams remoteConfigParams(&storeRemoteConfig);
 
-	if(remoteConfigParams.Load()) {
-		remoteConfigParams.Dump();
-		remoteConfigParams.Set(&remoteConfig);
-	}
+	remoteConfigParams.Load();
+	remoteConfigParams.Dump();
+	remoteConfigParams.Set(&remoteConfig);
 
 	while (configStore.Flash())
 		;
