@@ -70,7 +70,11 @@
 #include "firmwareversion.h"
 #include "software_version.h"
 
-static constexpr uint32_t DMXPORT_OFFSET = 32;
+namespace e131bridge {
+namespace configstore {
+uint32_t DMXPORT_OFFSET = LIGHTSET_PORTS;
+}  // namespace configstore
+}  // namespace e131bridge
 
 void Hardware::RebootHandler() {
 	WS28xxMulti::Get()->Blackout();
@@ -100,7 +104,7 @@ void main() {
 
 	E131Params e131params;
 	e131params.Load();
-	e131params.Set(DMXPORT_OFFSET);
+	e131params.Set();
 
 	PixelDmxConfiguration pixelDmxConfiguration;
 
