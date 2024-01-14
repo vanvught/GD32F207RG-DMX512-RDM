@@ -2,54 +2,52 @@
     \file    usbh_hid_core.c
     \brief   USB host HID class driver
 
-    \version 2020-07-28, V3.0.0, firmware for GD32F20x
+    \version 2023-06-30, V2.5.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2020, GigaDevice Semiconductor Inc.
+    Copyright (c) 2023, GigaDevice Semiconductor Inc.
 
-    Redistribution and use in source and binary forms, with or without modification, 
+    Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice, this 
+    1. Redistributions of source code must retain the above copyright notice, this
        list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, 
-       this list of conditions and the following disclaimer in the documentation 
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
        and/or other materials provided with the distribution.
-    3. Neither the name of the copyright holder nor the names of its contributors 
-       may be used to endorse or promote products derived from this software without 
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software without
        specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
 
+#include <string.h>
 #include "usbh_pipe.h"
 #include "usbh_hid_core.h"
-#include "usbh_hid_mouse.h"
-#include "usbh_hid_keybd.h"
-#include <string.h>
-#include <stdbool.h>
+#include "usbh_standard_hid.h"
 
 /* local function prototypes ('static') */
-static void usbh_hiddesc_parse (usb_desc_hid *hid_desc, uint8_t *buf);
-static void usbh_hid_itf_deinit (usbh_host *uhost);
-static usbh_status usbh_hid_itf_init (usbh_host *uhost);
-static usbh_status usbh_hid_class_req (usbh_host *uhost);
-static usbh_status usbh_hid_handle (usbh_host *uhost);
-static usbh_status usbh_hid_reportdesc_get (usbh_host *uhost, uint16_t len);
+static void usbh_hiddesc_parse(usb_desc_hid *hid_desc, uint8_t *buf);
+static void usbh_hid_itf_deinit(usbh_host *uhost);
+static usbh_status usbh_hid_itf_init(usbh_host *uhost);
+static usbh_status usbh_hid_class_req(usbh_host *uhost);
+static usbh_status usbh_hid_handle(usbh_host *uhost);
+static usbh_status usbh_hid_reportdesc_get(usbh_host *uhost, uint16_t len);
 static usbh_status usbh_hid_sof(usbh_host *uhost);
-static usbh_status usbh_hid_desc_get (usbh_host *uhost, uint16_t len);
-static usbh_status usbh_set_idle (usbh_host *uhost, uint8_t duration, uint8_t report_ID);
-static usbh_status usbh_set_protocol (usbh_host *uhost, uint8_t protocol);
+static usbh_status usbh_hid_desc_get(usbh_host *uhost, uint16_t len);
+static usbh_status usbh_set_idle(usbh_host *uhost, uint8_t duration, uint8_t report_ID);
+static usbh_status usbh_set_protocol(usbh_host *uhost, uint8_t protocol);
 
 usbh_class usbh_hid = 
 {
@@ -63,7 +61,7 @@ usbh_class usbh_hid =
 
 /*!
     \brief      get report
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[in]  report_type: duration for HID set idle request
     \param[in]  report_ID: targeted report ID for HID set idle request
     \param[in]  report_len: length of data report to be send
@@ -98,8 +96,8 @@ usbh_status usbh_get_report (usbh_host *uhost,
 
 /*!
     \brief      set report
-    \param[in]  udev: pointer to usb core instance
-    \param[in]  uhost: pointer to usb host
+    \param[in]  udev: pointer to USB core instance
+    \param[in]  uhost: pointer to USB host
     \param[in]  report_type: duration for HID set idle request
     \param[in]  report_ID: targeted report ID for HID set idle request
     \param[in]  report_len: length of data report to be send
@@ -134,8 +132,8 @@ usbh_status usbh_set_report (usb_core_driver *udev,
 }
 
 /*!
-    \brief      de-initialize the host pipes used for the HID class
-    \param[in]  uhost: pointer to usb host
+    \brief      deinitialize the host pipes used for the HID class
+    \param[in]  uhost: pointer to USB host
     \param[out] none
     \retval     operation status
 */
@@ -148,7 +146,7 @@ void usbh_hid_itf_deinit (usbh_host *uhost)
 
         usbh_pipe_free (uhost->data, hid->pipe_in);
 
-        hid->pipe_in = 0U; /* reset the pipe as free */
+        hid->pipe_in = 0U;     /* reset the pipe as free */
     }
 
     if (0x00U != hid->pipe_out) {
@@ -162,8 +160,8 @@ void usbh_hid_itf_deinit (usbh_host *uhost)
 
 /*!
     \brief      return device type
-    \param[in]  udev: pointer to usb core instance
-    \param[in]  uhost: pointer to usb host
+    \param[in]  udev: pointer to USB core instance
+    \param[in]  uhost: pointer to USB host
     \param[out] none
     \retval     hid_type
 */
@@ -189,8 +187,8 @@ hid_type usbh_hid_device_type_get(usb_core_driver *udev, usbh_host *uhost)
 
 /*!
     \brief      return HID device poll time
-    \param[in]  udev: pointer to usb core instance
-    \param[in]  uhost: pointer to usb host
+    \param[in]  udev: pointer to USB core instance
+    \param[in]  uhost: pointer to USB host
     \param[out] none
     \retval     poll time (ms)
 */
@@ -200,7 +198,7 @@ uint8_t usbh_hid_poll_interval_get (usb_core_driver *udev, usbh_host *uhost)
 
     if ((HOST_CLASS_ENUM == uhost->cur_state) ||
          (HOST_USER_INPUT == uhost->cur_state) ||
-           (HOST_CHECK_CLASS == uhost->cur_state) ||
+           (HOST_CLASS_CHECK == uhost->cur_state) ||
              (HOST_CLASS_HANDLER == uhost->cur_state)) {
         return (uint8_t)(hid->poll);
     } else {
@@ -209,100 +207,8 @@ uint8_t usbh_hid_poll_interval_get (usb_core_driver *udev, usbh_host *uhost)
 }
 
 /*!
-    \brief      read from FIFO
-    \param[in]  fifo: fifo address
-    \param[in]  buf: read buffer
-    \param[in]  nbytes: number of item to read
-    \param[out] none
-    \retval     number of read items
-*/
-uint16_t usbh_hid_fifo_read (data_fifo *fifo, void *buf, uint16_t nbytes)
-{
-    uint16_t i = 0U;
-    uint8_t *p = (uint8_t*) buf;
-
-    if (0U == fifo->lock) {
-        fifo->lock = 1U;
-
-        for (i = 0U; i < nbytes; i++) {
-            if (fifo->tail != fifo->head) {
-                *p++ = fifo->buf[fifo->tail];
-                fifo->tail++;
-
-                if (fifo->tail == fifo->size) {
-                    fifo->tail = 0U;
-                }
-            } else {
-                fifo->lock = 0U;
-
-                return i;
-            }
-        }
-    }
-
-    fifo->lock = 0U;
-
-    return nbytes;
-}
-
-/*!
-    \brief      write to FIFO
-    \param[in]  fifo: fifo address
-    \param[in]  buf: read buffer
-    \param[in]  nbytes: number of item to read
-    \param[out] none
-    \retval     number of write items
-*/
-uint16_t usbh_hid_fifo_write (data_fifo *fifo, void *buf, uint16_t nbytes)
-{
-    uint16_t i = 0U;
-    uint8_t *p = (uint8_t*) buf;
-
-    if (0U == fifo->lock) {
-        fifo->lock = 1U;
-
-        for (i = 0U; i < nbytes; i++) {
-            if ((fifo->head + 1U == fifo->tail) ||
-                 ((fifo->head + 1U == fifo->size) && (0U == fifo->tail))) {
-                fifo->lock = 0U;
-
-                return i;
-            } else {
-                fifo->buf[fifo->head] = *p++;
-                fifo->head++;
-        
-                if (fifo->head == fifo->size) {
-                    fifo->head = 0U;
-                }
-            }
-        }
-    }
-
-    fifo->lock = 0U;
-
-    return nbytes;
-}
-
-/*!
-    \brief      initialize FIFO
-    \param[in]  fifo: fifo address
-    \param[in]  buf: read buffer
-    \param[in]  size: size of FIFO
-    \param[out] none
-    \retval     none
-*/
-void usbh_hid_fifo_init (data_fifo *fifo, uint8_t *buf, uint16_t size)
-{
-    fifo->head = 0U;
-    fifo->tail = 0U;
-    fifo->lock = 0U;
-    fifo->size = size;
-    fifo->buf = buf;
-}
-
-/*!
     \brief      initialize the hid class
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[out] none
     \retval     operation status
 */
@@ -328,11 +234,11 @@ static usbh_status usbh_hid_itf_init (usbh_host *uhost)
 
         uint8_t itf_protocol = uhost->dev_prop.cfg_desc_set.itf_desc_set[uhost->dev_prop.cur_itf][0].itf_desc.bInterfaceProtocol;
         if (USB_HID_PROTOCOL_KEYBOARD == itf_protocol) {
-            hid_handler.init = usbh_hid_keybd_init;
-            hid_handler.machine = usbh_hid_keybrd_machine;
+            hid_handler.init = usbh_hid_keybrd_init;
+            hid_handler.decode = usbh_hid_keybrd_decode;
         } else if (USB_HID_PROTOCOL_MOUSE == itf_protocol) {
             hid_handler.init = usbh_hid_mouse_init;
-            hid_handler.machine = usbh_hid_mouse_machine;
+            hid_handler.decode = usbh_hid_mouse_decode;
         } else {
             status = USBH_FAIL;
         }
@@ -395,7 +301,7 @@ static usbh_status usbh_hid_itf_init (usbh_host *uhost)
 
 /*!
     \brief      handle HID class requests for HID class
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[out] none
     \retval     operation status
 */
@@ -457,8 +363,8 @@ static usbh_status usbh_hid_class_req (usbh_host *uhost)
 }
 
 /*!
-    \brief      manage state machine for HID data transfers 
-    \param[in]  uhost: pointer to usb host
+    \brief      manage state machine for HID data transfers
+    \param[in]  uhost: pointer to USB host
     \param[out] none
     \retval     operation status
 */
@@ -480,7 +386,7 @@ static usbh_status usbh_hid_handle (usbh_host *uhost)
 
     case HID_SYNC:
         /* sync with start of even frame */
-        if (true == usb_frame_even(uhost->data)) {
+        if (TRUE == usb_frame_even(uhost->data)) {
             hid->state = HID_GET_DATA;
         }
         break;
@@ -495,14 +401,14 @@ static usbh_status usbh_hid_handle (usbh_host *uhost)
 
     case HID_POLL:
         if (URB_DONE == usbh_urbstate_get (uhost->data, hid->pipe_in)) {
-            if (0U == hid->data_ready) { /* handle data once */
-                usbh_hid_fifo_write(&hid->fifo, hid->pdata, hid->len);
+            if (0U == hid->data_ready) {
                 hid->data_ready = 1U;
 
-                hid->machine(uhost->data, uhost);
+                hid->decode(hid->pdata);
             }
         } else {
-            if (URB_STALL == usbh_urbstate_get (uhost->data, hid->pipe_in)) { /* IN endpoint stalled */
+            /* check IN endpoint stall status */
+            if (URB_STALL == usbh_urbstate_get (uhost->data, hid->pipe_in)) {
                 /* issue clear feature on interrupt in endpoint */ 
                 if (USBH_OK == (usbh_clrfeature (uhost, hid->ep_addr, hid->pipe_in))) {
                     /* change state to issue next in token */
@@ -520,7 +426,7 @@ static usbh_status usbh_hid_handle (usbh_host *uhost)
 
 /*!
     \brief      send get report descriptor command to the device
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[in]  len: HID report descriptor length
     \param[out] none
     \retval     operation status
@@ -548,7 +454,7 @@ static usbh_status usbh_hid_reportdesc_get (usbh_host *uhost, uint16_t len)
 
 /*!
     \brief      managing the SOF process
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[out] none
     \retval     operation status
 */
@@ -573,7 +479,7 @@ static usbh_status usbh_hid_sof(usbh_host *uhost)
 
 /*!
     \brief      send the command of get HID descriptor to the device
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[in]  len: HID descriptor length
     \param[out] none
     \retval     operation status
@@ -601,9 +507,9 @@ static usbh_status usbh_hid_desc_get (usbh_host *uhost, uint16_t len)
 
 /*!
     \brief      set idle state
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[in]  duration: duration for HID set idle request
-    \param[in]  report_ID: targetted report ID for HID set idle request
+    \param[in]  report_ID: targeted report ID for HID set idle request
     \param[out] none
     \retval     operation status
 */
@@ -630,7 +536,7 @@ static usbh_status usbh_set_idle (usbh_host *uhost, uint8_t duration, uint8_t re
 
 /*!
     \brief      set protocol state
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[in]  protocol: boot/report protocol
     \param[out] none
     \retval     operation status
@@ -663,7 +569,7 @@ static usbh_status usbh_set_protocol (usbh_host *uhost, uint8_t protocol)
     \param[out] none
     \retval     none
 */
-static void  usbh_hiddesc_parse (usb_desc_hid *hid_desc, uint8_t *buf)
+static void usbh_hiddesc_parse (usb_desc_hid *hid_desc, uint8_t *buf)
 {
     hid_desc->header.bLength         = *(uint8_t *)(buf + 0U);
     hid_desc->header.bDescriptorType = *(uint8_t *)(buf + 1U);
@@ -673,4 +579,3 @@ static void  usbh_hiddesc_parse (usb_desc_hid *hid_desc, uint8_t *buf)
     hid_desc->bDescriptorType        = *(uint8_t *)(buf + 6U);
     hid_desc->wDescriptorLength      = BYTE_SWAP(buf + 7U);
 }
-

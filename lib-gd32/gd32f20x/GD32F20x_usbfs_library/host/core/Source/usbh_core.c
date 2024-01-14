@@ -2,68 +2,64 @@
     \file    usbh_core.c
     \brief   USB host core state machine driver
 
-    \version 2020-07-28, V3.0.0, firmware for GD32F20x
+    \version 2023-06-30, V2.5.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2020, GigaDevice Semiconductor Inc.
+    Copyright (c) 2023, GigaDevice Semiconductor Inc.
 
-    Redistribution and use in source and binary forms, with or without modification, 
+    Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice, this 
+    1. Redistributions of source code must retain the above copyright notice, this
        list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, 
-       this list of conditions and the following disclaimer in the documentation 
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
        and/or other materials provided with the distribution.
-    3. Neither the name of the copyright holder nor the names of its contributors 
-       may be used to endorse or promote products derived from this software without 
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software without
        specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
 
 #include "drv_usb_hw.h"
+#include "drv_usbh_int.h"
 #include "usbh_pipe.h"
 #include "usbh_enum.h"
-#include "usbh_core.h"
-#include "drv_usbh_int.h"
+
 #include <string.h>
 
 usb_core_driver usbh_core;
 
 /* local function prototypes ('static') */
-static uint8_t usbh_sof           (usbh_host *uhost);
-static uint8_t usbh_connect       (usbh_host *uhost);
-static uint8_t usbh_disconnect    (usbh_host *uhost);
-static uint8_t usbh_port_enabled  (usbh_host *uhost);
-static uint8_t usbh_port_disabled (usbh_host *uhost);
-static usbh_status usbh_enum_task (usbh_host *uhost);
+static uint8_t usb_ev_sof           (usbh_host *uhost);
+static uint8_t usb_ev_connect       (usbh_host *uhost);
+static uint8_t usb_ev_disconnect    (usbh_host *uhost);
+static usbh_status usbh_enum_task   (usbh_host *uhost);
 
-#ifdef USB_FS_LOW_PWR_ENABLE
-static void usb_hwp_suspend(usb_core_driver *udev);
-static void usb_hwp_resume(usb_core_driver *udev);
-#endif
+#if USB_LOW_POWER
+static void usb_hwp_suspend         (usb_core_driver *udev);
+static void usb_hwp_resume          (usb_core_driver *udev);
+#endif /* USB_LOW_POWER */
 
-usbh_int_cb usbh_int_op = 
+usbh_ev_cb usbh_int_op = 
 {
-    usbh_connect,
-    usbh_disconnect,
-    usbh_port_enabled,
-    usbh_port_disabled,
-    usbh_sof
+    usb_ev_connect,
+    usb_ev_disconnect,
+    usb_ev_sof,
 };
 
-usbh_int_cb *usbh_int_fop = &usbh_int_op;
+usbh_ev_cb *usbh_int_fop = &usbh_int_op;
 
 /*!
     \brief      USB host stack initializations
@@ -117,7 +113,7 @@ void usbh_init (usbh_host *uhost, usbh_user_cb *user_cb)
 
 /*!
     \brief      USB host register device class
-    \param[in]  uhost: pointer to usb host instance
+    \param[in]  uhost: pointer to USB host instance
     \param[in]  puclass: pointer to USB device class
     \param[out] none
     \retval     operation status
@@ -197,7 +193,7 @@ void usbh_core_task (usbh_host *uhost)
 
     case HOST_DETECT_DEV_SPEED:
         if (usbh_core.host.port_enabled) {
-            uhost->cur_state = HOST_DEV_ATTACHED;
+            uhost->cur_state = HOST_DEV_CONNECT;
 
             uhost->dev_prop.speed = usb_curspeed_get (&usbh_core);
 
@@ -207,7 +203,7 @@ void usbh_core_task (usbh_host *uhost)
         }
         break;
 
-    case HOST_DEV_ATTACHED:
+    case HOST_DEV_CONNECT:
         uhost->usr_cb->dev_attach();
         uhost->control.pipe_out_num = usbh_pipe_allocate(&usbh_core, 0x00U);
         uhost->control.pipe_in_num = usbh_pipe_allocate(&usbh_core, 0x80U);
@@ -226,10 +222,10 @@ void usbh_core_task (usbh_host *uhost)
                           USB_EPTYPE_CTRL,
                           (uint16_t)uhost->control.max_len);
 
-        uhost->cur_state = HOST_ENUM;
+        uhost->cur_state = HOST_DEV_ENUM;
         break;
 
-    case HOST_ENUM:
+    case HOST_DEV_ENUM:
         /* check for enumeration status */
         if (USBH_OK == usbh_enum_task (uhost)) {
             /* the function shall return USBH_OK when full enumeration is complete */
@@ -237,26 +233,33 @@ void usbh_core_task (usbh_host *uhost)
             /* user callback for end of device basic enumeration */
             uhost->usr_cb->dev_enumerated();
 
-#ifdef USB_FS_LOW_PWR_ENABLE
-            uhost->cur_state = HOST_SUSPENDED;
+#if USB_LOW_POWER
+            uhost->cur_state = HOST_SUSPEND;
+
+            /* judge device remote wakeup function */
+            if ((uhost->dev_prop.cfg_desc_set.cfg_desc.bmAttributes) & (1U << 5)) {
+                uhost->dev_supp_remote_wkup = 1;
+            }else{
+                uhost->dev_supp_remote_wkup = 0;
+            }
 #else
-            uhost->cur_state = HOST_SET_WAKEUP_FEATURE;
-#endif
+            uhost->cur_state = HOST_PWR_FEATURE_SET;
+#endif /* USB_LOW_POWER */
         }
         break;
 
-    case HOST_SET_WAKEUP_FEATURE:
+    case HOST_PWR_FEATURE_SET:
         if ((uhost->dev_prop.cfg_desc_set.cfg_desc.bmAttributes) & (1U << 5)) {
             if (usbh_setdevfeature(uhost, FEATURE_SELECTOR_REMOTEWAKEUP, 0U) == USBH_OK) {
-                uhost->cur_state = HOST_CHECK_CLASS;
+                uhost->cur_state = HOST_CLASS_CHECK;
             }
         } else {
-            uhost->cur_state = HOST_CHECK_CLASS;
+            uhost->cur_state = HOST_CLASS_CHECK;
         }
         break;
 
-    case HOST_CHECK_CLASS:
-        if (uhost->class_num == 0U) {
+    case HOST_CLASS_CHECK:
+        if (0U == uhost->class_num) {
             uhost->cur_state = HOST_ERROR;
         } else {
             uhost->active_class = NULL;
@@ -279,33 +282,61 @@ void usbh_core_task (usbh_host *uhost)
 
     case HOST_USER_INPUT:
         /* the function should return user response true to move to class state */
-        if (USBH_USER_RESP_OK == uhost->usr_cb->dev_user_input()) {
+        if (USR_IN_RESP_OK == uhost->usr_cb->dev_user_input()) {
             if ((USBH_OK == uhost->active_class->class_init(uhost))) {
                 uhost->cur_state = HOST_CLASS_ENUM;
             }
         }
         break;
 
-#ifdef USB_FS_LOW_PWR_ENABLE
-    case HOST_SUSPENDED:
-        if (USBH_OK == usbh_setdevfeature(uhost, FEATURE_SELECTOR_DEV, 0U)) {
-            uhost->suspend_flag = 1;
-            usb_hwp_suspend(uhost->data);
-            uhost->usr_cb->dev_user_input();
-            pmu_to_deepsleepmode(PMU_LDO_LOWPOWER, WFI_CMD);
-            uhost->cur_state = HOST_WAKEUP;
+#if USB_LOW_POWER
+    case HOST_SUSPEND:
+        if(uhost->dev_supp_remote_wkup){
+            /* send set feature command*/
+            if (USBH_OK == usbh_setdevfeature (uhost, FEATURE_SELECTOR_REMOTEWAKEUP, 0U)) {
+
+                usb_hwp_suspend(&usbh_core);
+
+                usb_mdelay (20U);
+                uhost->suspend_flag = 1;
+                uhost->usr_cb->dev_user_input();
+
+                /* MCU enter deep-sleep*/
+                pmu_to_deepsleepmode (PMU_LDO_LOWPOWER, WFI_CMD);
+                uhost->cur_state = HOST_WAKEUP;
+            }
+        } else {
+                /* host suspend */
+                usb_hwp_suspend(&usbh_core);
+
+                usb_mdelay(20U);
+                uhost->suspend_flag = 1U;
+                uhost->usr_cb->dev_user_input();
+
+                /* MCU enter deep-sleep */
+                pmu_to_deepsleepmode(PMU_LDO_LOWPOWER, WFI_CMD);
+                uhost->cur_state = HOST_WAKEUP;
         }
         break;
 
     case HOST_WAKEUP:
-        if (USBH_OK == usbh_clrdevfeature(uhost, FEATURE_SELECTOR_DEV, 0U)) {
-            /* user callback for initialization */
-            uhost->usr_cb->dev_init();
-
-            uhost->cur_state = HOST_CHECK_CLASS;
+         /* judge suspend status */
+        if (0U == uhost->suspend_flag) {
+            usb_hwp_resume(&usbh_core);
+            usb_mdelay(500U);
+    
+            if (uhost->dev_supp_remote_wkup) {
+                if (USBH_OK == usbh_clrdevfeature (uhost, FEATURE_SELECTOR_DEV, 0U)) {
+                    /* user callback for initialization */
+                    uhost->usr_cb->dev_init();
+                    uhost->cur_state = HOST_CLASS_CHECK;
+                }
+            } else {
+                    uhost->cur_state = HOST_CLASS_CHECK;
+            }
         }
         break;
-#endif
+#endif /* USB_LOW_POWER */
 
     case HOST_CLASS_ENUM:
         /* process class standard control requests state machine */
@@ -326,7 +357,7 @@ void usbh_core_task (usbh_host *uhost)
         break;
 
     case HOST_ERROR:
-        /* re-initialize host for new enumeration */
+        /* deinitialize host for new enumeration */
         usbh_deinit (uhost);
         uhost->usr_cb->dev_deinit();
         uhost->active_class->class_deinit(uhost);
@@ -337,7 +368,7 @@ void usbh_core_task (usbh_host *uhost)
         uhost->usr_cb->dev_detach();
 
         /* re-initialize host for new enumeration */
-        usbh_deinit(uhost);
+        usbh_deinit (uhost);
         uhost->usr_cb->dev_deinit();
         uhost->active_class->class_deinit(uhost);
         usbh_pipe_delete(&usbh_core);
@@ -374,12 +405,12 @@ void usbh_error_handler (usbh_host *uhost, usbh_status err_type)
 }
 
 /*!
-    \brief      USB SOF callback function from the interrupt
-    \param[in]  uhost: pointer to usb host
+    \brief      USB SOF event function from the interrupt
+    \param[in]  uhost: pointer to USB host
     \param[out] none
     \retval     operation status
 */
-static uint8_t usbh_sof (usbh_host *uhost)
+static uint8_t usb_ev_sof (usbh_host *uhost)
 {
     /* this callback could be used to implement a scheduler process */
     uhost->control.timer = (uint16_t)usb_curframe_get(&usbh_core);
@@ -394,12 +425,12 @@ static uint8_t usbh_sof (usbh_host *uhost)
 }
 
 /*!
-    \brief      USB connect callback function from the interrupt
-    \param[in]  uhost: pointer to usb host
+    \brief      USB connect event function from the interrupt
+    \param[in]  uhost: pointer to USB host
     \param[out] none
     \retval     operation status
 */
-static uint8_t usbh_connect (usbh_host *uhost)
+static uint8_t usb_ev_connect (usbh_host *uhost)
 {
     usbh_core.host.connect_status = 1U;
 
@@ -407,40 +438,14 @@ static uint8_t usbh_connect (usbh_host *uhost)
 }
 
 /*!
-    \brief      USB disconnect callback function from the interrupt
-    \param[in]  uhost: pointer to usb host
+    \brief      USB disconnect event function from the interrupt
+    \param[in]  uhost: pointer to USB host
     \param[out] none
     \retval     operation status
 */
-static uint8_t usbh_disconnect (usbh_host *uhost)
+static uint8_t usb_ev_disconnect (usbh_host *uhost)
 {
     usbh_core.host.connect_status = 0U;
-
-    return 0U;
-}
-
-/*!
-    \brief      USB port enable callback function from the interrupt
-    \param[in]  uhost: pointer to usb host
-    \param[out] none
-    \retval     operation status
-*/
-static uint8_t usbh_port_enabled (usbh_host *uhost)
-{
-    usbh_core.host.port_enabled = 1U;
-
-    return 0U;
-}
-
-/*!
-    \brief      USB port disabled callback function from the interrupt
-    \param[in]  uhost: pointer to usb host
-    \param[out] none
-    \retval     operation status
-*/
-static uint8_t usbh_port_disabled (usbh_host *uhost)
-{
-    usbh_core.host.port_enabled = 0U;
 
     return 0U;
 }
@@ -453,15 +458,14 @@ static uint8_t usbh_port_disabled (usbh_host *uhost)
 */
 static usbh_status usbh_enum_task (usbh_host *uhost)
 {
-    uint8_t str_buf[64];
-
+    uint8_t str_buf[512];
     usbh_status status = USBH_BUSY;
 
     static uint8_t index_mfc_str = 0U, index_prod_str = 0U, index_serial_str = 0U;
 
     switch (uhost->enum_state) {
     case ENUM_DEFAULT:
-        /* get device descriptor for only 1st 8 bytes : to get ep0 maxpacketsize */
+        /* get device descriptor for only 1st 8 bytes : to get ep0 max packet size */
         if (USBH_OK == usbh_devdesc_get (uhost, 8U)) {
             uhost->control.max_len = uhost->dev_prop.dev_desc.bMaxPacketSize0;
 
@@ -593,8 +597,7 @@ static usbh_status usbh_enum_task (usbh_host *uhost)
     return status;
 }
 
-
-#ifdef USB_FS_LOW_PWR_ENABLE
+#if USB_LOW_POWER
 
 /*!
     \brief      handles the USB resume from suspend mode
@@ -647,4 +650,4 @@ static void usb_hwp_suspend(usb_core_driver *udev)
     *udev->regs.PWRCLKCTL |= PWRCLKCTL_SHCLK;
 }
 
-#endif
+#endif /* USB_LOW_POWER */

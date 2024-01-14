@@ -2,33 +2,33 @@
     \file    drv_usbd_int.c
     \brief   USB device mode interrupt routines
 
-    \version 2020-07-28, V3.0.0, firmware for GD32F20x
+    \version 2023-06-30, V2.5.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2020, GigaDevice Semiconductor Inc.
+    Copyright (c) 2023, GigaDevice Semiconductor Inc.
 
-    Redistribution and use in source and binary forms, with or without modification, 
+    Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice, this 
+    1. Redistributions of source code must retain the above copyright notice, this
        list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, 
-       this list of conditions and the following disclaimer in the documentation 
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
        and/or other materials provided with the distribution.
-    3. Neither the name of the copyright holder nor the names of its contributors 
-       may be used to endorse or promote products derived from this software without 
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software without
        specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
 
@@ -36,13 +36,13 @@ OF SUCH DAMAGE.
 #include "drv_usbd_int.h"
 #include "usbd_transc.h"
 
+/* local function prototypes ('static') */
 static uint32_t usbd_int_epout                 (usb_core_driver *udev);
 static uint32_t usbd_int_epin                  (usb_core_driver *udev);
 static uint32_t usbd_int_rxfifo                (usb_core_driver *udev);
 static uint32_t usbd_int_reset                 (usb_core_driver *udev);
 static uint32_t usbd_int_enumfinish            (usb_core_driver *udev);
 static uint32_t usbd_int_suspend               (usb_core_driver *udev);
-
 static uint32_t usbd_emptytxfifo_write         (usb_core_driver *udev, uint32_t ep_num);
 
 static const uint8_t USB_SPEED[4] = {
@@ -63,7 +63,8 @@ __IO uint8_t setupc_flag = 0U;
 void usbd_isr (usb_core_driver *udev)
 {
     if (HOST_MODE != (udev->regs.gr->GINTF & GINTF_COPM)) {
-        uint32_t intr = udev->regs.gr->GINTF & udev->regs.gr->GINTEN;
+        uint32_t intr = udev->regs.gr->GINTF;
+        intr &= udev->regs.gr->GINTEN;
 
         /* there are no interrupts, avoid spurious interrupt */
         if (!intr) {
@@ -87,9 +88,10 @@ void usbd_isr (usb_core_driver *udev)
 
         /* wakeup interrupt */
         if (intr & GINTF_WKUPIF) {
-            /* inform upper layer by the resume event */
-            
-            udev->dev.cur_status = (uint8_t)USBD_CONFIGURED;
+            if(USBD_SUSPENDED == udev->dev.cur_status){
+                /* inform upper layer by the resume event */
+                udev->dev.cur_status = udev->dev.backup_status;
+            }
 
             /* clear interrupt */
             udev->regs.gr->GINTF = GINTF_WKUPIF;
@@ -98,11 +100,11 @@ void usbd_isr (usb_core_driver *udev)
         /* start of frame interrupt */
         if (intr & GINTF_SOF) {
             if (udev->dev.class_core->SOF) {
-                (void)udev->dev.class_core->SOF(udev); 
+                (void)udev->dev.class_core->SOF(udev);
             }
 
             if (0U != setupc_flag) {
-                setupc_flag ++;
+                setupc_flag++;
 
                 if (setupc_flag >= 3U) {
                     usbd_setup_transc (udev);
@@ -152,7 +154,7 @@ void usbd_isr (usb_core_driver *udev)
 
 #ifdef VBUS_SENSING_ENABLED
 
-        /* Session request interrupt */
+        /* session request interrupt */
         if (intr & GINTF_SESIF) {
             udev->regs.gr->GINTF = GINTF_SESIF;
         }
@@ -163,7 +165,7 @@ void usbd_isr (usb_core_driver *udev)
 
             }
 
-            /* Clear OTG interrupt */
+            /* clear OTG interrupt */
             udev->regs.gr->GINTF = GINTF_OTGIF;
         }
 #endif /* VBUS_SENSING_ENABLED */
@@ -190,26 +192,13 @@ static uint32_t usbd_int_epout (usb_core_driver *udev)
                 /* clear the bit in DOEPINTF for this interrupt */
                 udev->regs.er_out[ep_num]->DOEPINTF = DOEPINTF_TF;
 
-                if ((uint8_t)USB_USE_DMA == udev->bp.transfer_mode) {
-                    __IO uint32_t eplen = udev->regs.er_out[ep_num]->DOEPLEN;
-
-                    udev->dev.transc_out[ep_num].xfer_count = udev->dev.transc_out[ep_num].max_len - \
-                                                                (eplen & DEPLEN_TLEN);
-                }
-
                 /* inform upper layer: data ready */
                 (void)usbd_out_transc (udev, ep_num);
-
-                if ((uint8_t)USB_USE_DMA == udev->bp.transfer_mode) {
-                    if ((0U == ep_num) && ((uint8_t)USB_CTL_STATUS_OUT == udev->dev.control.ctl_state)) {
-                        usb_ctlep_startout (udev);
-                    }
-                }
             }
 
             /* setup phase finished interrupt (control endpoints) */
             if (oepintr & DOEPINTF_STPF) {
-                if ((0U == ep_num) && (0U != setupc_flag)) {
+                if((0U == ep_num) && (0U != setupc_flag)) {
                     /* inform the upper layer that a setup packet is available */
                     (void)usbd_setup_transc (udev);
 
@@ -244,12 +233,6 @@ static uint32_t usbd_int_epin (usb_core_driver *udev)
 
                 /* data transmission is completed */
                 (void)usbd_in_transc (udev, ep_num);
-
-                if ((uint8_t)USB_USE_DMA == udev->bp.transfer_mode) {
-                    if ((0U == ep_num) && ((uint8_t)USB_CTL_STATUS_IN == udev->dev.control.ctl_state)) {
-                        usb_ctlep_startout (udev);
-                    }
-                }
             }
 
             if (iepintr & DIEPINTF_TXFE) {
@@ -291,40 +274,41 @@ static uint32_t usbd_int_rxfifo (usb_core_driver *udev)
     bcount = (devrxstat & GRSTATRP_BCOUNT) >> 4U;
     data_PID = (uint8_t)((devrxstat & GRSTATRP_DPID) >> 15U);
 
-    switch ((devrxstat & GRSTATRP_RPCKST) >> 17U) {
-        case RSTAT_GOUT_NAK:
-            break;
+    switch((devrxstat & GRSTATRP_RPCKST) >> 17U) {
+    case RSTAT_GOUT_NAK:
+        break;
 
-        case RSTAT_DATA_UPDT:
-            if (bcount > 0U) {
-                (void)usb_rxfifo_read (&udev->regs, transc->xfer_buf, (uint16_t)bcount);
+    case RSTAT_DATA_UPDT:
+        if (bcount > 0U) {
+            (void)usb_rxfifo_read (&udev->regs, transc->xfer_buf, (uint16_t)bcount);
 
-                transc->xfer_buf += bcount;
-                transc->xfer_count += bcount;
-            }
-            break;
+            transc->xfer_buf += bcount;
+            transc->xfer_count += bcount;
+        }
+        break;
 
-        case RSTAT_XFER_COMP:
-            /* trigger the OUT endpoint interrupt */
-            break;
+    case RSTAT_XFER_COMP:
+        /* trigger the OUT endpoint interrupt */
+        break;
 
-        case RSTAT_SETUP_COMP:
-            /* trigger the OUT endpoint interrupt */
-            break;
+    case RSTAT_SETUP_COMP:
+        /* trigger the OUT endpoint interrupt */
+        break;
 
-        case RSTAT_SETUP_UPDT:
-            if ((0U == transc->ep_addr.num) && (8U == bcount) && (DPID_DATA0 == data_PID)) {
-                /* copy the setup packet received in FIFO into the setup buffer in RAM */
-                (void)usb_rxfifo_read (&udev->regs, (uint8_t *)&udev->dev.control.req, (uint16_t)bcount);
+    case RSTAT_SETUP_UPDT:
+        if ((0U == transc->ep_addr.num) && (8U == bcount) && (DPID_DATA0 == data_PID)) {
+            /* copy the setup packet received in FIFO into the setup buffer in RAM */
+            (void)usb_rxfifo_read (&udev->regs, (uint8_t *)&udev->dev.control.req, (uint16_t)bcount);
 
-                transc->xfer_count += bcount;
+            transc->xfer_count += bcount;
 
-                setupc_flag = 1;
-            }
-            break;
+            /* set the flag */
+            setupc_flag = 1;
+        }
+        break;
 
-        default:
-            break;
+    default:
+        break;
     }
 
     /* enable the Rx status queue level interrupt */
@@ -441,17 +425,17 @@ static uint32_t usbd_int_suspend (usb_core_driver *udev)
 {
     __IO uint8_t low_power = udev->bp.low_power;
     __IO uint8_t suspend = (uint8_t)(udev->regs.dr->DSTAT & DSTAT_SPST);
-    __IO uint8_t is_configured = (udev->dev.cur_status == (uint8_t)USBD_CONFIGURED)? 1U : 0U;
+    __IO uint8_t is_configured = (udev->dev.cur_status == (uint8_t)USBD_CONFIGURED) ? 1U : 0U;
 
     udev->dev.backup_status = udev->dev.cur_status;
     udev->dev.cur_status = (uint8_t)USBD_SUSPENDED;
 
     if (low_power && suspend && is_configured) {
-        /* switch-off the OTG clocks */
+        /* switch-off the USB clocks */
         *udev->regs.PWRCLKCTL |= PWRCLKCTL_SUCLK | PWRCLKCTL_SHCLK;
 
         /* enter DEEP_SLEEP mode with LDO in low power mode */
-        pmu_to_deepsleepmode(PMU_LDO_LOWPOWER, WFI_CMD);
+        pmu_to_deepsleepmode (PMU_LDO_LOWPOWER, WFI_CMD);
     }
 
     /* clear interrupt */

@@ -1,34 +1,34 @@
 /*!
     \file    usbh_enum.c
-    \brief   USB host mode enumberation driver
+    \brief   USB host mode enumeration driver
 
-    \version 2020-07-28, V3.0.0, firmware for GD32F20x
+    \version 2023-06-30, V2.5.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2020, GigaDevice Semiconductor Inc.
+    Copyright (c) 2023, GigaDevice Semiconductor Inc.
 
-    Redistribution and use in source and binary forms, with or without modification, 
+    Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice, this 
+    1. Redistributions of source code must retain the above copyright notice, this
        list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, 
-       this list of conditions and the following disclaimer in the documentation 
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
        and/or other materials provided with the distribution.
-    3. Neither the name of the copyright holder nor the names of its contributors 
-       may be used to endorse or promote products derived from this software without 
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software without
        specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
 
@@ -46,7 +46,7 @@ static void usbh_strdesc_parse (uint8_t *psrc, uint8_t *pdest, uint16_t len);
 
 /*!
     \brief      configure USB control status parameters
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[in]  buf: control transfer data buffer pointer
     \param[in]  len: length of the data buffer
     \param[out] none
@@ -63,7 +63,7 @@ void usbh_ctlstate_config (usbh_host *uhost, uint8_t *buf, uint16_t len)
 
 /*!
     \brief      get device descriptor from the USB device
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[in]  len: length of the descriptor
     \param[out] none
     \retval     operation status
@@ -98,7 +98,7 @@ usbh_status usbh_devdesc_get (usbh_host *uhost, uint8_t len)
 
 /*!
     \brief      get configuration descriptor from the USB device
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[in]  len: length of the descriptor
     \param[out] none
     \retval     operation status
@@ -111,11 +111,11 @@ usbh_status usbh_cfgdesc_get (usbh_host *uhost, uint16_t len)
 
     usbh_control *usb_ctl = &uhost->control;
 
-#if (USBH_KEEP_CFG_DESCRIPTOR == 1U)
+#if (USBH_CFG_DESC_KEEP == 1U)
     pdata = uhost->dev_prop.cfgdesc_rawdata;
 #else
     pdata = uhost->dev_prop.data;
-#endif
+#endif /* (USBH_CFG_DESC_KEEP == 1U) */
 
     if (CTL_IDLE == usb_ctl->ctl_state) {
         usb_ctl->setup.req = (usb_req) {
@@ -144,7 +144,7 @@ usbh_status usbh_cfgdesc_get (usbh_host *uhost, uint16_t len)
 
 /*!
     \brief      get string descriptor from the USB device
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[in]  str_index: index for the string descriptor
     \param[in]  buf: buffer pointer to the string descriptor
     \param[in]  len: length of the descriptor
@@ -184,7 +184,7 @@ usbh_status usbh_strdesc_get (usbh_host *uhost,
 
 /*!
     \brief      set the address to the connected device
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[in]  dev_addr: device address to assign
     \param[out] none
     \retval     operation status
@@ -214,7 +214,7 @@ usbh_status usbh_setaddress (usbh_host *uhost, uint8_t dev_addr)
 
 /*!
     \brief      set the configuration value to the connected device
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[in]  config_index: configuration value
     \param[out] none
     \retval     operation status
@@ -244,7 +244,7 @@ usbh_status usbh_setcfg (usbh_host *uhost, uint16_t config_index)
 
 /*!
     \brief      set the interface value to the connected device
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[in]  itf_num: interface number
     \param[in]  set: alternated setting value
     \param[out] none
@@ -275,7 +275,7 @@ usbh_status usbh_setinterface (usbh_host *uhost, uint8_t itf_num, uint8_t set)
 
 /*!
     \brief      set the interface value to the connected device
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[in]  feature_selector: feature selector
     \param[in]  windex: index value
     \param[out] none
@@ -306,7 +306,7 @@ usbh_status usbh_setdevfeature (usbh_host *uhost, uint8_t feature_selector, uint
 
 /*!
     \brief      clear the interface value to the connected device
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[in]  feature_selector: feature selector
     \param[in]  windex: index value
     \param[out] none
@@ -337,7 +337,7 @@ usbh_status usbh_clrdevfeature (usbh_host *uhost, uint8_t feature_selector, uint
 
 /*!
     \brief      clear or disable a specific feature
-    \param[in]  uhost: pointer to usb host
+    \param[in]  uhost: pointer to USB host
     \param[in]  ep_addr: endpoint address
     \param[in]  pp_num: pipe number
     \param[out] none
@@ -475,7 +475,7 @@ uint8_t usbh_interfaceindex_find (usb_dev_prop *udev, uint8_t interface_number, 
 
 /*!
     \brief      parse the device descriptor
-    \param[in]  dev_desc: pointer to usb device descriptor buffer
+    \param[in]  dev_desc: pointer to USB device descriptor buffer
     \param[in]  buf: pointer to the source descriptor buffer
     \param[in]  len: length of the descriptor
     \param[out] none
@@ -510,7 +510,7 @@ static void usbh_devdesc_parse (usb_desc_dev *dev_desc, uint8_t *buf, uint16_t l
 
 /*!
     \brief      parse the configuration descriptor
-    \param[in]  cfg_desc: pointer to usb configuration descriptor buffer
+    \param[in]  cfg_desc: pointer to USB configuration descriptor buffer
     \param[in]  buf: pointer to the source descriptor buffer
     \param[out] none
     \retval     none
@@ -540,7 +540,7 @@ static void usbh_cfgdesc_parse (usb_desc_config *cfg_desc, uint8_t *buf)
     \param[out] none
     \retval     none
 */
-static void  usbh_cfgset_parse (usb_dev_prop *udev, uint8_t *buf)
+static void usbh_cfgset_parse (usb_dev_prop *udev, uint8_t *buf)
 {
     usb_desc_ep *ep = NULL;
     usb_desc_itf_set *itf = NULL;
@@ -611,12 +611,12 @@ static void  usbh_cfgset_parse (usb_dev_prop *udev, uint8_t *buf)
 
 /*!
     \brief      parse the interface descriptor
-    \param[in]  itf_desc: pointer to usb interface descriptor buffer
+    \param[in]  itf_desc: pointer to USB interface descriptor buffer
     \param[in]  buf: pointer to the source descriptor buffer
     \param[out] none
     \retval     none
 */
-static void  usbh_itfdesc_parse (usb_desc_itf *itf_desc, uint8_t *buf)
+static void usbh_itfdesc_parse (usb_desc_itf *itf_desc, uint8_t *buf)
 {
     *itf_desc = (usb_desc_itf) {
         .header = {
@@ -636,12 +636,12 @@ static void  usbh_itfdesc_parse (usb_desc_itf *itf_desc, uint8_t *buf)
 
 /*!
     \brief      parse the endpoint descriptor
-    \param[in]  ep_desc: pointer to usb endpoint descriptor buffer
+    \param[in]  ep_desc: pointer to USB endpoint descriptor buffer
     \param[in]  buf: pointer to the source descriptor buffer
     \param[out] none
     \retval     none
 */
-static void  usbh_epdesc_parse (usb_desc_ep *ep_desc, uint8_t *buf)
+static void usbh_epdesc_parse (usb_desc_ep *ep_desc, uint8_t *buf)
 {
     *ep_desc = (usb_desc_ep) {
         .header = {
@@ -669,25 +669,25 @@ static void usbh_strdesc_parse (uint8_t *psrc, uint8_t *pdest, uint16_t len)
     uint16_t str_len = 0U, index = 0U;
 
     /* the unicode string descriptor is not NULL-terminated. The string length is
-     * computed by abstracting two from the value of the first byte of the descriptor.
+     * computed by substracting two from the value of the first byte of the descriptor.
      */
 
     /* check which is lower size, the size of string or the length of bytes read from the device */
     if (USB_DESCTYPE_STR == psrc[1]) {
         /* make sure the descriptor is string type */
 
-        /* psrc[0] contains Size of Descriptor, subtract 2 to get the length of string */      
+        /* psrc[0] contains size of descriptor, subtract 2 to get the length of string */
         str_len = USB_MIN((uint16_t)psrc[0] - 2U, len);
 
-        psrc += 2U; /* adjust the offset ignoring the string len and descriptor type */
+        psrc += 2U; /* adjust the offset ignoring the string length and descriptor type */
 
-        for (index = 0U; index < str_len; index += 2U) {
-            /* copy only the string and ignore the unicode id, hence add the src */
+        for(index = 0U; index < str_len; index += 2U) {
+            /* copy only the string and ignore the unicode id, hence add the source */
             *pdest = psrc[index];
 
             pdest++;
         }
 
-        *pdest = 0U; /* mark end of string */  
+        *pdest = 0U; /* mark end of string */
     }
 }

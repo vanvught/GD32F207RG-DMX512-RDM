@@ -2,33 +2,33 @@
     \file    drv_usb_host.c
     \brief   USB host mode low level driver
 
-    \version 2020-07-28, V3.0.0, firmware for GD32F20x
+    \version 2023-06-30, V2.5.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2020, GigaDevice Semiconductor Inc.
+    Copyright (c) 2023, GigaDevice Semiconductor Inc.
 
-    Redistribution and use in source and binary forms, with or without modification, 
+    Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice, this 
+    1. Redistributions of source code must retain the above copyright notice, this
        list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, 
-       this list of conditions and the following disclaimer in the documentation 
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
        and/or other materials provided with the distribution.
-    3. Neither the name of the copyright holder nor the names of its contributors 
-       may be used to endorse or promote products derived from this software without 
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software without
        specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
 
@@ -43,7 +43,7 @@ const uint32_t PIPE_DPID[2] = {
 
 /*!
     \brief      initializes USB core for host mode
-    \param[in]  udev: pointer to selected usb host
+    \param[in]  udev: pointer to selected USB host
     \param[out] none
     \retval     operation status
 */
@@ -56,6 +56,9 @@ usb_status usb_host_init (usb_core_driver *udev)
 
     /* restart the PHY Clock */
     *udev->regs.PWRCLKCTL = 0U;
+
+    /* configure USB clock of PHY */
+    usb_phyclock_config (udev, HCTL_48MHZ);
 
     /* support FS/LS only */
     udev->regs.hr->HCTL &= ~HCTL_SPDFSLS;
@@ -72,7 +75,7 @@ usb_status usb_host_init (usb_core_driver *udev)
         udev->regs.gr->DIEP0TFLEN_HNPTFLEN = nptxfifolen;
 
         /* set periodic Tx FIFO size and address */
-        ptxfifolen |= USB_RX_FIFO_FS_SIZE + USB_HTX_PFIFO_FS_SIZE;
+        ptxfifolen |= USB_RX_FIFO_FS_SIZE + USB_HTX_NPFIFO_FS_SIZE;
         ptxfifolen |= USB_HTX_PFIFO_FS_SIZE << 16U;
         udev->regs.gr->HPTFLEN = ptxfifolen;
     }
@@ -162,7 +165,7 @@ void usb_portvbus_switch (usb_core_driver *udev, uint8_t state)
 
 /*!
     \brief      reset host port
-    \param[in]  udev: pointer to usb device
+    \param[in]  udev: pointer to USB device
     \param[out] none
     \retval     operation status
 */
@@ -183,7 +186,7 @@ uint32_t usb_port_reset (usb_core_driver *udev)
 
 /*!
     \brief      initialize host pipe
-    \param[in]  udev: pointer to usb device
+    \param[in]  udev: pointer to USB device
     \param[in]  pipe_num: host pipe number which is in (0..7)
     \param[out] none
     \retval     operation status
@@ -200,10 +203,6 @@ usb_status usb_pipe_init (usb_core_driver *udev, uint8_t pipe_num)
     /* clear old interrupt conditions for this host channel */
     udev->regs.pr[pipe_num]->HCHINTF = 0xFFFFFFFFU;
 
-    if (USB_USE_DMA == udev->bp.transfer_mode) {
-        pp_inten |= HCHINTEN_DMAERIE;
-    }
-
     if (pp->ep.dir) {
         pp_inten |= HCHINTEN_BBERIE;
     }
@@ -216,9 +215,8 @@ usb_status usb_pipe_init (usb_core_driver *udev, uint8_t pipe_num)
                     | HCHINTEN_DTERIE | HCHINTEN_NAKIE;
 
         if (!pp->ep.dir) {
-            pp_inten |= HCHINTEN_NYETIE;
-
-            if (pp->ping) {
+            if (PORT_SPEED_HIGH == pp->dev_speed) {
+                pp_inten |= HCHINTEN_NYETIE;
                 pp_inten |= HCHINTEN_ACKIE;
             }
         }
@@ -266,7 +264,7 @@ usb_status usb_pipe_init (usb_core_driver *udev, uint8_t pipe_num)
 
 /*!
     \brief      prepare host channel for transferring packets
-    \param[in]  udev: pointer to usb device
+    \param[in]  udev: pointer to USB device
     \param[in]  pipe_num: host pipe number which is in (0..7)
     \param[out] none
     \retval     operation status
@@ -303,10 +301,6 @@ usb_status usb_pipe_xfer (usb_core_driver *udev, uint8_t pipe_num)
     /* initialize the host channel transfer information */
     udev->regs.pr[pipe_num]->HCHLEN = pp->xfer_len | pp->DPID | PIPE_XFER_PCNT(packet_count);
 
-    if (USB_USE_DMA == udev->bp.transfer_mode) {
-        udev->regs.pr[pipe_num]->HCHDMAADDR = (unsigned int)pp->xfer_buf;
-    }
-
     pp_ctl = udev->regs.pr[pipe_num]->HCHCTL;
 
     if (usb_frame_even(udev)) {
@@ -329,7 +323,7 @@ usb_status usb_pipe_xfer (usb_core_driver *udev, uint8_t pipe_num)
             case USB_EPTYPE_BULK:
                 dword_len = (uint16_t)((pp->xfer_len + 3U) / 4U);
 
-                /* check if there is enough space in fifo space */
+                /* check if there is enough space in FIFO space */
                 if (dword_len > (udev->regs.gr->HNPTFQSTAT & HNPTFQSTAT_NPTXFS)) {
                     /* need to process data in nptxfempty interrupt */
                     udev->regs.gr->GINTEN |= GINTEN_NPTXFEIE;
@@ -362,7 +356,7 @@ usb_status usb_pipe_xfer (usb_core_driver *udev, uint8_t pipe_num)
 
 /*!
     \brief      halt pipe
-    \param[in]  udev: pointer to usb device
+    \param[in]  udev: pointer to USB device
     \param[in]  pipe_num: host pipe number which is in (0..7)
     \param[out] none
     \retval     operation status
@@ -401,7 +395,7 @@ usb_status usb_pipe_halt (usb_core_driver *udev, uint8_t pipe_num)
 
 /*!
     \brief      configure host pipe to do ping operation
-    \param[in]  udev: pointer to usb device
+    \param[in]  udev: pointer to USB device
     \param[in]  pipe_num: host pipe number which is in (0..7)
     \param[out] none
     \retval     operation status
@@ -413,7 +407,7 @@ usb_status usb_pipe_ping (usb_core_driver *udev, uint8_t pipe_num)
     udev->regs.pr[pipe_num]->HCHLEN = HCHLEN_PING | (HCHLEN_PCNT & (1U << 19U));
 
     pp_ctl = udev->regs.pr[pipe_num]->HCHCTL;
- 
+
     pp_ctl |= HCHCTL_CEN;
     pp_ctl &= ~HCHCTL_CDIS;
 
@@ -424,7 +418,7 @@ usb_status usb_pipe_ping (usb_core_driver *udev, uint8_t pipe_num)
 
 /*!
     \brief      stop the USB host and clean up FIFO
-    \param[in]  udev: pointer to usb device
+    \param[in]  udev: pointer to USB device
     \param[out] none
     \retval     none
 */

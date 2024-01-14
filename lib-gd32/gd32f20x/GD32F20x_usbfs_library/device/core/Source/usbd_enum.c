@@ -2,33 +2,33 @@
     \file    usbd_enum.c
     \brief   USB enumeration function
 
-    \version 2020-07-28, V3.0.0, firmware for GD32F20x
+    \version 2023-06-30, V2.5.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2020, GigaDevice Semiconductor Inc.
+    Copyright (c) 2023, GigaDevice Semiconductor Inc.
 
-    Redistribution and use in source and binary forms, with or without modification, 
+    Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice, this 
+    1. Redistributions of source code must retain the above copyright notice, this
        list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, 
-       this list of conditions and the following disclaimer in the documentation 
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
        and/or other materials provided with the distribution.
-    3. Neither the name of the copyright holder nor the names of its contributors 
-       may be used to endorse or promote products derived from this software without 
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software without
        specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
 
@@ -42,22 +42,22 @@ extern usbd_status usbd_OEM_req(usb_dev *udev, usb_req *req);
 #endif /* WINUSB_EXEMPT_DRIVER */
 
 /* local function prototypes ('static') */
-static usb_reqsta _usb_std_reserved         (usb_core_driver *udev, usb_req *req);
-static uint8_t* _usb_dev_desc_get           (usb_core_driver *udev, uint8_t index, uint16_t *len);
-static uint8_t* _usb_config_desc_get        (usb_core_driver *udev, uint8_t index, uint16_t *len);
-static uint8_t* _usb_bos_desc_get           (usb_core_driver *udev, uint8_t index, uint16_t *len);
-static uint8_t* _usb_str_desc_get           (usb_core_driver *udev, uint8_t index, uint16_t *len);
-static usb_reqsta _usb_std_getstatus        (usb_core_driver *udev, usb_req *req);
-static usb_reqsta _usb_std_clearfeature     (usb_core_driver *udev, usb_req *req);
-static usb_reqsta _usb_std_setfeature       (usb_core_driver *udev, usb_req *req);
-static usb_reqsta _usb_std_setaddress       (usb_core_driver *udev, usb_req *req);
-static usb_reqsta _usb_std_getdescriptor    (usb_core_driver *udev, usb_req *req);
-static usb_reqsta _usb_std_setdescriptor    (usb_core_driver *udev, usb_req *req);
-static usb_reqsta _usb_std_getconfiguration (usb_core_driver *udev, usb_req *req);
-static usb_reqsta _usb_std_setconfiguration (usb_core_driver *udev, usb_req *req);
-static usb_reqsta _usb_std_getinterface     (usb_core_driver *udev, usb_req *req);
-static usb_reqsta _usb_std_setinterface     (usb_core_driver *udev, usb_req *req);
-static usb_reqsta _usb_std_synchframe       (usb_core_driver *udev, usb_req *req);
+static usb_reqsta _usb_std_reserved                     (usb_core_driver *udev, usb_req *req);
+static uint8_t* _usb_dev_desc_get                       (usb_core_driver *udev, uint8_t index, uint16_t *len);
+static uint8_t* _usb_config_desc_get                    (usb_core_driver *udev, uint8_t index, uint16_t *len);
+static uint8_t* _usb_bos_desc_get                       (usb_core_driver *udev, uint8_t index, uint16_t *len);
+static uint8_t* _usb_str_desc_get                       (usb_core_driver *udev, uint8_t index, uint16_t *len);
+static usb_reqsta _usb_std_getstatus                    (usb_core_driver *udev, usb_req *req);
+static usb_reqsta _usb_std_clearfeature                 (usb_core_driver *udev, usb_req *req);
+static usb_reqsta _usb_std_setfeature                   (usb_core_driver *udev, usb_req *req);
+static usb_reqsta _usb_std_setaddress                   (usb_core_driver *udev, usb_req *req);
+static usb_reqsta _usb_std_getdescriptor                (usb_core_driver *udev, usb_req *req);
+static usb_reqsta _usb_std_setdescriptor                (usb_core_driver *udev, usb_req *req);
+static usb_reqsta _usb_std_getconfiguration             (usb_core_driver *udev, usb_req *req);
+static usb_reqsta _usb_std_setconfiguration             (usb_core_driver *udev, usb_req *req);
+static usb_reqsta _usb_std_getinterface                 (usb_core_driver *udev, usb_req *req);
+static usb_reqsta _usb_std_setinterface                 (usb_core_driver *udev, usb_req *req);
+static usb_reqsta _usb_std_synchframe                   (usb_core_driver *udev, usb_req *req);
 
 static usb_reqsta (*_std_dev_req[])(usb_core_driver *udev, usb_req *req) =
 {
@@ -78,9 +78,9 @@ static usb_reqsta (*_std_dev_req[])(usb_core_driver *udev, usb_req *req) =
 
 /* get standard descriptor handler */
 static uint8_t* (*std_desc_get[])(usb_core_driver *udev, uint8_t index, uint16_t *len) = {
-    [(uint8_t)USB_DESCTYPE_DEV - 1U]    = _usb_dev_desc_get,
-    [(uint8_t)USB_DESCTYPE_CONFIG - 1U] = _usb_config_desc_get,
-    [(uint8_t)USB_DESCTYPE_STR - 1U]    = _usb_str_desc_get
+    [(uint8_t)USB_DESCTYPE_DEV - 1U]              = _usb_dev_desc_get,
+    [(uint8_t)USB_DESCTYPE_CONFIG - 1U]           = _usb_config_desc_get,
+    [(uint8_t)USB_DESCTYPE_STR - 1U]              = _usb_str_desc_get,
 };
 
 /*!
@@ -128,7 +128,7 @@ usb_reqsta usbd_vendor_request (usb_core_driver *udev, usb_req *req)
 
     /* added by user... */
 #ifdef WINUSB_EXEMPT_DRIVER
-   usbd_OEM_req(udev, req);
+    usbd_OEM_req(udev, req);
 #endif
 
     return REQ_SUPP;
@@ -252,7 +252,7 @@ static uint8_t* _usb_config_desc_get (usb_core_driver *udev, uint8_t index, uint
 {
     (void)index;
 
-    *len = udev->dev.desc->config_desc[2];
+    *len = udev->dev.desc->config_desc[2] | (udev->dev.desc->config_desc[3]<< 8U);
 
     return udev->dev.desc->config_desc;
 }
@@ -493,7 +493,7 @@ static usb_reqsta _usb_std_getdescriptor (usb_core_driver *udev, usb_req *req)
 {
     uint8_t desc_type = 0U;
     uint8_t desc_index = 0U;
-    
+
     usb_reqsta status = REQ_NOTSUPP;
 
     usb_transc *transc = &udev->dev.transc_in[0];

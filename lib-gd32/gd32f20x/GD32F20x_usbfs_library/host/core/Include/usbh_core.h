@@ -2,33 +2,33 @@
     \file    usbh_core.h
     \brief   USB host core state machine header file
 
-    \version 2020-07-28, V3.0.0, firmware for GD32F20x
+    \version 2023-06-30, V2.5.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2020, GigaDevice Semiconductor Inc.
+    Copyright (c) 2023, GigaDevice Semiconductor Inc.
 
-    Redistribution and use in source and binary forms, with or without modification, 
+    Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice, this 
+    1. Redistributions of source code must retain the above copyright notice, this
        list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, 
-       this list of conditions and the following disclaimer in the documentation 
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
        and/or other materials provided with the distribution.
-    3. Neither the name of the copyright holder nor the names of its contributors 
-       may be used to endorse or promote products derived from this software without 
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software without
        specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
 
@@ -64,15 +64,15 @@ typedef enum
 {
     HOST_DEFAULT = 0U,
     HOST_DETECT_DEV_SPEED,
-    HOST_DEV_ATTACHED,
+    HOST_DEV_CONNECT,
     HOST_DEV_DETACHED,
-    HOST_ENUM,
-    HOST_SET_WAKEUP_FEATURE,
-    HOST_CHECK_CLASS,
+    HOST_DEV_ENUM,
+    HOST_PWR_FEATURE_SET,
+    HOST_CLASS_CHECK,
     HOST_CLASS_ENUM,
     HOST_CLASS_HANDLER,
     HOST_USER_INPUT,
-    HOST_SUSPENDED,
+    HOST_SUSPEND,
     HOST_WAKEUP,
     HOST_ERROR
 } usb_host_state;
@@ -114,18 +114,17 @@ typedef enum
 /* user action state */
 typedef enum
 {
-    USBH_USER_NO_RESP = 0U,
-    USBH_USER_RESP_OK = 1U,
+    USR_IN_NO_RESP = 0U,
+    USR_IN_RESP_OK = 1U,
 } usbh_user_status;
 
+/* USB host wakeup mode */
 typedef enum
 {
-    USBH_PORT_EVENT = 1U,
-    USBH_URB_EVENT,
-    USBH_CONTROL_EVENT,
-    USBH_CLASS_EVENT,
-    USBH_STATE_CHANGED_EVENT,
-}usbh_os_event;
+    NORMAL_WORK = 0U,
+    GENERAL_WAKEUP = 1U,
+    REMOTE_WAKEUP = 2,
+} usbh_wakeup_mode;
 
 /* control transfer information */
 typedef struct _usbh_control
@@ -160,7 +159,7 @@ typedef struct _usb_desc_cfg_set
 /* USB device property */
 typedef struct
 {
-    uint8_t                   data[USBH_DATA_BUF_MAX_LEN]; /* if DMA is used, the data array must be located in the first position */
+    uint8_t                   data[USBH_DATA_BUF_MAX_LEN];
     uint8_t                   cur_itf;
     uint8_t                   addr;
 
@@ -169,9 +168,9 @@ typedef struct
     usb_desc_dev              dev_desc;
     usb_desc_cfg_set          cfg_desc_set;
 
-#if (USBH_KEEP_CFG_DESCRIPTOR == 1U)
+#if (USBH_CFG_DESC_KEEP == 1U)
     uint8_t                   cfgdesc_rawdata[USBH_CFGSET_MAX_LEN];
-#endif /* (USBH_KEEP_CFG_DESCRIPTOR == 1U) */
+#endif /* (USBH_CFG_DESC_KEEP == 1U) */
 } usb_dev_prop;
 
 struct _usbh_host;
@@ -179,7 +178,7 @@ struct _usbh_host;
 /* device class callbacks */
 typedef struct
 {
-    uint8_t       class_code;       /*!< USB class type */
+    uint8_t     class_code;        /*!< USB class type */
 
     usbh_status (*class_init)      (struct _usbh_host *phost);
     void        (*class_deinit)    (struct _usbh_host *phost);
@@ -230,9 +229,15 @@ typedef struct _usbh_host
     usbh_class                          *active_class;                      /*!< USB active class */
     usbh_user_cb                        *usr_cb;                            /*!< USB user callback */
 
-    uint8_t                              class_num;                         /*!< USB class number */
+    uint8_t                             class_num;                          /*!< USB class number */
 
     void                                *data;                              /*!< used for... */
+
+#if USB_LOW_POWER
+    uint8_t                             suspend_flag;                       /*!< host suspend flag */
+    uint8_t                             dev_supp_remote_wkup;               /*!< record device remote wakeup function */
+    usbh_wakeup_mode                    wakeup_mode;                        /*!< record wakeup mode */
+#endif /* USB_LOW_POWER*/
 } usbh_host;
 
 /*!
@@ -264,7 +269,7 @@ static inline uint32_t usbh_xfercount_get (usb_core_driver *udev, uint8_t pp_num
 void usbh_init (usbh_host *uhost, usbh_user_cb *user_cb);
 /* USB host register device class */
 usbh_status usbh_class_register (usbh_host *uhost, usbh_class *puclass);
-/* deinitialize USB host */
+/* de-initialize USB host */
 usbh_status usbh_deinit (usbh_host *uhost);
 /* USB host core main state machine process */
 void usbh_core_task (usbh_host *uhost);

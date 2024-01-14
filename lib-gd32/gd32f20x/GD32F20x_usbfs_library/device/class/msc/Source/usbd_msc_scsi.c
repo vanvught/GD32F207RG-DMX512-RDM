@@ -2,40 +2,77 @@
     \file    usbd_msc_scsi.c
     \brief   USB SCSI layer functions
 
-    \version 2020-07-28, V3.0.0, firmware for GD32F20x
+    \version 2023-06-30, V2.5.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2020, GigaDevice Semiconductor Inc.
+    Copyright (c) 2023, GigaDevice Semiconductor Inc.
 
-    Redistribution and use in source and binary forms, with or without modification, 
+    Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice, this 
+    1. Redistributions of source code must retain the above copyright notice, this
        list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, 
-       this list of conditions and the following disclaimer in the documentation 
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
        and/or other materials provided with the distribution.
-    3. Neither the name of the copyright holder nor the names of its contributors 
-       may be used to endorse or promote products derived from this software without 
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software without
        specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
 
 #include "usbd_enum.h"
 #include "usbd_msc_bbb.h"
 #include "usbd_msc_scsi.h"
-#include "usbd_msc_data.h"
+
+/* USB mass storage page 0 inquiry data */
+const uint8_t msc_page00_inquiry_data[] = 
+{
+    0x00U,
+    0x00U,
+    0x00U,
+    0x00U,
+    (INQUIRY_PAGE00_LENGTH - 4U),
+    0x80U,
+    0x83U,
+};
+
+/* USB mass storage sense 6 data */
+const uint8_t msc_mode_sense6_data[] = 
+{
+    0x00U,
+    0x00U,
+    0x00U,
+    0x00U,
+    0x00U,
+    0x00U,
+    0x00U,
+    0x00U
+};
+
+/* USB mass storage sense 10 data */
+const uint8_t msc_mode_sense10_data[] = 
+{
+    0x00U,
+    0x06U,
+    0x00U,
+    0x00U,
+    0x00U,
+    0x00U,
+    0x00U,
+    0x00U
+};
 
 /* local function prototypes ('static') */
 static int8_t scsi_test_unit_ready      (usb_core_driver *udev, uint8_t lun, uint8_t *params);
@@ -112,10 +149,10 @@ int8_t scsi_process_cmd(usb_core_driver *udev, uint8_t lun, uint8_t *params)
 
     case SCSI_READ_TOC_DATA:
         return scsi_toc_cmd_read (udev, lun, params);
-    
+
     case SCSI_MODE_SELECT6:
         return scsi_mode_select6 (udev, lun, params);
-    
+
     case SCSI_MODE_SELECT10:
         return scsi_mode_select10 (udev, lun, params);
 
@@ -139,7 +176,7 @@ void scsi_sense_code (usb_core_driver *udev, uint8_t lun, uint8_t skey, uint8_t 
     usbd_msc_handler *msc = (usbd_msc_handler *)udev->dev.class_data[USBD_MSC_INTERFACE];
 
     msc->scsi_sense[msc->scsi_sense_tail].SenseKey = skey;
-    msc->scsi_sense[msc->scsi_sense_tail].ASC = asc << 8U;
+    msc->scsi_sense[msc->scsi_sense_tail].ASC = asc;
     msc->scsi_sense_tail++;
 
     if (SENSE_LIST_DEEPTH == msc->scsi_sense_tail) {
@@ -171,7 +208,7 @@ static int8_t scsi_test_unit_ready (usb_core_driver *udev, uint8_t lun, uint8_t 
 
         return -1;
     }
-    
+
     msc->bbb_datalen = 0U;
 
     return 0;
@@ -227,7 +264,6 @@ static int8_t scsi_inquiry (usb_core_driver *udev, uint8_t lun, uint8_t *params)
     usbd_msc_handler *msc = (usbd_msc_handler *)udev->dev.class_data[USBD_MSC_INTERFACE];
 
     if (params[1] & 0x01U) {
-        /* Evpd is set */
         page = (uint8_t *)msc_page00_inquiry_data;
 
         len = INQUIRY_PAGE00_LENGTH;
@@ -387,8 +423,8 @@ static int8_t scsi_request_sense (usb_core_driver *udev, uint8_t lun, uint8_t *p
 
     if ((msc->scsi_sense_head != msc->scsi_sense_tail)) {
         msc->bbb_data[2] = msc->scsi_sense[msc->scsi_sense_head].SenseKey;
-        msc->bbb_data[12] = msc->scsi_sense[msc->scsi_sense_head].ASCQ;
-        msc->bbb_data[13] = msc->scsi_sense[msc->scsi_sense_head].ASC;
+        msc->bbb_data[12] = msc->scsi_sense[msc->scsi_sense_head].ASC;
+        msc->bbb_data[13] = msc->scsi_sense[msc->scsi_sense_head].ASCQ;
         msc->scsi_sense_head++;
 
         if (msc->scsi_sense_head == SENSE_LIST_DEEPTH) {
@@ -625,7 +661,7 @@ static int8_t scsi_process_read (usb_core_driver *udev, uint8_t lun)
                                 (uint16_t)(len / msc->scsi_blk_size[lun])) < 0) {
         scsi_sense_code(udev, lun, HARDWARE_ERROR, UNRECOVERED_READ_ERROR);
 
-        return -1; 
+        return -1;
     }
 
     usbd_ep_send (udev, MSC_IN_EP, msc->bbb_data, len);

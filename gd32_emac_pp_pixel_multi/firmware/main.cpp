@@ -31,12 +31,7 @@
 #include "network.h"
 #include "networkconst.h"
 
-
 #include "mdns.h"
-
-#if defined (ENABLE_HTTPD)
-# include "httpd/httpd.h"
-#endif
 
 #include "displayudf.h"
 #include "displayudfparams.h"
@@ -89,10 +84,6 @@ void main() {
 	nw.Print();
 
 	mDns.ServiceRecordAdd(nullptr, mdns::Services::PP);
-
-#if defined (ENABLE_HTTPD)
-	HttpDaemon httpDaemon;
-#endif
 
 	PixelDmxConfiguration pixelDmxConfiguration;
 
@@ -198,9 +189,6 @@ void main() {
 		mDns.Run();
 #if defined (NODE_RDMNET_LLRP_ONLY)
 		llrpOnlyDevice.Run();
-#endif
-#if defined (ENABLE_HTTPD)
-		httpDaemon.Run();
 #endif
 		display.Run();
 		hw.Run();
