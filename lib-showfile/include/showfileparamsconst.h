@@ -1,8 +1,8 @@
 /**
- * @file pixeldmxstartstop.h
+ * @file showfileparamsconst.h
  *
  */
-/* Copyright (C) 2020-2023 by Arjan van Vught mailto:info@orangepi-dmx.nl
+/* Copyright (C) 2020 by Arjan van Vught mailto:info@orangepi-dmx.nl
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,31 +23,22 @@
  * THE SOFTWARE.
  */
 
-#ifndef WS28XXDMXSTARTSTOP_H_
-#define WS28XXDMXSTARTSTOP_H_
+#ifndef SHOWFILEPARAMSCONST_H_
+#define SHOWFILEPARAMSCONST_H_
 
-#include "pixeldmxhandler.h"
+struct ShowFileParamsConst {
+	static  const char FILE_NAME[];
 
-#include "hal_gpio.h"
+	static  const char SHOW[];
 
-#define GPIO_START_STOP		GPIO_EXT_12
+	static  const char DMX_MASTER[];
 
-class PixelDmxStartStop final: public PixelDmxHandler {
-public:
-	PixelDmxStartStop() {
-		FUNC_PREFIX(gpio_fsel(GPIO_START_STOP, GPIO_FSEL_OUTPUT));
-		FUNC_PREFIX(gpio_clr(GPIO_START_STOP));
-	}
+	static  const char OPTION_AUTO_START[];
+	static  const char OPTION_LOOP[];
+	static  const char OPTION_DISABLE_SYNC[];
 
-	~PixelDmxStartStop() override  = default;
-
-	void Start() override {
-		FUNC_PREFIX(gpio_set(GPIO_START_STOP));
-	}
-
-	void Stop() override {
-		FUNC_PREFIX(gpio_clr(GPIO_START_STOP));
-	}
+	static  const char SACN_SYNC_UNIVERSE[];
+	static  const char ARTNET_DISABLE_UNICAST[];
 };
 
-#endif /* WS28XXDMXSTARTSTOP_H_ */
+#endif /* SHOWFILEPARAMSCONST_H_ */

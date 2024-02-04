@@ -1,8 +1,8 @@
 /**
- * @file pixeldmxstartstop.h
+ * @file showfiledisplay.h
  *
  */
-/* Copyright (C) 2021-2022 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2020-2024 by Arjan van Vught mailto:info@orangepi-dmx.nl
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,31 +23,14 @@
  * THE SOFTWARE.
  */
 
-#ifndef PIXELDMXSTARTSTOP_H_
-#define PIXELDMXSTARTSTOP_H_
+#ifndef SHOWFILEDISPLAY_H_
+#define SHOWFILEDISPLAY_H_
 
-#include "pixeldmxhandler.h"
+#include <cstdint>
 
-#include "gd32.h"
-#include "gd32_gpio.h"
+namespace showfile {
+void display_filename(const char *pFileName, const uint32_t nShow);
+void display_status();
+}  // namespace showfile
 
-class PixelDmxStartStop final: public PixelDmxHandler {
-public:
-	PixelDmxStartStop() {
-		gd32_gpio_fsel(GD32_BOARD_LED2, GPIO_FSEL_OUTPUT);
-		gd32_gpio_clr(GD32_BOARD_LED2);
-	}
-
-	~PixelDmxStartStop() override {
-	}
-
-	void Start() override {
-		gd32_gpio_set(GD32_BOARD_LED2);
-	}
-
-	void Stop() override {
-		gd32_gpio_clr(GD32_BOARD_LED2);
-	}
-};
-
-#endif /* PIXELDMXSTARTSTOP_H_ */
+#endif /* SHOWFILEDISPLAY_H_ */

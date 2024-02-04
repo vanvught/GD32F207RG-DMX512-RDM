@@ -1,8 +1,8 @@
 /**
- * @file rdmnetdevice.cpp
+ * @file oscconst.h
  *
  */
-/* Copyright (C) 2019-2023 by Arjan van Vught mailto:info@orangepi-dmx.nl
+/* Copyright (C) 2020 by Arjan van Vught mailto:info@orangepi-dmx.nl
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,31 +23,12 @@
  * THE SOFTWARE.
  */
 
-#include <cstdint>
-#include <cstdio>
-#include <uuid/uuid.h>
+#ifndef OSCPARAMSCONST_H_
+#define OSCPARAMSCONST_H_
 
-#include "rdmnetdevice.h"
-#include "llrp/llrpdevice.h"
+struct OscParamsConst {
+	static const char INCOMING_PORT[];
+	static const char OUTGOING_PORT[];
+};
 
-#include "rdmpersonality.h"
-#include "lightset.h"
-#include "rdmdeviceresponder.h"
-#include "rdmhandler.h"
-
-static constexpr auto UUID_STRING_LENGTH = 36;
-
-TRdmMessage RDMNetDevice::s_RdmCommand;
-uint8_t RDMNetDevice::s_Cid[e131::CID_LENGTH];
-
-void RDMNetDevice::Print() {
-	char uuid_str[UUID_STRING_LENGTH + 1];
-	uuid_str[UUID_STRING_LENGTH] = '\0';
-	uuid_unparse(s_Cid, uuid_str);
-
-	printf("RDMNet\n");
-	printf(" CID : %s\n", uuid_str);
-
-	LLRPDevice::Print();
-	RDMDeviceResponder::Print();
-}
+#endif /* OSCPARAMSCONST_H_ */

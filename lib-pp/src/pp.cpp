@@ -207,7 +207,7 @@ void PixelPusher::HandlePusherCommand(__attribute__((unused)) const uint8_t *pBu
 #include <cstdio>
 
 void PixelPusher::Print() {
-	puts("PixelPusher:");
+	puts("PixelPusher");
 	printf(" Count             : %u\n", m_nCount);
 	printf(" Channels per pixel: %u\n", pp::configuration::CHANNELS_PER_PIXEL);
 	printf(" Active ports      : %u\n", m_nActivePorts);

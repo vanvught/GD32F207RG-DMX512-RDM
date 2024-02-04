@@ -1,8 +1,8 @@
 /**
- * @file dmxconfigudp.cpp
+ * @file showfileparamsconst.cpp
  *
  */
-/* Copyright (C) 2021-2022 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2020-2024 by Arjan van Vught mailto:info@orangepi-dmx.nl
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,17 @@
  * THE SOFTWARE.
  */
 
-#include <cstdint>
+#include "showfileparamsconst.h"
 
-#include  "dmxconfigudp.h"
+const char ShowFileParamsConst::FILE_NAME[] = "show.txt";
 
-int32_t DmxConfigUdp::s_nHandle = -1;
-char *DmxConfigUdp::s_pUdpBuffer = nullptr;
+const char ShowFileParamsConst::SHOW[] = "show";
+
+const char ShowFileParamsConst::DMX_MASTER[] = "dmx_master";
+
+const char ShowFileParamsConst::OPTION_AUTO_START[] = "auto_start";
+const char ShowFileParamsConst::OPTION_LOOP[] = "loop";
+const char ShowFileParamsConst::OPTION_DISABLE_SYNC[] = "disable_sync";
+
+const char ShowFileParamsConst::SACN_SYNC_UNIVERSE[] = "sync_universe";
+const char ShowFileParamsConst::ARTNET_DISABLE_UNICAST[] = "disable_unicast";

@@ -1,8 +1,8 @@
 /**
- * @file pixeldmxstartstop.h
+ * @file showfileprotocolartnettrigger.h
  *
  */
-/* Copyright (C) 2021-2022 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2024 by Arjan van Vught mailto:info@orangepi-dmx.nl
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,31 +23,28 @@
  * THE SOFTWARE.
  */
 
-#ifndef PIXELDMXSTARTSTOP_H_
-#define PIXELDMXSTARTSTOP_H_
+#ifndef PROTOCOLS_SHOWFILEPROTOCOLARTNETTRIGGER_H_
+#define PROTOCOLS_SHOWFILEPROTOCOLARTNETTRIGGER_H_
 
-#include "pixeldmxhandler.h"
+#include <cstdint>
+#include <cstdio>
 
-#include "gd32.h"
-#include "gd32_gpio.h"
+#include "artnetcontroller.h"
+#include "artnettrigger.h"
 
-class PixelDmxStartStop final: public PixelDmxHandler {
+#include "debug.h"
+
+class ShowFileProtocolArtNetTrigger: public ArtNetTrigger {
 public:
-	PixelDmxStartStop() {
-		gd32_gpio_fsel(GD32_BOARD_LED2, GPIO_FSEL_OUTPUT);
-		gd32_gpio_clr(GD32_BOARD_LED2);
+	ShowFileProtocolArtNetTrigger() {
+		DEBUG_ENTRY
+
+		ArtNetController::Get()->SetArtNetTrigger(this);
+
+		DEBUG_EXIT
 	}
 
-	~PixelDmxStartStop() override {
-	}
-
-	void Start() override {
-		gd32_gpio_set(GD32_BOARD_LED2);
-	}
-
-	void Stop() override {
-		gd32_gpio_clr(GD32_BOARD_LED2);
-	}
+	void Handler(const struct TArtNetTrigger *ptArtNetTrigger) override;
 };
 
-#endif /* PIXELDMXSTARTSTOP_H_ */
+#endif /* PROTOCOLS_SHOWFILEPROTOCOLARTNETTRIGGER_H_ */
