@@ -195,7 +195,7 @@ void PixelPusher::Run() {
 #endif
 }
 
-void PixelPusher::HandlePusherCommand(__attribute__((unused)) const uint8_t *pBuffer, __attribute__((unused)) uint32_t nSize) {
+void PixelPusher::HandlePusherCommand([[maybe_unused]] const uint8_t *pBuffer, [[maybe_unused]] uint32_t nSize) {
 	DEBUG_ENTRY
 	DEBUG_PRINTF("pBuffer=%p, nSize=%u", reinterpret_cast<const void *>(pBuffer), nSize);
 #if !defined(CONFIG_PP_16BITSTUFF)

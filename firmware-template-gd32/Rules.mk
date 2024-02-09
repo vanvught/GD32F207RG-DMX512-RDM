@@ -24,12 +24,6 @@ FIRMWARE_DIR=./../firmware-template-gd32/
 
 DEFINES:=$(addprefix -D,$(DEFINES))
 
-ifeq ($(findstring ARTNET_VERSION=4,$(DEFINES)),ARTNET_VERSION=4)
-	ifeq ($(findstring ARTNET_HAVE_DMXIN,$(DEFINES)),ARTNET_HAVE_DMXIN)
-		DEFINES+=-DE131_HAVE_DMXIN
-	endif
-endif
-
 MCU=GD32F207RG
 
 include ../firmware-template-gd32/Mcu.mk
@@ -38,6 +32,7 @@ include ../firmware-template/libs.mk
 LIBS+=c++ c gd32
 
 include ../firmware-template-gd32/Includes.mk
+include ../firmware-template-gd32/Artnet.mk
 
 # The variable for the libraries include directory
 LIBINCDIRS:=$(addprefix -I../lib-,$(LIBS))
@@ -59,17 +54,17 @@ $(info $$DEFINES [${DEFINES}])
 $(info $$LIBS [${LIBS}])
 $(info $$LIBDEP [${LIBDEP}])
 
-COPS=-DBARE_METAL -DGD32 -D$(LINE_UC) -D$(MCU) -D$(BOARD) -DPHY_TYPE=$(ENET_PHY)
+COPS=-DBARE_METAL -DGD32 -D$(FAMILY_UCA) -D$(LINE_UC) -D$(MCU) -D$(BOARD) -DPHY_TYPE=$(ENET_PHY)
 COPS+=$(DEFINES) $(MAKE_FLAGS) $(INCLUDES) $(LIBINCDIRS)
-COPS+=-Os -mcpu=cortex-m3 -mthumb
 COPS+=-D__Vendor_SysTickConfig=0
+COPS+=-Os -mcpu=cortex-m3 -mthumb
 COPS+=-nostartfiles -ffreestanding -nostdlib
 COPS+=-fstack-usage
 COPS+=-ffunction-sections -fdata-sections
 COPS+=-Wall -Werror -Wpedantic -Wextra -Wunused -Wsign-conversion -Wconversion
 COPS+=-Wduplicated-cond -Wlogical-op
 
-CPPOPS=-std=c++11
+CPPOPS=-std=c++20
 CPPOPS+=-Wnon-virtual-dtor -Woverloaded-virtual -Wnull-dereference -fno-rtti -fno-exceptions -fno-unwind-tables
 CPPOPS+=-Wuseless-cast -Wold-style-cast
 CPPOPS+=-fno-threadsafe-statics
@@ -113,6 +108,7 @@ clean: $(LIBDEP)
 	rm -f $(TARGET)
 	rm -f $(MAP)
 	rm -f $(LIST)
+	rm -f $(SIZE)
 
 #
 # Libraries
@@ -123,7 +119,7 @@ clean: $(LIBDEP)
 lisdep: $(LIBDEP)
 
 $(LIBDEP):
-	$(MAKE) -f Makefile.GD32 $(MAKECMDGOALS) 'FAMILY=${FAMILY}' 'MCU=${MCU}' 'BOARD=${BOARD}' 'ENET_PHY=${ENET_PHY}' 'MAKE_FLAGS=$(DEFINES)' -C $@
+	$(MAKE) -f Makefile.GD32 $(MAKECMDGOALS) 'FAMILY=${FAMILY}' 'BOARD=${BOARD}' 'ENET_PHY=${ENET_PHY}' 'MAKE_FLAGS=$(DEFINES)' -C $@
 
 #
 # Build bin
@@ -132,20 +128,20 @@ $(LIBDEP):
 $(BUILD_DIRS) :
 	mkdir -p $(BUILD_DIRS)
 
-$(BUILD)startup_$(FAMILY)_cl.o : $(FIRMWARE_DIR)/startup_$(FAMILY)_cl.S
-	$(AS) $(COPS) -D__ASSEMBLY__ -c $(FIRMWARE_DIR)/startup_$(FAMILY)_cl.S -o $(BUILD)startup_$(FAMILY)_cl.o
+$(BUILD)startup_$(LINE).o : $(FIRMWARE_DIR)/startup_$(LINE).S
+	$(AS) $(COPS) -D__ASSEMBLY__ -c $(FIRMWARE_DIR)/startup_$(LINE).S -o $(BUILD)startup_$(LINE).o
 
 $(BUILD)hardfault_handler.o : $(FIRMWARE_DIR)/hardfault_handler.c	
 	$(CC) $(COPS) -c $(FIRMWARE_DIR)/hardfault_handler.c -o $(BUILD)hardfault_handler.o
 
-$(BUILD)main.elf: Makefile.GD32 $(LINKER) $(BUILD)startup_$(FAMILY)_cl.o $(BUILD)hardfault_handler.o $(OBJECTS) $(LIBDEP)
-	$(LD) $(BUILD)startup_$(FAMILY)_cl.o $(BUILD)hardfault_handler.o $(OBJECTS) -Map $(MAP) -T $(LINKER) $(LDOPS) -o $(BUILD)main.elf $(LIBGD32) $(LDLIBS) $(PLATFORM_LIBGCC) -lgcc
+$(BUILD)main.elf: Makefile.GD32 $(LINKER) $(BUILD)startup_$(LINE).o $(BUILD)hardfault_handler.o $(OBJECTS) $(LIBDEP)
+	$(LD) $(BUILD)startup_$(LINE).o $(BUILD)hardfault_handler.o $(OBJECTS) -Map $(MAP) -T $(LINKER) $(LDOPS) -o $(BUILD)main.elf $(LIBGD32) $(LDLIBS) $(PLATFORM_LIBGCC) -lgcc
 	$(PREFIX)objdump -D $(BUILD)main.elf | $(PREFIX)c++filt > $(LIST)
 	$(PREFIX)size -A -x $(BUILD)main.elf > $(FAMILY).size
 	$(MAKE) -f Makefile.GD32 calculate_unused_ram SIZE_FILE=$(FAMILY).size LINKER_SCRIPT=$(LINKER)
 
 $(TARGET) : $(BUILD)main.elf
-	$(PREFIX)objcopy $(BUILD)main.elf -O binary $(TARGET) --remove-section=.sram1* --remove-section=.sram2*
+	$(PREFIX)objcopy $(BUILD)main.elf -O binary $(TARGET) --remove-section=.tcmsram* --remove-section=.sram1* --remove-section=.sram2* --remove-section=.ramadd* --remove-section=.bkpsram*
 
 $(foreach bdir,$(SRCDIR),$(eval $(call compile-objects,$(bdir))))
 

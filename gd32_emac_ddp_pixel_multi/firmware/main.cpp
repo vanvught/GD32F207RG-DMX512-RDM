@@ -36,7 +36,6 @@
 #include "displayudf.h"
 #include "displayudfparams.h"
 #include "displayhandler.h"
-#include "display_timeout.h"
 
 #include "ddpdisplay.h"
 
