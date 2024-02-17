@@ -52,6 +52,7 @@
 *.map
 *.list
 *.size
+sofware_version_id.h
 
 *.bin
 udp_send
@@ -68,4 +69,3 @@ lib-*/src/esp8266/*
 lib-*/include/esp8266/*
 
 lib-*/src/h3/*
-lib-*/include/h3/*

@@ -1,8 +1,8 @@
 /**
- * @file  emac_debug.cpp
+ * usbh_conf.h
  *
  */
-/* Copyright (C) 2023-2024 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2023 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,22 +23,22 @@
  * THE SOFTWARE.
  */
 
-#include <cstdio>
+#ifndef USBH_CONF_H_
+#define USBH_CONF_H_
+
+#include <stdint.h>
 
 #include "gd32.h"
 
-static uint32_t s_nCounter;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 
-void emac_debug_run() {
-	uint32_t rxfifo_drop;
-	uint32_t rxdma_drop;
-#if defined (GD32H7XX)
-	enet_missed_frame_counter_get(ENETx, &rxfifo_drop, &rxdma_drop);
-#else
-	enet_missed_frame_counter_get(&rxfifo_drop, &rxdma_drop);
-#endif
+#define USBH_MAX_EP_NUM                         2
+#define USBH_MAX_INTERFACES_NUM                 2
+#define USBH_MAX_ALT_SETTING                    2
+#define USBH_MAX_SUPPORTED_CLASS                2
 
-	if ((rxfifo_drop != 0) || (rxdma_drop != 0)) {
-		printf("%u: RxFIFO: %u RxDMA: %u\n", ++s_nCounter, rxfifo_drop, rxdma_drop);
-	}
-}
+#define USBH_DATA_BUF_MAX_LEN                   0x200
+#define USBH_CFGSET_MAX_LEN                     0x200
+
+#endif /* USBH_CONF_H_ */

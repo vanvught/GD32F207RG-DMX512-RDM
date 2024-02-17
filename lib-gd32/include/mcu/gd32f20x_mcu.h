@@ -2,7 +2,7 @@
  * @file gd32f20x_mcu.h
  *
  */
-/* Copyright (C) 2021-2022 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2021-2024 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,14 +29,6 @@
 #if !defined(GD32F20X_CL)
 # error This file should not be included
 #endif
-
-#include <stdint.h>
-
-#define MCU_CLOCK_FREQ		(uint32_t)(120000000)
-#define APB1_CLOCK_FREQ		(uint32_t)(60000000)
-#define APB2_CLOCK_FREQ		(uint32_t)(120000000)
-#define TIMER_PSC_1MHZ		(uint16_t)(119)
-#define TIMER_PSC_10KHZ		(uint16_t)(11999)
 
 #include "gd32f20x_libopt.h"
 
@@ -212,7 +204,7 @@
  * SPI
  */
 
-#define SPI0_PERiPH				SPI0
+#define SPI0_PERIPH				SPI0
 #define SPI0_RCU_CLK			RCU_SPI0
 #if defined (SPI0_REMAP)
 # define SPI0_REMAP_GPIO		GPIO_SPI0_REMAP
@@ -233,6 +225,8 @@
 # define SPI0_SCK_GPIO_PINx		GPIO_PIN_5
 # define SPI0_MISO_GPIO_PINx	GPIO_PIN_6
 # define SPI0_MOSI_GPIO_PINx	GPIO_PIN_7
+# define SPI0_IO3_GPIO_PINx		GPIO_PIN_2
+# define SPI0_IO4_GPIO_PINx		GPIO_PIN_3
 #endif
 
 #define SPI1_PERIPH				SPI1

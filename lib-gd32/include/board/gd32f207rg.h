@@ -165,7 +165,7 @@ static constexpr uint32_t PORT_A_TX = 0;
 #define GD32_MCU_NAME			"GD32F207RG"
 #define GD32_BOARD_NAME			"GD32F207RG"
 
-#include "mcu/gd32f20x_mcu.h"
+#include "mcu/gd32f207_mcu.h"
 #include "gd32_gpio.h"
 
 #define GD32_BOARD_LED1			GD32_PORT_TO_GPIO(GD32_GPIO_PORTC, 0)

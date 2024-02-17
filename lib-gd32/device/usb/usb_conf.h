@@ -1,5 +1,5 @@
 /**
- * @file gd32h759_mcu.h
+ * usb_conf.h
  *
  */
 /* Copyright (C) 2024 by Arjan van Vught mailto:info@gd32-dmx.org
@@ -23,31 +23,15 @@
  * THE SOFTWARE.
  */
 
-#ifndef MCU_GD32H759_MCU_H_
-#define MCU_GD32H759_MCU_H_
+#ifndef USB_CONF_H_
+#define USB_CONF_H_
 
-#if !defined(GD32H759)
-# error This file should not be included
+#include "gd32.h"
+
+#if defined (GD32H7XX)
+# include "h/usb_conf.h"
+#else
+# include "f/usb_conf.h"
 #endif
 
-#include <stdint.h>
-
-/**
- * 	rcu_timer_clock_prescaler_config(RCU_TIMER_PSC_MUL4);
- *
- * CK_APB1 x 4 = 240000000
- * TIMER1,2,3,4,5,6,11,12,13
- *
- * CK_APB2 x 2 = 240000000
- * TIMER0,7,8,9,10
- */
-
-#define MCU_CLOCK_FREQ      (uint32_t)(600000000)
-#define APB1_CLOCK_FREQ     (uint32_t)(150000000)
-#define APB2_CLOCK_FREQ     (uint32_t)(300000000)
-#define TIMER_PSC_1MHZ      (uint16_t)(239)
-#define TIMER_PSC_10KHZ     (uint16_t)(23999)
-
-#include "gd32h7xx_mcu.h"
-
-#endif /* MCU_GD32H759_MCU_H_ */
+#endif /* USB_CONF_H_ */

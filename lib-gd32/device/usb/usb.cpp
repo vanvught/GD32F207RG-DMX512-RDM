@@ -1,8 +1,8 @@
 /**
- * @file  emac_debug.cpp
+ * usb.cpp
  *
  */
-/* Copyright (C) 2023-2024 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2023 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,22 +23,13 @@
  * THE SOFTWARE.
  */
 
-#include <cstdio>
-
 #include "gd32.h"
 
-static uint32_t s_nCounter;
-
-void emac_debug_run() {
-	uint32_t rxfifo_drop;
-	uint32_t rxdma_drop;
-#if defined (GD32H7XX)
-	enet_missed_frame_counter_get(ENETx, &rxfifo_drop, &rxdma_drop);
-#else
-	enet_missed_frame_counter_get(&rxfifo_drop, &rxdma_drop);
-#endif
-
-	if ((rxfifo_drop != 0) || (rxdma_drop != 0)) {
-		printf("%u: RxFIFO: %u RxDMA: %u\n", ++s_nCounter, rxfifo_drop, rxdma_drop);
-	}
+extern "C" {
+void usb_udelay(uint32_t nMicros) {
+	udelay(nMicros);
+}
+void usb_mdelay(uint32_t nMillis) {
+	udelay(nMillis * 1000U);
+}
 }

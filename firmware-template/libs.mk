@@ -27,6 +27,10 @@ ifeq ($(findstring NODE_PP,$(DEFINES)),NODE_PP)
 	LIBS+=pp
 endif
 
+ifeq ($(findstring NODE_SHOWFILE,$(DEFINES)),NODE_SHOWFILE)
+	LIBS+=showfile osc
+endif
+
 ifeq ($(findstring RDM_CONTROLLER,$(DEFINES)),RDM_CONTROLLER)
 	RDM=1
 	DMX=1

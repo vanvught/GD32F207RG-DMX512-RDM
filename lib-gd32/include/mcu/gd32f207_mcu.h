@@ -1,8 +1,8 @@
 /**
- * @file  emac_debug.cpp
+ * @file gd32f207_mcu.h
  *
  */
-/* Copyright (C) 2023-2024 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2024 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,22 +23,21 @@
  * THE SOFTWARE.
  */
 
-#include <cstdio>
+#ifndef MCU_GD32F207_MCU_H_
+#define MCU_GD32F207_MCU_H_
 
-#include "gd32.h"
-
-static uint32_t s_nCounter;
-
-void emac_debug_run() {
-	uint32_t rxfifo_drop;
-	uint32_t rxdma_drop;
-#if defined (GD32H7XX)
-	enet_missed_frame_counter_get(ENETx, &rxfifo_drop, &rxdma_drop);
-#else
-	enet_missed_frame_counter_get(&rxfifo_drop, &rxdma_drop);
+#if !defined(GD32F20X_CL)
+# error This file should not be included
 #endif
 
-	if ((rxfifo_drop != 0) || (rxdma_drop != 0)) {
-		printf("%u: RxFIFO: %u RxDMA: %u\n", ++s_nCounter, rxfifo_drop, rxdma_drop);
-	}
-}
+#include <stdint.h>
+
+#define MCU_CLOCK_FREQ		(uint32_t)(120000000)
+#define APB1_CLOCK_FREQ		(uint32_t)(60000000)
+#define APB2_CLOCK_FREQ		(uint32_t)(120000000)
+#define TIMER_PSC_1MHZ		(uint16_t)(119)
+#define TIMER_PSC_10KHZ		(uint16_t)(11999)
+
+#include "gd32f20x_mcu.h"
+
+#endif /* MCU_GD32F207_MCU_H_ */
