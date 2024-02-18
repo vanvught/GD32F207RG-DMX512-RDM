@@ -127,13 +127,13 @@ public:
 #endif
 	}
 
-	void SetStatus(showfile::Status Status);
+	void SetStatus(const showfile::Status Status);
 
 	showfile::Status GetStatus() const {
 		return m_Status;
 	}
 
-	void SetShowFile(uint32_t nShowFileNumber);
+	void SetShowFile(const uint32_t nShowFileNumber);
 
 	const char *GetShowFileName() const {
 		return static_cast<const char *>(m_aShowFileName);
@@ -143,9 +143,9 @@ public:
 		return m_nShowFileNumber;
 	}
 
-	bool DeleteShowFile(uint32_t nShowFileNumber);
+	bool DeleteShowFile(const uint32_t nShowFileNumber);
 
-	void DoLoop(bool bDoLoop) {
+	void DoLoop(const bool bDoLoop) {
 		m_bDoLoop = bDoLoop;
 	}
 
@@ -162,8 +162,10 @@ public:
 	}
 
 	void BlackOut() {
+#if defined (SHOWFILE_ENABLE_DMX_MASTER)
 		Stop();
 		ShowFileProtocol::DmxBlackout();
+#endif
 	}
 
 	void SetMaster([[maybe_unused]] const uint32_t nMaster) {

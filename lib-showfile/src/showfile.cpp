@@ -56,7 +56,7 @@ ShowFile::ShowFile() {
 	DEBUG_EXIT
 }
 
-void ShowFile::SetShowFile(uint32_t nShowFileNumber) {
+void ShowFile::SetShowFile(const uint32_t nShowFileNumber) {
 	DEBUG_ENTRY
 	DEBUG_PRINTF("nShowFileNumber=%u", nShowFileNumber);
 
@@ -96,7 +96,7 @@ void ShowFile::SetShowFile(uint32_t nShowFileNumber) {
 	DEBUG_EXIT
 }
 
-bool ShowFile::DeleteShowFile([[maybe_unused]] uint32_t nShowFileNumber) {
+bool ShowFile::DeleteShowFile([[maybe_unused]] const uint32_t nShowFileNumber) {
 	DEBUG_ENTRY
 	DEBUG_PRINTF("nShowFileNumber=%u, m_bEnableTFTP=%d", nShowFileNumber, m_bEnableTFTP);
 
@@ -109,7 +109,7 @@ bool ShowFile::DeleteShowFile([[maybe_unused]] uint32_t nShowFileNumber) {
 	char aFileName[showfile::FILE_NAME_LENGTH + 1U];
 
 	if (showfile::filename_copyto(aFileName, sizeof(aFileName), nShowFileNumber)) {
-		const int nResult = unlink(aFileName);
+		const auto nResult = unlink(aFileName);
 		DEBUG_PRINTF("nResult=%d", nResult);
 		DEBUG_EXIT
 		return (nResult == 0);
@@ -161,7 +161,7 @@ void ShowFile::EnableTFTP([[maybe_unused]] bool bEnableTFTP) {
 	DEBUG_EXIT
 }
 
-void ShowFile::SetStatus(showfile::Status Status) {
+void ShowFile::SetStatus(const showfile::Status Status) {
 	DEBUG_ENTRY
 
 	if (Status == m_Status) {

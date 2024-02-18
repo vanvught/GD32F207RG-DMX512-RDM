@@ -37,18 +37,16 @@
 extern "C" {
 #include "usbh_core.h"
 #include "usbh_msc_core.h"
-
 #include "drv_usbh_int.h"
+void usb_mdelay(uint32_t);
 }
 
 static void usb_gpio_config() {
 #if !defined (GD32F4XX)
 #else
     rcu_periph_clock_enable(RCU_SYSCFG);
-
     rcu_periph_clock_enable(RCU_GPIOA);
 
-    /* USBFS_DM(PA11) and USBFS_DP(PA12) GPIO pin configuration */
     gpio_mode_set(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO_PIN_11 | GPIO_PIN_12);
     gpio_output_options_set(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_MAX, GPIO_PIN_11 | GPIO_PIN_12);
 
@@ -101,6 +99,23 @@ static void usb_intr_config() {
 #endif
 }
 
+void usb_vbus_config () {
+#if defined (USB_HOST_VBUS_GPIOx)
+    rcu_periph_clock_enable(USB_HOST_VBUS_RCU_GPIOx);
+
+# if defined (GPIO_INIT)
+    gpio_init(USB_HOST_VBUS_GPIOx, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, USB_HOST_VBUS_GPIO_PINx);
+# else
+    gpio_mode_set(USB_HOST_VBUS_GPIOx, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, USB_HOST_VBUS_GPIO_PINx);
+    gpio_output_options_set(USB_HOST_VBUS_GPIOx, GPIO_OTYPE_PP, GPIO_OSPEED_MAX, USB_HOST_VBUS_GPIO_PINx);
+# endif
+
+    gpio_bit_set(USB_HOST_VBUS_GPIOx, USB_HOST_VBUS_GPIO_PINx);
+
+    usb_mdelay (200);
+#endif
+}
+
 #if !defined (GD32F4XX)
 extern usb_core_driver usbh_core;
 usbh_host usb_host;
@@ -113,7 +128,7 @@ extern usbh_user_cb usr_cb;
 void usb_init() {
     usb_gpio_config();
     usb_rcu_config();
-
+	usb_vbus_config();
 #if !defined (GD32F4XX)
     usbh_class_register(&usb_host, &usbh_msc);
     usbh_init (&usb_host, &usr_cb);

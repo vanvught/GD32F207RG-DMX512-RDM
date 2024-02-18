@@ -31,5 +31,12 @@
 extern "C" {
 void usb_vbus_drive (uint8_t state) {
 	printf("usb_vbus_drive: %u\n", state);
+#if defined(USB_HOST_VBUS_GPIOx)
+    if (0U == state) {
+        gpio_bit_reset(USB_HOST_VBUS_GPIOx, USB_HOST_VBUS_GPIO_PINx);
+    } else {
+        gpio_bit_set(USB_HOST_VBUS_GPIOx, USB_HOST_VBUS_GPIO_PINx);
+    }
+#endif
 }
 }
