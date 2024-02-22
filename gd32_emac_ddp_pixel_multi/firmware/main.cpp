@@ -33,6 +33,10 @@
 
 #include "mdns.h"
 
+#if defined (ENABLE_NTP_CLIENT)
+# include "ntpclient.h"
+#endif
+
 #include "displayudf.h"
 #include "displayudfparams.h"
 #include "displayhandler.h"
@@ -80,6 +84,12 @@ void main() {
 
 	fw.Print("DDP Pixel controller {8x 4 Universes}");
 	nw.Print();
+
+#if defined (ENABLE_NTP_CLIENT)
+	NtpClient ntpClient;
+	ntpClient.Start();
+	ntpClient.Print();
+#endif
 
 	display.TextStatus(NetworkConst::MSG_MDNS_CONFIG, Display7SegmentMessage::INFO_MDNS_CONFIG, CONSOLE_YELLOW);
 
@@ -184,6 +194,9 @@ void main() {
 			pixelTestPattern.Run();
 		}
 		mDns.Run();
+#if defined (ENABLE_NTP_CLIENT)
+		ntpClient.Run();
+#endif
 #if defined (NODE_RDMNET_LLRP_ONLY)
 		llrpOnlyDevice.Run();
 #endif

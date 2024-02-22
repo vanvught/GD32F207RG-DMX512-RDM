@@ -24,6 +24,7 @@
  */
 
 #include <cstdio>
+#include <dirent.h>
 #include <unistd.h>
 #include <cassert>
 
@@ -61,8 +62,8 @@ void ShowFile::SetShowFile(const uint32_t nShowFileNumber) {
 	DEBUG_PRINTF("nShowFileNumber=%u", nShowFileNumber);
 
 	if (nShowFileNumber <= showfile::FILE_MAX_NUMBER) {
-		m_nShowFileNumber = nShowFileNumber;
-		showfile::filename_copyto(m_aShowFileName, sizeof(m_aShowFileName), m_nShowFileNumber);
+		m_nShowFileCurrent = nShowFileNumber;
+		showfile::filename_copyto(m_aShowFileName, sizeof(m_aShowFileName), m_nShowFileCurrent);
 
 		DEBUG_PRINTF("m_aShowFileName=[%s]", m_aShowFileName);
 
@@ -77,7 +78,7 @@ void ShowFile::SetShowFile(const uint32_t nShowFileNumber) {
 
 		if (m_pShowFile != nullptr) {
 			if (fclose(m_pShowFile) != 0) {
-				perror("fclose(m_pShowFile)");
+				perror("fclose()");
 			}
 			m_pShowFile = nullptr;
 		}
@@ -120,6 +121,62 @@ bool ShowFile::DeleteShowFile([[maybe_unused]] const uint32_t nShowFileNumber) {
 	return false;
 }
 
+void ShowFile::LoadShows() {
+	UnloadShows();
+
+#if defined (CONFIG_USB_HOST_MSC)
+	auto *dirp = opendir("0:/");
+#else
+	auto *dirp = opendir(".");
+#endif
+
+	if (dirp == nullptr) {
+		perror("opendir");
+
+		for (auto &FileIndex : m_nShowFileNumber) {
+			FileIndex = -1;
+		}
+	}
+
+	struct dirent *dp;
+
+    do {
+        if ((dp = readdir(dirp)) != nullptr) {
+        	if (dp->d_type == DT_DIR) {
+        		continue;
+        	}
+
+          	uint32_t nShowFileNumber;
+        	if (!showfile::filename_check(dp->d_name, nShowFileNumber)) {
+                continue;
+            }
+
+            DEBUG_PRINTF("[%d] found %s", nShows, dp->d_name);
+
+    		if (m_nShows == 0) {
+    			m_nShowFileNumber[0] = static_cast<int32_t>(nShowFileNumber);
+    		} else {
+    			int32_t i = m_nShows - 1;
+    			while ((static_cast<int32_t>(nShowFileNumber) < m_nShowFileNumber[i]) && i >= 0) {
+    				m_nShowFileNumber[i + 1] = m_nShowFileNumber[i];
+    				i--;
+    			}
+    			m_nShowFileNumber[i + 1] = static_cast<int32_t>(nShowFileNumber);
+    		}
+
+    		m_nShows++;
+
+            if (m_nShows == (showfile::FILE_MAX_NUMBER + 1U)) {
+            	break;
+            }
+        }
+    } while (dp != nullptr);
+
+	for (auto &FileIndex : m_nShowFileNumber) {
+		printf("%d ", FileIndex);
+	}
+}
+
 void ShowFile::EnableTFTP([[maybe_unused]] bool bEnableTFTP) {
 	DEBUG_ENTRY
 
@@ -151,7 +208,7 @@ void ShowFile::EnableTFTP([[maybe_unused]] bool bEnableTFTP) {
 		delete m_pShowFileTFTP;
 		m_pShowFileTFTP = nullptr;
 
-		SetShowFile(m_nShowFileNumber);
+		SetShowFile(m_nShowFileCurrent);
 		SetStatus(showfile::Status::IDLE);
 	}
 
