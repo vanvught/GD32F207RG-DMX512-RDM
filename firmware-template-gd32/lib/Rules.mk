@@ -22,6 +22,7 @@ DEFINES+=-D_TIME_STAMP_YEAR_=$(shell date  +"%Y") -D_TIME_STAMP_MONTH_=$(shell d
 
 MCU=GD32F207RG
 
+include ../firmware-template-gd32/Board.mk
 include ../firmware-template-gd32/Mcu.mk
 include ../firmware-template-gd32/Includes.mk
 include ../firmware-template-gd32/Artnet.mk
@@ -33,13 +34,11 @@ $(info $$MAKE_FLAGS [${MAKE_FLAGS}])
 
 COPS=-DBARE_METAL -DGD32 -D$(FAMILY_UCA) -D$(LINE_UC) -D$(MCU) -D$(BOARD) -DPHY_TYPE=$(ENET_PHY)
 COPS+=$(strip $(DEFINES)) $(MAKE_FLAGS) $(INCLUDES)
-COPS+=-D__Vendor_SysTickConfig=0
-COPS+=-Os -mcpu=cortex-m3 -mthumb
-COPS+=-nostartfiles -ffreestanding -nostdlib
+COPS+=$(strip $(ARMOPS) $(CMSISOPS))
+COPS+=-Os -nostartfiles -ffreestanding -nostdlib
 COPS+=-fstack-usage
 COPS+=-ffunction-sections -fdata-sections
-COPS+=-Wall -Werror -Wpedantic -Wextra -Wunused -Wsign-conversion -Wconversion
-COPS+=-Wduplicated-cond -Wlogical-op
+COPS+=-Wall -Werror -Wpedantic -Wextra -Wunused -Wsign-conversion -Wconversion -Wduplicated-cond -Wlogical-op
 
 CPPOPS=-std=c++20
 CPPOPS+=-Wnon-virtual-dtor -Woverloaded-virtual -Wnull-dereference -fno-rtti -fno-exceptions -fno-unwind-tables
