@@ -58,14 +58,16 @@ sofware_version_id.h
 udp_send
 do-tftp.sh
 
-gd32f10x*.*
-lib-gd32/gd32f10x/*
-gd32f30x*.*
-lib-gd32/gd32f30x/*
-gd32f4xx*.*
-lib-gd32/gd32f4xx/*
-
 lib-*/src/esp8266/*
 lib-*/include/esp8266/*
 
 lib-*/src/h3/*
+
+gd32f1*.*
+lib-gd32/gd32f1*/*
+gd32f3*.*
+lib-gd32/gd32f3*/*
+gd32f4*.*
+lib-gd32/gd32f4*/*
+gd32h7*.*
+lib-gd32/gd32h7*/*
