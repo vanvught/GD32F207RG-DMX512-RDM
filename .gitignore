@@ -64,10 +64,13 @@ lib-*/include/esp8266/*
 lib-*/src/h3/*
 
 gd32f1*.*
-lib-gd32/gd32f1*/*
+lib-gd32/gd32f10x/*
 gd32f3*.*
-lib-gd32/gd32f3*/*
+lib-gd32/gd32f30x/*
 gd32f4*.*
-lib-gd32/gd32f4*/*
-gd32h7*.*
-lib-gd32/gd32h7*/*
+lib-gd32/gd32f4xx/*
+gd32fh*.*
+lib-gd32/gd32h7xx/*
+
+
+software_version_id.h

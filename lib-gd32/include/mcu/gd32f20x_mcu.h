@@ -274,6 +274,8 @@
 # define SPI2_SCK_GPIO_PINx		GPIO_PIN_3
 # define SPI2_MISO_GPIO_PINx	GPIO_PIN_4
 # define SPI2_MOSI_GPIO_PINx	GPIO_PIN_5
+# define SPI2_IO3_GPIO_PINx		GPIO_PIN_2
+# define SPI2_IO4_GPIO_PINx		GPIO_PIN_3
 #endif
 
 /**

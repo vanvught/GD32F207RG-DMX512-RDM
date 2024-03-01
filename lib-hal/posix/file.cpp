@@ -23,6 +23,12 @@
  * THE SOFTWARE.
  */
 
+#if defined (DEBUG_POSIX)
+# if defined (NDEBUG)
+#  undef NDEBUG
+# endif
+#endif
+
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
@@ -32,8 +38,48 @@
 #include "../ff14b/source/ff.h"
 #include <dirent.h>	/* DO NOT MOVE -> DIR is defined in ff.h */
 
-static FIL file_object;
+#include "debug.h"
+
+#if !defined (CONFIG_POSIX_OPEN_FILES_MAX) || (CONFIG_POSIX_OPEN_FILES_MAX < 1)
+# define CONFIG_POSIX_OPEN_FILES_MAX 1
+#endif
+
+namespace posix {
+static constexpr int OPEN_FILES_MAX = CONFIG_POSIX_OPEN_FILES_MAX;
+}  // namespace posix
+
+#if defined(CONFIG_POSIX_ENABLE_STDIN)
+static FILE s_file[3 + posix::OPEN_FILES_MAX];
+FILE *stdin = &s_file[0];
+FILE *stdout = &s_file[1];
+FILE *stderr = &s_file[2];
+#else
+static FILE s_file[posix::OPEN_FILES_MAX];
+#endif
+static FIL	s_ff_file[posix::OPEN_FILES_MAX];
+
 static FRESULT s_fresult;
+
+static int get_file_descriptor() {
+	for (int nFile = 0; nFile < posix::OPEN_FILES_MAX; nFile++) {
+#if defined(CONFIG_POSIX_ENABLE_STDIN)
+		if (isatty(nFile)) {
+			continue;
+		}
+#endif
+		if (s_file[nFile].udata == nullptr) {
+#if defined(CONFIG_POSIX_ENABLE_STDIN)
+			s_file[nFile].udata = &s_ff_file[nFile - 3];
+#else
+			s_file[nFile].udata = &s_ff_file[nFile];
+#endif
+			return nFile;
+		}
+	}
+
+	errno = ENFILE;
+	return -1;
+}
 
 static int fatfs_to_errno(const BYTE err) {
 	switch (static_cast<FRESULT>(err)) {
@@ -83,6 +129,21 @@ static int fatfs_to_errno(const BYTE err) {
 }
 
 extern "C" {
+int fileno(FILE *stream) {
+	if (stream == nullptr) {
+		errno = EBADF;
+		return -1;
+	}
+
+	for (int nFile = 0; nFile < posix::OPEN_FILES_MAX; nFile++) {
+		if (&s_file[nFile] == stream) {
+			return nFile;
+		}
+	}
+
+	return EOF;
+}
+
 // http://elm-chan.org/fsw/ff/doc/open.html
 FILE *fopen(const char *path, const char *mode) {
 	assert(path != nullptr);
@@ -123,11 +184,21 @@ FILE *fopen(const char *path, const char *mode) {
 		}
 	}
 
-	s_fresult = f_open(&file_object, (TCHAR *) path, (BYTE) (fm | fo));
+	const auto fd = get_file_descriptor();
+	DEBUG_PRINTF("fd=%d", fd);
+
+	if (fd < 0) {
+		errno = EBADF;
+		return nullptr;
+	}
+
+	s_fresult = f_open(&s_ff_file[fd], (TCHAR *) path, (BYTE) (fm | fo));
 	errno = fatfs_to_errno(s_fresult);
 
+	DEBUG_PRINTF("errno=%d", errno);
+
 	if (s_fresult == FR_OK) {
-		return (FILE *) &file_object;
+		return &s_file[fd];
 	} else {
 		return nullptr;
 	}
@@ -140,14 +211,26 @@ int fclose(FILE *stream) {
 		return 0;
 	}
 
-	s_fresult = f_close(&file_object);
+	const auto fd = fileno(stream);
+	DEBUG_PRINTF("fd=%d", fd);
+
+	if (fd < 0) {
+		errno = EBADF;
+		return EOF;
+	}
+
+	s_fresult = f_close((FIL *)stream->udata);
 	errno = fatfs_to_errno(s_fresult);
+
+	DEBUG_PRINTF("errno=%d", errno);
+
+	stream->udata = nullptr;
 
 	if (s_fresult == FR_OK) {
 		return 0;
 	}
 
-	return -1;
+	return EOF;
 }
 
 int fgetc(FILE *stream) {
@@ -159,25 +242,26 @@ int fgetc(FILE *stream) {
 		return EOF;
 	}
 
-	if ((s_fresult = f_read(&file_object, &c, (UINT) 1, &bytes_read)) == FR_OK) {
+	if ((s_fresult = f_read((FIL *)stream->udata, &c, (UINT) 1, &bytes_read)) == FR_OK) {
 		if (bytes_read > 0) {
 			return c;
 		}
 
 		if (bytes_read < 1) {
 			errno = fatfs_to_errno(s_fresult);
-			return (EOF);
+			stream->flags |= __SEOF;
+			return EOF;
 		}
 	}
 
 	errno = fatfs_to_errno(s_fresult);
-	return (EOF);
+	return EOF;
 }
 
-size_t fread(void *ptr, size_t size, size_t nmemb, [[maybe_unused]] FILE *stream) {
+size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
 	UINT bytes_read;
 
-	s_fresult = f_read(&file_object, ptr, (size * nmemb), &bytes_read);
+	s_fresult = f_read((FIL *)stream->udata, ptr, (size * nmemb), &bytes_read);
 	errno = fatfs_to_errno(s_fresult);
 
 	if (s_fresult == FR_OK) {
@@ -187,11 +271,11 @@ size_t fread(void *ptr, size_t size, size_t nmemb, [[maybe_unused]] FILE *stream
 	return 0;
 }
 
-int fseek([[maybe_unused]] FILE *stream, long offset, int whence) {
+int fseek(FILE *stream, long offset, int whence) {
 	if (whence == SEEK_SET) {
-		s_fresult = f_lseek(&file_object, (FSIZE_t) offset);
+		s_fresult = f_lseek((FIL *)stream->udata, (FSIZE_t) offset);
 	} else if (whence == SEEK_END) {
-		s_fresult = f_lseek(&file_object, f_size(&file_object));
+		s_fresult = f_lseek((FIL *)stream->udata, f_size((FIL *)stream->udata));
 	}
 
 	errno = fatfs_to_errno(s_fresult);
@@ -203,8 +287,8 @@ int fseek([[maybe_unused]] FILE *stream, long offset, int whence) {
 	return -1;
 }
 
-long ftell([[maybe_unused]] FILE *stream) {
-	return (long) f_tell(&file_object);
+long ftell(FILE *stream) {
+	return (long) f_tell((FIL *)stream->udata);
 }
 
 char *fgets(char *s, int size, FILE *stream) {
@@ -216,21 +300,26 @@ char *fgets(char *s, int size, FILE *stream) {
 		return nullptr;
 	}
 
-	if (f_gets(s, size, &file_object) != s) {
+	if (f_gets(s, size, (FIL *)stream->udata) != s) {
 		*s = '\0';
-		errno = fatfs_to_errno(f_error(&file_object));
+		errno = fatfs_to_errno(f_error((FIL *)stream->udata));
 		return nullptr;
 	}
 
 	return s;
 }
 
-void clearerr([[maybe_unused]] FILE *stream) {
-	s_fresult = FR_OK;
+void clearerr(FILE *stream) {
+	stream->flags &= static_cast<uint8_t>(~__SEOF);
+	stream->flags &= static_cast<uint8_t>(~__SERR);
 }
 
-int ferror([[maybe_unused]] FILE *stream) {
-	return s_fresult == FR_OK ? 0 : EOF;
+int ferror(FILE *stream) {
+	return (stream->flags & __SERR) ? 1 : 0;
+}
+
+int feof(FILE *stream) {
+	return (stream->flags & __SEOF) ? 1 : 0;
 }
 
 /*
@@ -249,7 +338,7 @@ int fputs([[maybe_unused]] const char *s, [[maybe_unused]] FILE *stream) {
 		return 0;
 	}
 
-	return f_puts(s, &file_object);
+	return f_puts(s, (FIL *)stream->udata);
 #endif
 }
 
@@ -260,7 +349,7 @@ size_t fwrite([[maybe_unused]] const void *ptr, [[maybe_unused]] size_t size, [[
 #else
 	UINT bytes_write;
 
-	s_fresult = f_write(&file_object, ptr, (size * nmemb), &bytes_write);
+	s_fresult = f_write((FIL *)stream->udata, ptr, (size * nmemb), &bytes_write);
 	errno = fatfs_to_errno(s_fresult);
 
 	if (s_fresult == FR_OK) {
@@ -298,7 +387,7 @@ DIR *opendir([[maybe_unused]] const char *dirname) {
 	errno = ENOSYS;
 	return 0;
 #else
-	const size_t len = strlen(dirname);
+	const auto len = strlen(dirname);
 
 	if ((len > 0) && (dirname[len - 1] == '.')) {
 		char *pathdir = (char *) dirname;
@@ -364,7 +453,6 @@ int closedir([[maybe_unused]] DIR *dirp) {
 	return -1;
 #else
 	s_fresult = f_closedir(&s_dir);
-
 	errno = fatfs_to_errno(s_fresult);
 
 	if (s_fresult == FR_OK) {
