@@ -1,5 +1,5 @@
 /**
- * @file gd32_uart0.cpp
+ * @file uart0.cpp
  *
  */
 /* Copyright (C) 2021-2024 by Arjan van Vught mailto:info@gd32-dmx.org

@@ -92,7 +92,7 @@ clean:
 	
 $(BUILD)%.o: %.c
 	$(CC) $(COPS) -c $< -o $@
-	
+
 $(BUILD_DIRS) :	
 	mkdir -p $(BUILD_DIRS)
 	mkdir -p lib_gd32
