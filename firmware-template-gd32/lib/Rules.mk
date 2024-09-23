@@ -9,48 +9,39 @@ AS	= $(CC)
 LD	= $(PREFIX)ld
 AR	= $(PREFIX)ar
 
-FAMILY?=gd32f20x
-MCU?=GD32F207RG
 BOARD?=BOARD_GD32F207RG
-ENET_PHY?=DP83848
+ENET_PHY?=RTL8201F
 
-FAMILY:=$(shell echo $(FAMILY) | tr A-Z a-z)
-FAMILY_UC=$(shell echo $(FAMILY) | tr a-w A-W)
-
-$(info $$FAMILY [${FAMILY}])
-$(info $$FAMILY_UC [${FAMILY_UC}])
 $(info $$BOARD [${BOARD}])
 $(info $$ENET_PHY [${ENET_PHY}])
 
 SRCDIR=src src/gd32 $(EXTRA_SRCDIR)
 
-include ../firmware-template-gd32/Includes.mk
-
 DEFINES:=$(addprefix -D,$(DEFINES))
 DEFINES+=-D_TIME_STAMP_YEAR_=$(shell date  +"%Y") -D_TIME_STAMP_MONTH_=$(shell date  +"%-m") -D_TIME_STAMP_DAY_=$(shell date  +"%-d")
 
-ifeq ($(findstring ARTNET_VERSION=4,$(DEFINES)),ARTNET_VERSION=4)
-	ifeq ($(findstring ARTNET_HAVE_DMXIN,$(DEFINES)),ARTNET_HAVE_DMXIN)
-		DEFINES+=-DE131_HAVE_DMXIN
-	endif
-endif
+MCU=GD32F207RG
 
-COPS=-DBARE_METAL -DGD32 -DGD32F20X_CL -D$(MCU) -D$(BOARD) -DPHY_TYPE=$(ENET_PHY)
-COPS+=$(DEFINES) $(MAKE_FLAGS) $(INCLUDES)
-COPS+=-Os -mcpu=cortex-m3 -mthumb
-COPS+=-nostartfiles -ffreestanding -nostdlib
+include ../firmware-template-gd32/Board.mk
+include ../firmware-template-gd32/Mcu.mk
+include ../firmware-template-gd32/Includes.mk
+include ../firmware-template-gd32/Artnet.mk
+include ../firmware-template-gd32/Validate.mk
+
+INCLUDES+=-I../lib-configstore/include -I../lib-device/include -I../lib-display/include -I../lib-flash/include -I../lib-flashcode/include -I../lib-hal/include -I../lib-lightset/include -I../lib-network/include
+
+COPS=-DGD32 -D$(FAMILY_UCA) -D$(LINE_UC) -D$(MCU) -D$(BOARD) -DPHY_TYPE=$(ENET_PHY)
+COPS+=$(strip $(DEFINES)) $(MAKE_FLAGS) $(INCLUDES)
+COPS+=$(strip $(ARMOPS) $(CMSISOPS))
+COPS+=-Os -nostartfiles -ffreestanding -nostdlib
 COPS+=-fstack-usage
 COPS+=-ffunction-sections -fdata-sections
-COPS+=-Wall -Werror -Wpedantic -Wextra -Wunused -Wsign-conversion -Wconversion
-COPS+=-Wduplicated-cond -Wlogical-op
+COPS+=-Wall -Werror -Wpedantic -Wextra -Wunused -Wsign-conversion -Wconversion -Wduplicated-cond -Wlogical-op
 
-CPPOPS=-std=c++11
+CPPOPS=-std=c++20
 CPPOPS+=-Wnon-virtual-dtor -Woverloaded-virtual -Wnull-dereference -fno-rtti -fno-exceptions -fno-unwind-tables
 CPPOPS+=-Wuseless-cast -Wold-style-cast
 CPPOPS+=-fno-threadsafe-statics
-
-CURR_DIR:=$(notdir $(patsubst %/,%,$(CURDIR)))
-LIB_NAME:=$(patsubst lib-%,%,$(CURR_DIR))
 
 BUILD=build_gd32/
 BUILD_DIRS:=$(addprefix build_gd32/,$(SRCDIR))
@@ -66,19 +57,22 @@ EXTRA_BUILD_DIRS:=$(addsuffix $(EXTRA_C_DIRECTORIES), $(BUILD))
 
 OBJECTS:=$(strip $(ASM_OBJECTS) $(C_OBJECTS) $(CPP_OBJECTS) $(EXTRA_C_OBJECTS))
 
-$(info $$OBJECTS [${OBJECTS}])
+CURR_DIR:=$(notdir $(patsubst %/,%,$(CURDIR)))
+LIB_NAME:=$(patsubst lib-%,%,$(CURR_DIR))
+TARGET=lib_gd32/lib$(LIB_NAME).a
 
-TARGET=lib_gd32/lib$(LIB_NAME).a 
+$(info $$DEFINES [${DEFINES}])
+$(info $$MAKE_FLAGS [${MAKE_FLAGS}])
+$(info $$OBJECTS [${OBJECTS}])
 $(info $$TARGET [${TARGET}])
 
-LIST = lib.list
-
 define compile-objects
+$(info $1)
 $(BUILD)$1/%.o: $1/%.c
 	$(CC) $(COPS) -c $$< -o $$@
 	
 $(BUILD)$1/%.o: $1/%.cpp
-	$(CPP) $(COPS) $(CPPOPS)  -c $$< -o $$@
+	$(CPP) $(COPS) $(CPPOPS) -c $$< -o $$@
 	
 $(BUILD)$1/%.o: $1/%.S
 	$(CC) $(COPS) -D__ASSEMBLY__ -c $$< -o $$@
@@ -99,13 +93,13 @@ clean:
 	
 $(BUILD)%.o: %.c
 	$(CC) $(COPS) -c $< -o $@
-	
+
 $(BUILD_DIRS) :	
 	mkdir -p $(BUILD_DIRS)
 	mkdir -p lib_gd32
 	
 $(TARGET): Makefile.GD32 $(OBJECTS)
 	$(AR) -r $(TARGET) $(OBJECTS)
-	$(PREFIX)objdump -d $(TARGET) | $(PREFIX)c++filt > lib_gd32/$(LIST)
+	$(PREFIX)objdump -d $(TARGET) | $(PREFIX)c++filt > lib_gd32/lib.list
 	
 $(foreach bdir,$(SRCDIR),$(eval $(call compile-objects,$(bdir))))

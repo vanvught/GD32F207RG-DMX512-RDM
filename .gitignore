@@ -52,20 +52,25 @@
 *.map
 *.list
 *.size
+sofware_version_id.h
 
 *.bin
 udp_send
 do-tftp.sh
 
-gd32f10x*.*
-lib-gd32/gd32f10x/*
-gd32f30x*.*
-lib-gd32/gd32f30x/*
-gd32f4xx*.*
-lib-gd32/gd32f4xx/*
-
 lib-*/src/esp8266/*
 lib-*/include/esp8266/*
 
 lib-*/src/h3/*
-lib-*/include/h3/*
+
+gd32f1*.*
+lib-gd32/gd32f10x/*
+gd32f3*.*
+lib-gd32/gd32f30x/*
+gd32f4*.*
+lib-gd32/gd32f4xx/*
+gd32fh*.*
+lib-gd32/gd32h7xx/*
+
+
+software_version_id.h

@@ -2,7 +2,7 @@
  * usb_host_msc.cpp
  *
  */
-/* Copyright (C) 2023 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2023-2024 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,10 @@
  * THE SOFTWARE.
  */
 
+#ifndef NDEBUG
+# undef NDEBUG
+#endif
+
 #include <cstdio>
 #include <cstdint>
 
@@ -31,7 +35,19 @@
 extern "C" {
 #include "usb_host_msc.h"
 #include "usbh_core.h"
+void console_error(const char *);
 }
+
+#include "../lib-hal/ff14b/source/ff.h"
+#include "device/usb/host.h"
+
+#if (FF_DEFINED	== 86631)		// R0.14b
+ static FATFS fat_fs;
+#else
+# error Not a recognized/tested FatFs version
+#endif
+
+#include "device/usb/host.h"
 
 usbh_user_cb usr_cb = {
     usbh_user_init,
@@ -54,51 +70,90 @@ usbh_user_cb usr_cb = {
     usbh_user_unrecovered_error
 };
 
-#define USBH_USR_FS_INIT             0
-#define USBH_USR_FS_READLIST         1
-#define USBH_USR_FS_WRITEFILE        2
-#define USBH_USR_FS_DRAW             3
-#define USBH_USR_FS_DEMOEND          4
+#if defined NODE_SHOWFILE
+namespace showfile {
+	void usb_ready();
+	void usb_disconnected();
+}  // namespace showfile
+#endif
 
-static uint32_t usbh_usr_application_state = USBH_USR_FS_INIT;
+/* state machine for the USBH_USR_ApplicationState */
+#define USBH_USR_FS_MOUNT            0
+#define USBH_USR_FS_READY	         1
+
+static uint8_t usbh_usr_application_state = USBH_USR_FS_MOUNT;
+
+static usb::host::Status s_status;
+static usb::host::Speed s_speed;
+static usb::host::Class s_class;
+
+namespace usb {
+namespace host {
+Status get_status() {
+	return s_status;
+}
+Speed get_speed() {
+	return s_speed;
+}
+Class get_class() {
+	return s_class;
+}
+}  // namespace host
+}  // namespace usb
 
 void usbh_user_init() {
-	static uint32_t startup = 0U;
-
-	if (0U == startup) {
-		startup = 1U;
+	if (s_status == usb::host::Status::NOT_AVAILABLE) {
+		s_status = usb::host::Status::DISCONNECTED;
+#ifndef NDEBUG
 		puts("USB host library started.");
+#endif
 	}
 }
 
 void usbh_user_deinit() {
-    usbh_usr_application_state = USBH_USR_FS_INIT;
+	s_status = usb::host::Status::NOT_AVAILABLE;
 }
 
 void usbh_user_device_connected() {
+	s_status = usb::host::Status::ATTACHED;
 	puts("> Device Attached.");
 }
 
 void usbh_user_unrecovered_error() {
+	s_status = usb::host::Status::UNRECOVERABLE_ERROR;
 	puts("> Unrecovered error state.");
 }
 
 void usbh_user_device_disconnected() {
+	s_status = usb::host::Status::DISCONNECTED;
 	puts("> Device Disconnected.");
+	usbh_usr_application_state = USBH_USR_FS_MOUNT;
+#if defined NODE_SHOWFILE
+	showfile::usb_disconnected();
+#endif
 }
 
 void usbh_user_device_reset() {
+	s_status = usb::host::Status::RESET;
 	puts("> Reset the USB device.");
 }
 
 void usbh_user_device_speed_detected(uint32_t device_speed) {
 	if (PORT_SPEED_HIGH == device_speed) {
+		s_speed = usb::host::Speed::HIGH;
 		puts("> High speed device detected.");
 	} else if (PORT_SPEED_FULL == device_speed) {
+		s_speed = usb::host::Speed::FULL;
+#ifndef NDEBUG
 		puts("> Full speed device detected.");
+#endif
 	} else if (PORT_SPEED_LOW == device_speed) {
+		s_speed = usb::host::Speed::LOW;
+#ifndef NDEBUG
 		puts("> Low speed device detected.");
+#endif
 	} else {
+		s_speed = usb::host::Speed::FAULT;
 		puts("> Device Fault.");
 	}
 }
@@ -137,16 +192,17 @@ void usbh_user_serialnum_string(void *serial_num_string) {
 }
 
 void usbh_user_enumeration_finish() {
+	s_status = usb::host::Status::ENUMERATION_COMPLETED;
     puts("> Enumeration completed.");
 }
 
 void usbh_user_device_not_supported() {
+	s_status = usb::host::Status::DEVICE_NOT_SUPPORTED;
     puts("> Device not supported.");
 }
 
 usbh_user_status usbh_user_userinput() {
 	puts("usbh_user_userinput");
-
     return static_cast<usbh_user_status>(1);
 }
 
@@ -155,5 +211,22 @@ void usbh_user_over_current_detected() {
 }
 
 int usbh_usr_msc_application() {
+	if  (usbh_usr_application_state == USBH_USR_FS_MOUNT) {
+		const auto result = f_mount(&fat_fs, (const TCHAR *) "0:/", (BYTE) 0);
+
+		if (result == FR_OK) {
+			s_status = usb::host::Status::READY;
+			usbh_usr_application_state = USBH_USR_FS_READY;
+#if defined NODE_SHOWFILE
+			showfile::usb_ready();
+#endif
+		} else {
+			char buffer[32];
+			snprintf(buffer, sizeof(buffer) - 1, "f_mount failed! %d\n", (int) result);
+			console_error(buffer);
+			return -1;
+		}
+	}
+
 	return 0;
 }

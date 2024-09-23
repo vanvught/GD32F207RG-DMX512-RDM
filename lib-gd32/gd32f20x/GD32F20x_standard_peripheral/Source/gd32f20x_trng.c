@@ -2,43 +2,40 @@
     \file    gd32f20x_trng.c
     \brief   TRNG driver
 
-    \version 2015-07-15, V1.0.0, firmware for GD32F20x
-    \version 2017-06-05, V2.0.0, firmware for GD32F20x
-    \version 2018-10-31, V2.1.0, firmware for GD32F20x
-    \version 2020-09-30, V2.2.0, firmware for GD32F20x
+    \version 2023-06-30, V2.5.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2020, GigaDevice Semiconductor Inc.
+    Copyright (c) 2023, GigaDevice Semiconductor Inc.
 
-    Redistribution and use in source and binary forms, with or without modification, 
+    Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    1. Redistributions of source code must retain the above copyright notice, this 
+    1. Redistributions of source code must retain the above copyright notice, this
        list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, 
-       this list of conditions and the following disclaimer in the documentation 
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
        and/or other materials provided with the distribution.
-    3. Neither the name of the copyright holder nor the names of its contributors 
-       may be used to endorse or promote products derived from this software without 
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software without
        specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT 
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 OF SUCH DAMAGE.
 */
 
 #include "gd32f20x_trng.h"
 
 /*!
-    \brief      deinitialize the TRNG
+    \brief      reset TRNG
     \param[in]  none
     \param[out] none
     \retval     none
@@ -50,7 +47,7 @@ void trng_deinit(void)
 }
 
 /*!
-    \brief      enable the TRNG interface
+    \brief      enable TRNG
     \param[in]  none
     \param[out] none
     \retval     none
@@ -61,7 +58,7 @@ void trng_enable(void)
 }
 
 /*!
-    \brief      disable the TRNG interface
+    \brief      disable TRNG
     \param[in]  none
     \param[out] none
     \retval     none
@@ -75,7 +72,7 @@ void trng_disable(void)
     \brief      get the true random data
     \param[in]  none
     \param[out] none
-    \retval     the generated random data
+    \retval     the generated random data: 0 - 0xFFFFFFFF
 */
 uint32_t trng_get_true_random_data(void)
 {
@@ -83,7 +80,7 @@ uint32_t trng_get_true_random_data(void)
 }
 
 /*!
-    \brief      get the trng status flags
+    \brief       get TRNG flag status
     \param[in]  flag: trng status flag, refer to trng_flag_enum
                 only one parameter can be selected which is shown as below:
       \arg        TRNG_FLAG_DRDY: Random Data ready status
@@ -94,37 +91,37 @@ uint32_t trng_get_true_random_data(void)
 */
 FlagStatus trng_flag_get(trng_flag_enum flag)
 {
-    if(RESET != (TRNG_STAT & flag)){
+    if(RESET != (TRNG_STAT & flag)) {
         return SET;
-    }else{
+    } else {
         return RESET;
     }
 }
 
 /*!
-    \brief      enable the TRNG interrupt
+    \brief      enable TRNG interrupt
     \param[in]  none
     \param[out] none
     \retval     none
 */
-void trng_interrupt_enable(void) 
+void trng_interrupt_enable(void)
 {
-    TRNG_CTL |= TRNG_CTL_IE;
+    TRNG_CTL |= TRNG_CTL_TRNGIE;
 }
 
 /*!
-    \brief      disable the TRNG interrupt
+    \brief      disable TRNG interrupt
     \param[in]  none
     \param[out] none
     \retval     none
 */
 void trng_interrupt_disable(void)
 {
-    TRNG_CTL &= ~TRNG_CTL_IE;
+    TRNG_CTL &= ~TRNG_CTL_TRNGIE;
 }
 
 /*!
-    \brief      get the trng interrupt flags
+    \brief      get TRNG interrupt flag status
     \param[in]  int_flag: trng interrupt flag, refer to trng_int_flag_enum
                 only one parameter can be selected which is shown as below:
       \arg        TRNG_INT_FLAG_CE: clock error interrupt flag
@@ -134,15 +131,15 @@ void trng_interrupt_disable(void)
 */
 FlagStatus trng_interrupt_flag_get(trng_int_flag_enum int_flag)
 {
-    if(RESET != (TRNG_STAT & int_flag)){
+    if(RESET != (TRNG_STAT & int_flag)) {
         return SET;
-    }else{
+    } else {
         return RESET;
     }
 }
 
 /*!
-    \brief      clear the trng interrupt flags
+    \brief      clear TRNG interrupt flag status
     \param[in]  int_flag: trng interrupt flag, refer to trng_int_flag_enum
                 only one parameter can be selected which is shown as below:
       \arg        TRNG_INT_FLAG_CE: clock error interrupt flag

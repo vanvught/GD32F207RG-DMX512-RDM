@@ -2,7 +2,7 @@
  * @file ddpdisplay.h
  *
  */
-/* Copyright (C) 2021-2022 by Arjan van Vught mailto:info@orangepi-dmx.nl
+/* Copyright (C) 2021-2023 by Arjan van Vught mailto:info@orangepi-dmx.nl
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -169,7 +169,7 @@ void DdpDisplay::HandleQuery() {
 		m_Packet.header.len[0] = static_cast<uint8_t>(nLength >> 8);
 		m_Packet.header.len[1] = static_cast<uint8_t>(nLength);
 
-		Network::Get()->SendTo(m_nHandle, &m_Packet, static_cast<uint16_t>(HEADER_LEN + static_cast<uint16_t>(nLength)), Network::Get()->GetIp() | ~(Network::Get()->GetNetmask()), ddp::UDP_PORT);
+		Network::Get()->SendTo(m_nHandle, &m_Packet, (HEADER_LEN + static_cast<uint16_t>(nLength)), Network::Get()->GetIp() | ~(Network::Get()->GetNetmask()), ddp::UDP_PORT);
 	}
 
 	if ((m_Packet.header.id & id::STATUS) == id::CONFIG) {
@@ -206,9 +206,9 @@ void DdpDisplay::HandleQuery() {
 		m_Packet.header.len[0] = static_cast<uint8_t>(nLength >> 8);
 		m_Packet.header.len[1] = static_cast<uint8_t>(nLength);
 
-		Network::Get()->SendTo(m_nHandle, &m_Packet, static_cast<uint16_t>(HEADER_LEN + static_cast<uint16_t>(nLength)), m_nFromIp, ddp::UDP_PORT);
+		Network::Get()->SendTo(m_nHandle, &m_Packet, HEADER_LEN + nLength, m_nFromIp, ddp::UDP_PORT);
 
-		debug_dump(&m_Packet, static_cast<uint16_t>(HEADER_LEN + static_cast<uint16_t>(nLength)));
+		debug_dump(&m_Packet, HEADER_LEN + nLength);
 	}
 
 	DEBUG_EXIT
@@ -318,7 +318,7 @@ void DdpDisplay::Run() {
 }
 
 void DdpDisplay::Print() {
-	puts("DDP Display:");
+	puts("DDP Display");
 	printf(" Count             : %u\n", m_nCount);
 	printf(" Channels per pixel: %u\n", GetChannelsPerPixel());
 	printf(" Active ports      : %u\n", m_nActivePorts);

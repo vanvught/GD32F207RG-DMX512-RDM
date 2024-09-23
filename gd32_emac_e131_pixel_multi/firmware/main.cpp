@@ -2,7 +2,7 @@
  * @file main.cpp
  *
  */
-/* Copyright (C) 2022-2023 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2022-2024 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,16 +29,19 @@
 #include "network.h"
 #include "networkconst.h"
 
-#include "mdns.h"
+#include "net/apps/mdns.h"
 
-#if defined (ENABLE_HTTPD)
-# include "httpd/httpd.h"
+#if defined (ENABLE_NTP_CLIENT)
+# include "net/apps/ntpclient.h"
+#endif
+
+#if defined (ENABLE_SHELL)
+# include "shell/shell.h"
 #endif
 
 #include "displayudf.h"
 #include "displayudfparams.h"
 #include "displayhandler.h"
-#include "display_timeout.h"
 
 #include "e131.h"
 #include "e131bridge.h"
@@ -49,7 +52,7 @@
 #include "pixeltype.h"
 #include "pixeltestpattern.h"
 #include "pixeldmxparams.h"
-#include "pixeldmxstartstop.h"
+
 #include "ws28xxmulti.h"
 #include "ws28xxdmxmulti.h"
 
@@ -61,82 +64,65 @@
 # include "rdm_e120.h"
 #endif
 
+#if defined (NODE_SHOWFILE)
+# include "showfile.h"
+# include "showfileparams.h"
+#endif
+
 #include "remoteconfig.h"
 #include "remoteconfigparams.h"
 
 #include "configstore.h"
-#include "storedisplayudf.h"
-#include "storee131.h"
-#include "storenetwork.h"
-#if defined (NODE_RDMNET_LLRP_ONLY)
-# include "storerdmdevice.h"
-#endif
-#include "storeremoteconfig.h"
-#include "storepixeldmx.h"
+
 
 #include "firmwareversion.h"
 #include "software_version.h"
 
-static constexpr uint32_t DMXPORT_OFFSET = 32;
+namespace e131bridge {
+namespace configstore {
+uint32_t DMXPORT_OFFSET = LIGHTSET_PORTS;
+}  // namespace configstore
+}  // namespace e131bridge
 
 void Hardware::RebootHandler() {
 	WS28xxMulti::Get()->Blackout();
 	E131Bridge::Get()->Stop();
 }
 
-void main() {
+int main() {
 	Hardware hw;
 	DisplayUdf display;
 	ConfigStore configStore;
-	display.TextStatus(NetworkConst::MSG_NETWORK_INIT, Display7SegmentMessage::INFO_NETWORK_INIT, CONSOLE_YELLOW);
-	StoreNetwork storeNetwork;
-	Network nw(&storeNetwork);
-	display.TextStatus(NetworkConst::MSG_NETWORK_STARTED, Display7SegmentMessage::INFO_NONE, CONSOLE_GREEN);
+	display.TextStatus(NetworkConst::MSG_NETWORK_INIT, CONSOLE_YELLOW);
+	Network nw;
+	MDNS mDns;
+	display.TextStatus(NetworkConst::MSG_NETWORK_STARTED, CONSOLE_GREEN);
 	FirmwareVersion fw(SOFTWARE_VERSION, __DATE__, __TIME__);
 
-	fw.Print("sACN E1.31 Pixel controller {8x 4 Universes}");
-	nw.Print();
+	fw.Print("sACN E1.31 Pixel controller");
 
-	display.TextStatus(NetworkConst::MSG_MDNS_CONFIG, Display7SegmentMessage::INFO_MDNS_CONFIG, CONSOLE_YELLOW);
-
-	MDNS mDns;
-	mDns.AddServiceRecord(nullptr, mdns::Services::CONFIG, "node=sACN E1.31 Pixel");
-#if defined (ENABLE_HTTPD)
-	mDns.AddServiceRecord(nullptr, mdns::Services::HTTP);
+#if defined (ENABLE_NTP_CLIENT)
+	NtpClient ntpClient;
+	ntpClient.Start();
+	ntpClient.Print();
 #endif
-	mDns.Print();
-
-#if defined (ENABLE_HTTPD)
-	HttpDaemon httpDaemon;
-#endif
-
-	display.TextStatus(E131MsgConst::PARAMS, Display7SegmentMessage::INFO_BRIDGE_PARMAMS, CONSOLE_YELLOW);
-
-	StoreE131 storeE131;
-	E131Params e131params(&storeE131);
 
 	E131Bridge bridge;
 
-	if (e131params.Load()) {
-		e131params.Dump();
-		e131params.Set(DMXPORT_OFFSET);
-	}
+	E131Params e131params;
+	e131params.Load();
+	e131params.Set();
 
 	PixelDmxConfiguration pixelDmxConfiguration;
 
-	StorePixelDmx storePixelDmx;
-	PixelDmxParams pixelDmxParams(&storePixelDmx);
+	PixelDmxParams pixelDmxParams;
+	pixelDmxParams.Load();
+	pixelDmxParams.Set();
 
-	if (pixelDmxParams.Load()) {
-		pixelDmxParams.Dump();
-		pixelDmxParams.Set(&pixelDmxConfiguration);
-	}
+	WS28xxDmxMulti pixelDmxMulti;
 
-	WS28xxDmxMulti pixelDmxMulti(pixelDmxConfiguration);
-	pixelDmxMulti.SetPixelDmxHandler(new PixelDmxStartStop);
-
-	const auto nUniverses = pixelDmxMulti.GetUniverses();
-	const auto nActivePorts = pixelDmxMulti.GetOutputPorts();
+	const auto nUniverses = pixelDmxConfiguration.GetUniverses();
+	const auto nActivePorts = pixelDmxConfiguration.GetOutputPorts();
 
 	uint32_t nPortProtocolIndex = 0;
 
@@ -163,9 +149,9 @@ void main() {
 	}
 
 #if defined (NODE_RDMNET_LLRP_ONLY)
-	display.TextStatus(RDMNetConst::MSG_CONFIG, Display7SegmentMessage::INFO_RDMNET_CONFIG, CONSOLE_YELLOW);
+	display.TextStatus(RDMNetConst::MSG_CONFIG, CONSOLE_YELLOW);
 	char aDescription[rdm::personality::DESCRIPTION_MAX_LENGTH + 1];
-	snprintf(aDescription, sizeof(aDescription) - 1, "sACN Pixel %d-%s:%d", nActivePorts, PixelType::GetType(WS28xxMulti::Get()->GetType()), WS28xxMulti::Get()->GetCount());
+	snprintf(aDescription, sizeof(aDescription) - 1, "sACN Pixel %d-%s:%d", nActivePorts, pixel::pixel_get_type(pixelDmxConfiguration.GetType()), pixelDmxConfiguration.GetCount());
 
 	char aLabel[RDM_DEVICE_LABEL_MAX_LENGTH + 1];
 	const auto nLength = snprintf(aLabel, sizeof(aLabel) - 1, GD32_BOARD_NAME " Pixel");
@@ -178,42 +164,44 @@ void main() {
 	llrpOnlyDevice.SetProductDetail(E120_PRODUCT_DETAIL_LED);
 	llrpOnlyDevice.Init();
 
-	StoreRDMDevice storeRdmDevice;
-	RDMDeviceParams rdmDeviceParams(&storeRdmDevice);
+	RDMDeviceParams rdmDeviceParams;
 
-	if (rdmDeviceParams.Load()) {
-		rdmDeviceParams.Dump();
-		rdmDeviceParams.Set(&llrpOnlyDevice);
-	}
-
-	llrpOnlyDevice.SetRDMDeviceStore(&storeRdmDevice);
+	rdmDeviceParams.Load();
+	rdmDeviceParams.Set(&llrpOnlyDevice);
+	
 	llrpOnlyDevice.Print();
+#endif
+
+#if defined (NODE_SHOWFILE)
+	ShowFile showFile;
+
+	ShowFileParams showFileParams;
+	showFileParams.Load();
+	showFileParams.Set();
+
+	showFile.Print();
 #endif
 
 	bridge.Print();
 	pixelDmxMulti.Print();
 
-	display.SetTitle("sACN Pixel 8:%dx%d", nActivePorts, WS28xxMulti::Get()->GetCount());
+	display.SetTitle("sACN Pixel 8:%dx%d", nActivePorts, pixelDmxConfiguration.GetCount());
 	display.Set(2, displayudf::Labels::IP);
 	display.Set(3, displayudf::Labels::HOSTNAME);
 	display.Set(4, displayudf::Labels::VERSION);
-	display.Set(5, displayudf::Labels::UNIVERSE_PORT_A);
-	display.Set(6, displayudf::Labels::BOARDNAME);
+	display.Set(5, displayudf::Labels::BOARDNAME);
 
-	StoreDisplayUdf storeDisplayUdf;
-	DisplayUdfParams displayUdfParams(&storeDisplayUdf);
+	DisplayUdfParams displayUdfParams;
 
-	if (displayUdfParams.Load()) {
-		displayUdfParams.Dump();
-		displayUdfParams.Set(&display);
-	}
+	displayUdfParams.Load();
+	displayUdfParams.Set(&display);
 
-	display.Show(&bridge);
+	display.Show();
 	display.Printf(7, "%s:%d G%d %s",
-		PixelType::GetType(pixelDmxConfiguration.GetType()),
+		pixel::pixel_get_type(pixelDmxConfiguration.GetType()),
 		pixelDmxConfiguration.GetCount(),
 		pixelDmxConfiguration.GetGroupingCount(),
-		PixelType::GetMap(pixelDmxConfiguration.GetMap()));
+		pixel::pixel_get_map(pixelDmxConfiguration.GetMap()));
 
 	if (nTestPattern != pixelpatterns::Pattern::NONE) {
 		display.ClearLine(6);
@@ -222,22 +210,24 @@ void main() {
 
 	RemoteConfig remoteConfig(remoteconfig::Node::E131, remoteconfig::Output::PIXEL, bridge.GetActiveOutputPorts());
 
-	StoreRemoteConfig storeRemoteConfig;
-	RemoteConfigParams remoteConfigParams(&storeRemoteConfig);
-
-	if (remoteConfigParams.Load()) {
-		remoteConfigParams.Dump();
-		remoteConfigParams.Set(&remoteConfig);
-	}
+	RemoteConfigParams remoteConfigParams;
+	remoteConfigParams.Load();
+	remoteConfigParams.Set(&remoteConfig);
 
 	while (configStore.Flash())
 		;
 
-	display.TextStatus(E131MsgConst::START, Display7SegmentMessage::INFO_BRIDGE_START, CONSOLE_YELLOW);
+	mDns.Print();
+
+#if defined (ENABLE_SHELL)
+	Shell shell;
+#endif
+
+	display.TextStatus(E131MsgConst::START, CONSOLE_YELLOW);
 
 	bridge.Start();
 
-	display.TextStatus(E131MsgConst::STARTED, Display7SegmentMessage::INFO_BRIDGE_STARTED, CONSOLE_GREEN);
+	display.TextStatus(E131MsgConst::STARTED, CONSOLE_GREEN);
 
 	hw.WatchdogInit();
 
@@ -245,19 +235,25 @@ void main() {
 		hw.WatchdogFeed();
 		nw.Run();
 		bridge.Run();
+#if defined (NODE_SHOWFILE)
+		showFile.Run();
+#endif
 		remoteConfig.Run();
 		configStore.Flash();
 		if (__builtin_expect((pPixelTestPattern != nullptr), 0)) {
 			pPixelTestPattern->Run();
 		}
 		mDns.Run();
+#if defined (ENABLE_NTP_CLIENT)
+		ntpClient.Run();
+#endif
 #if defined (NODE_RDMNET_LLRP_ONLY)
 		llrpOnlyDevice.Run();
 #endif
-#if defined (ENABLE_HTTPD)
-		httpDaemon.Run();
-#endif
 		display.Run();
 		hw.Run();
+#if defined (ENABLE_SHELL)
+		shell.Run();
+#endif
 	}
 }

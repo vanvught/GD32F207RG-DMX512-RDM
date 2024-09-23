@@ -1,5 +1,5 @@
 /*
- * hardfault_handler.cpp
+ * hardfault_handler.c
  */
 /**
  * Using Cortex-M3/M4/M7 Fault Exceptions
@@ -50,24 +50,24 @@ void hardfault_handler(unsigned long *hardfault_args, unsigned int lr_value) {
 
 	printf("[HardFault]\n");
 	printf("- Stack frame:\n");
-	printf(" R0  = %x\n", stacked_r0);
-	printf(" R1  = %x\n", stacked_r1);
-	printf(" R2  = %x\n", stacked_r2);
-	printf(" R3  = %x\n", stacked_r3);
-	printf(" R12 = %x\n", stacked_r12);
-	printf(" LR  = %x\n", stacked_lr);
-	printf(" PC  = %x\n", stacked_pc);
-	printf(" PSR = %x\n", stacked_psr);
+	printf(" R0  = %x\n", (unsigned int) stacked_r0);
+	printf(" R1  = %x\n", (unsigned int) stacked_r1);
+	printf(" R2  = %x\n", (unsigned int) stacked_r2);
+	printf(" R3  = %x\n", (unsigned int) stacked_r3);
+	printf(" R12 = %x\n", (unsigned int) stacked_r12);
+	printf(" LR  = %x\n", (unsigned int) stacked_lr);
+	printf(" PC  = %x\n", (unsigned int) stacked_pc);
+	printf(" PSR = %x\n", (unsigned int) stacked_psr);
 	printf("- FSR/FAR:\n");
-	printf(" CFSR = %x\n", cfsr);
-	printf(" HFSR = %x\n", SCB->HFSR);
-	printf(" DFSR = %x\n", SCB->DFSR);
-	printf(" AFSR = %x\n", SCB->AFSR);
+	printf(" CFSR = %x\n", (unsigned int) cfsr);
+	printf(" HFSR = %x\n", (unsigned int) SCB->HFSR);
+	printf(" DFSR = %x\n", (unsigned int) SCB->DFSR);
+	printf(" AFSR = %x\n", (unsigned int) SCB->AFSR);
 	if (cfsr & 0x0080) {
-		printf(" MMFAR = %x\n", memmanage_fault_address);
+		printf(" MMFAR = %x\n", (unsigned int) memmanage_fault_address);
 	}
 	if (cfsr & 0x8000) {
-		printf(" BFAR = %x\n", bus_fault_address);
+		printf(" BFAR = %x\n", (unsigned int) bus_fault_address);
 	}
 	printf("- Misc\n");
 	printf(" LR/EXC_RETURN= %x\n", lr_value);

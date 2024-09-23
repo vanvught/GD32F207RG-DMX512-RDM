@@ -27,34 +27,29 @@ ifeq ($(findstring NODE_PP,$(DEFINES)),NODE_PP)
 	LIBS+=pp
 endif
 
-RDM=
+ifeq ($(findstring NODE_SHOWFILE,$(DEFINES)),NODE_SHOWFILE)
+	LIBS+=showfile osc
+endif
 
 ifeq ($(findstring RDM_CONTROLLER,$(DEFINES)),RDM_CONTROLLER)
 	RDM=1
-	ifeq ($(findstring NO_EMAC,$(DEFINES)),NO_EMAC)
-	else
-		LIBS+=rdmdiscovery
-	endif
+	DMX=1
 endif
 
 ifeq ($(findstring RDM_RESPONDER,$(DEFINES)),RDM_RESPONDER)
-	ifneq ($(findstring rdmresponder,$(LIBS)),rdmresponder)
-		LIBS+=rdmresponder
-	endif
 	ifneq ($(findstring rdmsensor,$(LIBS)),rdmsensor)
-		LIBS+=rdmsensor device
+		LIBS+=rdmsensor
 	endif
-	ifneq ($(findstring rdmsubdevice,$(LIBS)),rdmsubdevice)
-		LIBS+=rdmsubdevice
-	endif
-	LIBS+=dmxreceiver dmx
 	RDM=1
+	ifneq ($(findstring NODE_ARTNET,$(DEFINES)),NODE_ARTNET)
+		ifeq ($(findstring OUTPUT_DMX_,$(DEFINES)),OUTPUT_DMX_)
+		 		DMX=1
+		endif
+ 	endif
 endif
 
 ifeq ($(findstring NODE_RDMNET_LLRP_ONLY,$(DEFINES)),NODE_RDMNET_LLRP_ONLY)
-	ifneq ($(findstring rdmnet,$(LIBS)),rdmnet)
-		LIBS+=rdmnet
-	endif
+	RDM=1
 	ifneq ($(findstring e131,$(LIBS)),e131)
 		LIBS+=e131
 	endif
@@ -64,15 +59,6 @@ ifeq ($(findstring NODE_RDMNET_LLRP_ONLY,$(DEFINES)),NODE_RDMNET_LLRP_ONLY)
 	ifneq ($(findstring rdmsubdevice,$(LIBS)),rdmsubdevice)
 		LIBS+=rdmsubdevice
 	endif
-	RDM=1
-endif
-
-ifdef RDM
-	LIBS+=rdm
-endif
-
-ifeq ($(findstring e131,$(LIBS)),e131)
-	LIBS+=uuid
 endif
 
 ifeq ($(findstring OUTPUT_DMX_MONITOR,$(DEFINES)),OUTPUT_DMX_MONITOR)
@@ -80,7 +66,16 @@ ifeq ($(findstring OUTPUT_DMX_MONITOR,$(DEFINES)),OUTPUT_DMX_MONITOR)
 endif
 
 ifeq ($(findstring OUTPUT_DMX_SEND,$(DEFINES)),OUTPUT_DMX_SEND)
-	LIBS+=dmxsend dmx
+	LIBS+=
+	DMX=1
+endif
+
+ifdef RDM
+	LIBS+=rdm
+endif
+
+ifdef DMX
+	LIBS+=dmx
 endif
 
 ifeq ($(findstring OUTPUT_DDP_PIXEL_MULTI,$(DEFINES)),OUTPUT_DDP_PIXEL_MULTI)
@@ -99,12 +94,12 @@ ifeq ($(findstring OUTPUT_DDP_PIXEL,$(DEFINES)),OUTPUT_DDP_PIXEL)
 	LIBS+=ws28xx
 endif
 
-LIBS+=configstore flashcode network lightset 
+LIBS+=configstore flashcode network 
 
 ifeq ($(findstring DISPLAY_UDF,$(DEFINES)),DISPLAY_UDF)
 	LIBS+=displayudf
 endif
 
-LIBS+=flash properties display hal
+LIBS+=lightset flash properties display device hal
 
 $(info $$LIBS [${LIBS}])

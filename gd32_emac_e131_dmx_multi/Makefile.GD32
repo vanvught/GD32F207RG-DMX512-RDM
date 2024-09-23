@@ -7,6 +7,7 @@ DEFINES+=OUTPUT_DMX_SEND_MULTI
 DEFINES+=OUTPUT_HAVE_STYLESWITCH
 
 DEFINES+=ENET_RXBUF_NUM=8 ENET_TXBUF_NUM=2
+DEFINES+=RTL8201F_LED1_LINK_ALL
 
 DEFINES+=DISPLAY_UDF 
 
@@ -28,5 +29,6 @@ SRCDIR=firmware lib
 include ../firmware-template-gd32/Rules.mk
 
 prerequisites:
-	./generate_sofware_version_id.sh
+	@echo "constexpr uint32_t DEVICE_SOFTWARE_VERSION_ID="$(shell date "+%s")";" > ./include/software_version_id.h
+
 
