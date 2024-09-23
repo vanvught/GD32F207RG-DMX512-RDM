@@ -31,46 +31,47 @@
 *.out
 *.app
 
-# Linux 
-.nfs*
-.nfs.*
+#Eclipse user settings
+/.metadata/
 
-# Apple
-.DS*
-._.DS*
+lib_gd32
+build_gd32
+
+.DS_Store
 ._*
 ._*.*
+*._gd32
 
-# Eclipse
-.tracecompass
-*/.tracecompass
+gd32f2*.*
+lib-gd32/gd32f2*/*
 
-# Build
-*/build_gd32/*
-*/lib_gd32/*
-*.su
-*.map
-*.list
-*.size
-sofware_version_id.h
+gd32f4*.*
+lib-gd32/gd32f4*/*
 
-*.bin
-udp_send
-do-tftp.sh
+gd32h7*.*
+lib-gd32/gd32h7*/*
 
 lib-*/src/esp8266/*
 lib-*/include/esp8266/*
 
 lib-*/src/h3/*
+lib-*/include/h3/*
 
-gd32f1*.*
-lib-gd32/gd32f10x/*
-gd32f3*.*
-lib-gd32/gd32f30x/*
-gd32f4*.*
-lib-gd32/gd32f4xx/*
-gd32fh*.*
-lib-gd32/gd32h7xx/*
+lib-*/src/linux/*
+lib-*/include/linux/*
 
+lib-network/src/apps/*
+lib-network/src/emac/*
+lib-network/src/net/*
 
-software_version_id.h
+FreeRTOS*.*
+Artnet*.*
+
+*.list
+*.map
+*.bin
+*.size
+
+do-tftp.sh
+udp_send
+
