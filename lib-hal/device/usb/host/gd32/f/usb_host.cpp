@@ -143,8 +143,6 @@ void usb_init() {
     usb_intr_config ();
 }
 
-extern "C" {
-void USBFS_IRQHandler(void) {
+extern "C" void USBFS_IRQHandler() {
 	usbh_isr (&usbh_core);
-}
 }

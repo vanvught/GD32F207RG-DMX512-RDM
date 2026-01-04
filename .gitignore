@@ -60,13 +60,6 @@ lib-*/include/h3/*
 lib-*/src/linux/*
 lib-*/include/linux/*
 
-lib-network/src/apps/*
-lib-network/src/emac/*
-lib-network/src/net/*
-
-FreeRTOS*.*
-Artnet*.*
-
 *.list
 *.map
 *.bin
@@ -75,3 +68,6 @@ Artnet*.*
 do-tftp.sh
 udp_send
 
+*._h
+/.cache
+compile_commands.json

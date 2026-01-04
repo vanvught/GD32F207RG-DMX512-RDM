@@ -1,5 +1,5 @@
 /**
- * @file file.c
+ * @file file.cpp
  *
  */
 /* Copyright (C) 2017-2024 by Arjan van Vught mailto:info@orangepi-dmx.nl

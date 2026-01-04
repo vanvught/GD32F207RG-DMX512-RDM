@@ -1,8 +1,7 @@
 /**
  * @file main.cpp
- *
  */
-/* Copyright (C) 2022-2024 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2022-2025 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,182 +22,119 @@
  * THE SOFTWARE.
  */
 
+#pragma GCC push_options
+#pragma GCC optimize("O2")
+#pragma GCC optimize("no-tree-loop-distribute-patterns")
+
 #include <cstdint>
 #include <cstdio>
-#include <cassert>
 
-#include "hardware.h"
+#include "gd32/hal.h"
+#include "gd32/hal_watchdog.h"
 #include "network.h"
-#include "networkconst.h"
-
 #include "net/apps/mdns.h"
-
-#if defined (ENABLE_NTP_CLIENT)
-# include "net/apps/ntpclient.h"
-#endif
-
 #include "displayudf.h"
-#include "displayudfparams.h"
-#include "displayhandler.h"
-
+#include "json/displayudfparams.h"
 #include "pp.h"
-
-#include "pixeldmxconfiguration.h"
+#include "firmware/pixeldmx/show.h"
 #include "pixeltype.h"
 #include "pixeltestpattern.h"
-#include "pixeldmxparams.h"
-
-#include "ws28xxmulti.h"
-#include "ws28xxdmxmulti.h"
-
-#if defined (NODE_RDMNET_LLRP_ONLY)
-# include "rdmdeviceparams.h"
-# include "rdmnetdevice.h"
-# include "rdmnetconst.h"
-# include "rdmpersonality.h"
-# include "rdm_e120.h"
+#include "json/pixeldmxparams.h"
+#include "pixeldmxmulti.h"
+#if defined(NODE_RDMNET_LLRP_ONLY)
+#include "rdmnetdevice.h"
+#include "rdmdevice.h"
+#include "rdm_e120.h"
 #endif
-
 #include "remoteconfig.h"
-#include "remoteconfigparams.h"
-
 #include "configstore.h"
-
-
 #include "firmwareversion.h"
 #include "software_version.h"
+#include "software_version_id.h"
+#include "common/utils/utils_flags.h"
+#include "configurationstore.h"
 
-void Hardware::RebootHandler() {
-	WS28xxMulti::Get()->Blackout();
-	PixelPusher::Get()->Stop();
+namespace hal
+{
+void RebootHandler()
+{
+    PixelDmxMulti::Get().Blackout();
+    PixelPusher::Get()->Stop();
 }
+} // namespace hal
 
-int main() {
-	Hardware hw;
-	DisplayUdf display;
-	ConfigStore configStore;
-	display.TextStatus(NetworkConst::MSG_NETWORK_INIT, CONSOLE_YELLOW);
-	Network nw;
-	MDNS mDns;
-	display.TextStatus(NetworkConst::MSG_NETWORK_STARTED, CONSOLE_GREEN);
-	FirmwareVersion fw(SOFTWARE_VERSION, __DATE__, __TIME__);
+int main() // NOLINT
+{
+    hal::Init();
+    DisplayUdf display;
+    ConfigStore config_store;
+    network::Init();
+    FirmwareVersion fw(SOFTWARE_VERSION, __DATE__, __TIME__, DEVICE_SOFTWARE_VERSION_ID);
 
-	fw.Print("PixelPusher controller {8x 4 Universes}");
-	
+    fw.Print("PixelPusher controller {8x 4 Universes}");
 
-#if defined (ENABLE_NTP_CLIENT)
-	NtpClient ntpClient;
-	ntpClient.Start();
-	ntpClient.Print();
+    mdns::ServiceRecordAdd(nullptr, mdns::Services::PP);
+
+    PixelDmxMulti pixeldmx_multi;
+
+    json::PixelDmxParams pixeldmx_params;
+    pixeldmx_params.Load();
+    pixeldmx_params.Set();
+
+    PixelPusher pp;
+
+    const auto kActivePorts = pixeldmx_multi.GetOutputPorts();
+
+    pp.SetCount(pixeldmx_multi.GetGroups(), kActivePorts, false);
+
+    const auto kTestPattern = common::FromValue<pixelpatterns::Pattern>(ConfigStore::Instance().DmxLedGet(&common::store::DmxLed::test_pattern));
+
+    PixelTestPattern pixeltest_pattern(kTestPattern, kActivePorts);
+
+    pixeldmx_multi.Print();
+
+    pp.SetOutput(&pixeldmx_multi);
+    pp.Print();
+
+#if defined(NODE_RDMNET_LLRP_ONLY)
+    auto& rdm_device = RdmDevice::Get();
+    rdm_device.SetProductCategory(E120_PRODUCT_CATEGORY_FIXTURE);
+    rdm_device.SetProductDetail(E120_PRODUCT_DETAIL_LED);
+    rdm_device.Init();
+    rdm_device.Print();
+
+    RDMNetDevice llrp_only_device;
 #endif
 
-	mDns.ServiceRecordAdd(nullptr, mdns::Services::PP);
+    display.SetTitle("PixelPusher %d", kActivePorts);
+    display.Set(2, displayudf::Labels::kVersion);
+    display.Set(3, displayudf::Labels::kHostname);
+    display.Set(4, displayudf::Labels::kIp);
+    display.Set(5, displayudf::Labels::kDefaultGateway);
+    display.Set(6, displayudf::Labels::kBoardname);
 
-	PixelDmxConfiguration pixelDmxConfiguration;
+    json::DisplayUdfParams displayudf_params;
+    displayudf_params.Load();
+    displayudf_params.SetAndShow();
 
-	PixelDmxParams pixelDmxParams;
-	pixelDmxParams.Load();
-	pixelDmxParams.Set();
+    common::firmware::pixeldmx::Show(7);
 
-	WS28xxDmxMulti pixelDmxMulti;
+    RemoteConfig remote_config(remoteconfig::Output::PIXEL, kActivePorts);
 
-	PixelPusher pp;
+    display.TextStatus("Starting PixelPusher", console::Colours::kConsoleYellow);
 
-	const auto nActivePorts = pixelDmxConfiguration.GetOutputPorts();
+    pp.Start();
 
-	pp.SetCount(pixelDmxConfiguration.GetGroups(), nActivePorts, false);
+    display.TextStatus("PixelPusher Started", console::Colours::kConsoleGreen);
 
-	const auto nTestPattern = static_cast<pixelpatterns::Pattern>(pixelDmxParams.GetTestPattern());
-	PixelTestPattern pixelTestPattern(nTestPattern, nActivePorts);
+    hal::WatchdogInit();
 
-	pixelDmxMulti.Print();
-
-	pp.SetOutput(&pixelDmxMulti);
-	pp.Print();
-
-#if defined (NODE_RDMNET_LLRP_ONLY)
-	display.TextStatus(RDMNetConst::MSG_CONFIG, CONSOLE_YELLOW);
-
-	char aDescription[rdm::personality::DESCRIPTION_MAX_LENGTH + 1];
-	snprintf(aDescription, sizeof(aDescription) - 1, "PixelPusher %u-%s:%d", nActivePorts, pixel::pixel_get_type(pixelDmxConfiguration.GetType()), pixelDmxConfiguration.GetCount());
-
-	char aLabel[RDM_DEVICE_LABEL_MAX_LENGTH + 1];
-	const auto nLength = snprintf(aLabel, sizeof(aLabel) - 1, GD32_BOARD_NAME " PixelPusher");
-
-	RDMPersonality *pPersonalities[1] = { new RDMPersonality(aDescription, nullptr) };
-	RDMNetDevice llrpOnlyDevice(pPersonalities, 1);
-
-	llrpOnlyDevice.SetLabel(RDM_ROOT_DEVICE, aLabel, static_cast<uint8_t>(nLength));
-	llrpOnlyDevice.SetProductCategory(E120_PRODUCT_CATEGORY_FIXTURE);
-	llrpOnlyDevice.SetProductDetail(E120_PRODUCT_DETAIL_LED);
-	llrpOnlyDevice.Init();
-
-	RDMDeviceParams rdmDeviceParams;
-
-	rdmDeviceParams.Load();
-	rdmDeviceParams.Set(&llrpOnlyDevice);
-
-	llrpOnlyDevice.Print();
-#endif
-
-	display.SetTitle("PixelPusher %d", nActivePorts);
-	display.Set(2, displayudf::Labels::VERSION);
-	display.Set(3, displayudf::Labels::HOSTNAME);
-	display.Set(4, displayudf::Labels::IP);
-	display.Set(5, displayudf::Labels::DEFAULT_GATEWAY);
-	display.Set(6, displayudf::Labels::BOARDNAME);
-
-	DisplayUdfParams displayUdfParams;
-
-	displayUdfParams.Load();
-	displayUdfParams.Set(&display);
-
-	display.Show();
-	display.Printf(7, "%s:%d G%d %s",
-		pixel::pixel_get_type(pixelDmxConfiguration.GetType()),
-		pixelDmxConfiguration.GetCount(),
-		pixelDmxConfiguration.GetGroupingCount(),
-		pixel::pixel_get_map(pixelDmxConfiguration.GetMap()));
-
-	if (nTestPattern != pixelpatterns::Pattern::NONE) {
-		display.ClearLine(6);
-		display.Printf(6, "%s:%u", PixelPatterns::GetName(nTestPattern), static_cast<uint32_t>(nTestPattern));
-	}
-
-	RemoteConfig remoteConfig(remoteconfig::Node::PP, remoteconfig::Output::PIXEL, nActivePorts);
-
-	RemoteConfigParams remoteConfigParams;
-	remoteConfigParams.Load();
-	remoteConfigParams.Set(&remoteConfig);
-
-	while (configStore.Flash())
-		;
-
-	mDns.Print();
-
-	display.TextStatus("Starting PixelPusher", CONSOLE_YELLOW);
-
-	pp.Start();
-
-	display.TextStatus("PixelPusher Started", CONSOLE_GREEN);
-
-	hw.WatchdogInit();
-
-	for (;;) {
-		hw.WatchdogFeed();
-		nw.Run();
-		pp.Run();
-		remoteConfig.Run();
-		configStore.Flash();
-		pixelTestPattern.Run();
-		mDns.Run();
-#if defined (ENABLE_NTP_CLIENT)
-		ntpClient.Run();
-#endif
-#if defined (NODE_RDMNET_LLRP_ONLY)
-		llrpOnlyDevice.Run();
-#endif
-		display.Run();
-		hw.Run();
-	}
+    for (;;)
+    {
+        hal::WatchdogFeed();
+        network::Run();
+        pp.Run();
+        pixeltest_pattern.Run();
+        hal::Run();
+    }
 }

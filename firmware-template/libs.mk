@@ -6,19 +6,21 @@ else
 endif
 
 ifeq ($(findstring NODE_ARTNET,$(DEFINES)),NODE_ARTNET)
-	ifeq ($(findstring ARTNET_VERSION=3,$(DEFINES)),ARTNET_VERSION=3)
-		LIBS+=artnet
-	else
-		LIBS+=artnet e131
-	endif
+	ARTNET=1
+  	DMXNODE=1
+  	ifeq ($(findstring ARTNET_VERSION=3,$(DEFINES)),ARTNET_VERSION=3)
+  	else
+  		E131=1
+  	endif
 endif
-
+  
 ifeq ($(findstring NODE_E131,$(DEFINES)),NODE_E131)
-	ifneq ($(findstring e131,$(LIBS)),e131)
-		LIBS+=e131
-	endif
+  	ifneq ($(findstring e131,$(LIBS)),e131)
+  		E131=1
+  		DMXNODE=1
+  	endif
 endif
-
+  
 ifeq ($(findstring NODE_DDP_DISPLAY,$(DEFINES)),NODE_DDP_DISPLAY)
 	LIBS+=ddp
 endif
@@ -61,6 +63,22 @@ ifeq ($(findstring NODE_RDMNET_LLRP_ONLY,$(DEFINES)),NODE_RDMNET_LLRP_ONLY)
 	endif
 endif
 
+ifdef ARTNET
+  	LIBS+=artnet
+endif
+  
+ifdef E131
+  	LIBS+=e131
+endif
+
+ifdef DMXNODE
+  	LIBS+=dmxnode
+endif
+
+ifeq ($(findstring NODE_SHOWFILE,$(DEFINES)),NODE_SHOWFILE)
+	LIBS+=showfile	
+endif
+
 ifeq ($(findstring OUTPUT_DMX_MONITOR,$(DEFINES)),OUTPUT_DMX_MONITOR)
 	LIBS+=dmxmonitor	
 endif
@@ -79,19 +97,19 @@ ifdef DMX
 endif
 
 ifeq ($(findstring OUTPUT_DDP_PIXEL_MULTI,$(DEFINES)),OUTPUT_DDP_PIXEL_MULTI)
-	LIBS+=ws28xxdmx ws28xx
+	LIBS+=pixeldmx pixel
 else
 	ifeq ($(findstring OUTPUT_DMX_PIXEL_MULTI,$(DEFINES)),OUTPUT_DMX_PIXEL_MULTI)
-		LIBS+=ws28xxdmx ws28xx
+		LIBS+=dmxled pixeldmx pixel
 	else
 		ifeq ($(findstring OUTPUT_DMX_PIXEL,$(DEFINES)),OUTPUT_DMX_PIXEL)
-			LIBS+=ws28xxdmx ws28xx
+			LIBS+=dmxled pixeldmx pixel
 		endif
 	endif
 endif
 
 ifeq ($(findstring OUTPUT_DDP_PIXEL,$(DEFINES)),OUTPUT_DDP_PIXEL)
-	LIBS+=ws28xx
+	LIBS+=pixel
 endif
 
 LIBS+=configstore flashcode network 
@@ -100,6 +118,6 @@ ifeq ($(findstring DISPLAY_UDF,$(DEFINES)),DISPLAY_UDF)
 	LIBS+=displayudf
 endif
 
-LIBS+=lightset flash properties display device hal
+LIBS+=flash display device hal
 
 $(info $$LIBS [${LIBS}])

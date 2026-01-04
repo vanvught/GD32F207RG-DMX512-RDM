@@ -2,7 +2,7 @@
  * usb.cpp
  *
  */
-/* Copyright (C) 2023 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2023-2025 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,11 +25,15 @@
 
 #include "gd32.h"
 
-extern "C" {
-void usb_udelay(uint32_t nMicros) {
-	udelay(nMicros);
-}
-void usb_mdelay(uint32_t nMillis) {
-	udelay(nMillis * 1000U);
-}
+extern "C"
+{
+    void usb_udelay(uint32_t micros) //NOLINT
+    {
+        udelay(micros);
+    }
+
+    void usb_mdelay(uint32_t millis)  //NOLINT
+    {
+        udelay(millis * 1000U);
+    }
 }

@@ -131,11 +131,12 @@ SECTIONS
 	. = ALIGN(4);
 	_epixel = .;
   	. = ALIGN(4);
-      _snetwork = .;
+    _snetwork = .;
     *(.network*)
     . = ALIGN(4);
     _enetwork = .;
   	. = ALIGN(4);
+    *(.http*)
   } >RAM2 
 
   /DISCARD/ :
