@@ -42,24 +42,6 @@ build_gd32
 ._*.*
 *._gd32
 
-gd32f2*.*
-lib-gd32/gd32f2*/*
-
-gd32f4*.*
-lib-gd32/gd32f4*/*
-
-gd32h7*.*
-lib-gd32/gd32h7*/*
-
-lib-*/src/esp8266/*
-lib-*/include/esp8266/*
-
-lib-*/src/h3/*
-lib-*/include/h3/*
-
-lib-*/src/linux/*
-lib-*/include/linux/*
-
 *.list
 *.map
 *.bin
