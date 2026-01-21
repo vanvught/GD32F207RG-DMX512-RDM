@@ -32,7 +32,7 @@
 #include "gd32/hal.h"
 #include "gd32/hal_watchdog.h"
 #include "network.h"
-#include "net/apps/mdns.h"
+#include "apps/mdns.h"
 #include "displayudf.h"
 #include "json/displayudfparams.h"
 #include "pp.h"
@@ -73,7 +73,7 @@ int main() // NOLINT
 
     fw.Print("PixelPusher controller {8x 4 Universes}");
 
-    mdns::ServiceRecordAdd(nullptr, mdns::Services::PP);
+    network::apps::mdns::ServiceRecordAdd(nullptr, network::apps::mdns::Services::kPp);
 
     PixelDmxMulti pixeldmx_multi;
 
