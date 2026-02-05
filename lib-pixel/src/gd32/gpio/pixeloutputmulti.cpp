@@ -1,7 +1,7 @@
 /**
  * @file pixeloutputmulti.cpp
  */
-/* Copyright (C) 2021-2025 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2021-2026 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,8 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
- 
- #undef NDEBUG
 
 #if defined(DEBUG_PIXEL)
 #undef NDEBUG
@@ -680,7 +678,6 @@ void PixelOutputMulti::FullOn()
 
 #pragma GCC push_options
 #pragma GCC optimize("O3")
-#pragma GCC optimize("no-tree-loop-distribute-patterns")
 
 void PixelOutputMulti::Update()
 {
@@ -700,6 +697,10 @@ void PixelOutputMulti::Update()
     timer2_ctl0 &= ~TIMER_CTL0_CEN;
     TIMER_CTL0(TIMER2) = timer2_ctl0;
     TIMER_CNT(TIMER2) = 0;
+
+#if defined(DMA_MEMCPY32_DISABLE_IRQ)
+    dma::memcpy32::StartDma(reinterpret_cast<uint8_t*>(s_pixel_buffer_dma), reinterpret_cast<uint8_t*>(s_pixel_buffer_data), buffer_size_ / 2);
+#endif
 
     const auto& pixel_configuration = PixelConfiguration::Get();
 
@@ -757,7 +758,16 @@ void PixelOutputMulti::Update()
         TIMER_DMAINTEN(TIMER2) |= (TIMER_DMA_CH2D | TIMER_DMA_CH3D);
     }
 
+#if defined(DMA_MEMCPY32_DISABLE_IRQ)
+    while (dma::memcpy32::IsActive())
+    {
+    }
+
+    TIMER_CTL0(TIMER3) |= TIMER_CTL0_CEN;
+    TIMER_CTL0(TIMER2) |= TIMER_CTL0_CEN;
+#else
     dma::memcpy32::StartDma(reinterpret_cast<uint8_t*>(s_pixel_buffer_dma), reinterpret_cast<uint8_t*>(s_pixel_buffer_data), buffer_size_ / 2);
+#endif
 
 #ifndef NDEBUG
     GPIO_BC(DEBUG_CS_GPIOx) = DEBUG_CS_GPIO_PINx;
@@ -801,6 +811,7 @@ extern "C"
         TIMER_INTF(TIMER10) = ~kIntFlag;
     }
 
+#if !defined(DMA_MEMCPY32_DISABLE_IRQ)
 #if !defined(GD32F4XX)
     void DMA0_Channel3_IRQHandler()
     { // DMX memcpy ready
@@ -827,5 +838,6 @@ extern "C"
 
         Gd32DmaInterruptFlagClear<DMA1, DMA_CH0, (DMA_INT_FLAG_FTF | DMA_INT_FLAG_TAE)>();
     }
+#endif
 #endif
 }
