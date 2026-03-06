@@ -1,7 +1,7 @@
 /**
  * @file main.cpp
  */
-/* Copyright (C) 2022-2025 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2022-2026 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,14 +36,9 @@
 #include "artnettriggerhandler.h"
 #include "firmware/pixeldmx/show.h"
 #include "common/utils/utils_enum.h"
-#include "pixeltype.h"
 #include "pixeltestpattern.h"
 #include "json/pixeldmxparams.h"
 #include "pixeldmxmulti.h"
-#if defined(NODE_RDMNET_LLRP_ONLY)
-#include "rdmnetdevice.h"
-#include "rdmdevice.h"
-#endif
 #if defined(NODE_SHOWFILE)
 #include "showfile.h"
 #endif
@@ -51,7 +46,7 @@
 #include "configstore.h"
 #include "firmwareversion.h"
 #include "software_version.h"
-#include "software_version_id.h"
+
 
 namespace hal
 {
@@ -68,7 +63,7 @@ int main() // NOLINT
     DisplayUdf display;
     ConfigStore config_store;
     network::Init();
-    FirmwareVersion fw(SOFTWARE_VERSION, __DATE__, __TIME__, DEVICE_SOFTWARE_VERSION_ID);
+    FirmwareVersion fw(SOFTWARE_VERSION, __DATE__, __TIME__);
 
     fw.Print("Art-Net 4 Pixel controller {" STR(CONFIG_DMXNODE_PIXEL_MAX_PORTS) " Ports}");
 
@@ -95,18 +90,6 @@ int main() // NOLINT
     }
 
     ArtNetTriggerHandler trigger_handler(&pixeldmx_multi);
-
-#if defined(NODE_RDMNET_LLRP_ONLY)
-    auto& rdm_device = RdmDevice::Get();
-    rdm_device.SetProductCategory(E120_PRODUCT_CATEGORY_FIXTURE);
-    rdm_device.SetProductDetail(E120_PRODUCT_DETAIL_LED);
-    rdm_device.Init();
-    rdm_device.Print();
-
-    RDMNetDevice llrp_only_device;
-
-    dmxnode_node.SetRdmUID(rdm_device.GetUID(), true);
-#endif
 
 #if defined(NODE_SHOWFILE)
     ShowFile showfile;
