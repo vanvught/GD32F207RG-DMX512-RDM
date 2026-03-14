@@ -63,7 +63,7 @@ int main() // NOLINT
     DisplayUdf display;
     ConfigStore config_store;
     network::Init();
-    FirmwareVersion fw(SOFTWARE_VERSION, __DATE__, __TIME__);
+    FirmwareVersion fw(kSoftwareVersion, __DATE__, __TIME__);
 
     fw.Print("Art-Net 4 Pixel controller {" STR(CONFIG_DMXNODE_PIXEL_MAX_PORTS) " Ports}");
 
