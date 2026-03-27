@@ -29,7 +29,7 @@
 #include <cstdint>
 #include <cassert>
 
-#include "pixeloutputmulti.h"
+#include "pixeloutputmulti.h" // IWYU pragma: keep
 #include "pixelconfiguration.h"
 #include "pixeltype.h"
 #include "gd32/gpio/pixeloutputmulti_config.h"
@@ -97,7 +97,7 @@ void PixelOutputMulti::Blackout()
     else
     {
         const auto kType = pixel_configuration.GetType();
-        if ((kType == pixel::Type::APA102) || (kType == pixel::Type::SK9822) || (kType == pixel::Type::P9813))
+        if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822) || (kType == pixel::LedType::kP9813))
         {
             const auto kCount = pixel_configuration.GetCount();
             for (auto port_index = 0; port_index < pixel::kPortCount; port_index++)
@@ -109,7 +109,7 @@ void PixelOutputMulti::Blackout()
                     SetPixel4Bytes(port_index, pixel_index, 0xE0, 0, 0, 0);
                 }
 
-                if ((kType == pixel::Type::APA102) || (kType == pixel::Type::SK9822))
+                if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822))
                 {
                     SetPixel4Bytes(port_index, 1U + kCount, 0xFF, 0xFF, 0xFF, 0xFF);
                 }
@@ -121,7 +121,7 @@ void PixelOutputMulti::Blackout()
         }
         else
         {
-            assert(kType == pixel::Type::WS2801);
+            assert(kType == pixel::LedType::kWS2801);
             auto* p = reinterpret_cast<uint32_t*>(s_pixel_buffer_data);
             for (uint32_t i = 0; i < ((buffer_size_ + 1) / 2); i++)
             {
@@ -214,7 +214,7 @@ void PixelOutputMulti::ApplyConfiguration()
     const auto kType = pixel_configuration.GetType();
     const auto kLedsPerPixel = pixel_configuration.GetLedsPerPixel();
 
-    if ((kType == pixel::Type::APA102) || (kType == pixel::Type::SK9822) || (kType == pixel::Type::P9813))
+    if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822) || (kType == pixel::LedType::kP9813))
     {
         DEBUG_PRINTF("kMaxApA102=%u", kMaxApA102);
         if (pixel_configuration.GetCount() > kMaxApA102)
@@ -227,7 +227,7 @@ void PixelOutputMulti::ApplyConfiguration()
     const auto kCount = pixel_configuration.GetCount();
     buffer_size_ = kCount * kLedsPerPixel;
 
-    if ((kType == pixel::Type::APA102) || (kType == pixel::Type::SK9822) || (kType == pixel::Type::P9813))
+    if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822) || (kType == pixel::LedType::kP9813))
     {
         buffer_size_ += kCount;
         buffer_size_ += 8;
@@ -584,14 +584,14 @@ void PixelOutputMulti::Setup(uint32_t frequency)
     auto& pixel_configuration = PixelConfiguration::Get();
     const auto kType = pixel_configuration.GetType();
 
-    if ((kType == pixel::Type::APA102) || (kType == pixel::Type::SK9822) || (kType == pixel::Type::P9813))
+    if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822) || (kType == pixel::LedType::kP9813))
     {
         const auto kCount = pixel_configuration.GetCount();
         for (auto port_index = 0; port_index < pixel::kPortCount; port_index++)
         {
             SetPixel4Bytes(port_index, 0, 0, 0, 0, 0);
 
-            if ((kType == pixel::Type::APA102) || (kType == pixel::Type::SK9822))
+            if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822))
             {
                 SetPixel4Bytes(port_index, 1U + kCount, 0xFF, 0xFF, 0xFF, 0xFF);
             }
@@ -624,7 +624,7 @@ void PixelOutputMulti::FullOn()
     else
     {
         const auto kType = pixel_configuration.GetType();
-        if ((kType == pixel::Type::APA102) || (kType == pixel::Type::SK9822) || (kType == pixel::Type::P9813))
+        if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822) || (kType == pixel::LedType::kP9813))
         {
             const auto kCount = pixel_configuration.GetCount();
             for (auto port_index = 0; port_index < pixel::kPortCount; port_index++)
@@ -636,7 +636,7 @@ void PixelOutputMulti::FullOn()
                     SetPixel4Bytes(port_index, pixel_index, 0xE0, 0xFF, 0xFF, 0xFF);
                 }
 
-                if ((kType == pixel::Type::APA102) || (kType == pixel::Type::SK9822))
+                if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822))
                 {
                     SetPixel4Bytes(port_index, 1U + kCount, 0xFF, 0xFF, 0xFF, 0xFF);
                 }
@@ -648,7 +648,7 @@ void PixelOutputMulti::FullOn()
         }
         else
         {
-            assert(kType == pixel::Type::WS2801);
+            assert(kType == pixel::LedType::kWS2801);
             auto* p = reinterpret_cast<uint32_t*>(&s_pixel_buffer_data[0]);
             for (uint32_t i = 0; i < ((buffer_size_ + 1) / 2); i++)
             {
