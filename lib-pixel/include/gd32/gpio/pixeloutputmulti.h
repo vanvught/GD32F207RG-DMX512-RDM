@@ -66,7 +66,7 @@ class PixelOutputMulti
         assert(port_index < pixel::kPortCount);
 
         uint32_t j = 0;
-        const auto kIndex = pixel_index * pixel::single::RGB;
+        const auto kIndex = pixel_index * pixel::single::kRgb;
         const auto kBit = port_index + GPIO_PIN_OFFSET;
         auto* p = &s_pixel_buffer_data[kIndex];
 
@@ -109,7 +109,7 @@ class PixelOutputMulti
     {
         assert(port_index < pixel::kPortCount);
 
-        const auto kIndex = pixel_index * pixel::single::RGBW;
+        const auto kIndex = pixel_index * pixel::single::kRgbw;
         const auto kBit = port_index + GPIO_PIN_OFFSET;
 
         auto* p = &s_pixel_buffer_data[kIndex];
@@ -168,7 +168,7 @@ class PixelOutputMulti
         assert(port_index < pixel::kPortCount);
 
         uint32_t j = 0;
-        const auto kIndex = pixel_index * pixel::single::RGB;
+        const auto kIndex = pixel_index * pixel::single::kRgb;
         const auto kBit = port_index + GPIO_PIN_OFFSET;
         auto* p = &s_pixel_buffer_data[kIndex];
 
@@ -212,7 +212,7 @@ class PixelOutputMulti
         assert(port_index < pixel::kPortCount);
 
         uint32_t j = 0;
-        const auto kIndex = pixel_index * pixel::single::RGBW;
+        const auto kIndex = pixel_index * pixel::single::kRgbw;
         const auto kBit = port_index + GPIO_PIN_OFFSET;
         auto* p = &s_pixel_buffer_data[kIndex];
 
