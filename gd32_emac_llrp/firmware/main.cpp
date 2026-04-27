@@ -2,7 +2,7 @@
  * @file main.cpp
  *
  */
-/* Copyright (C) 2024-2025 by Arjan van Vught mailto:info@gd32-dmx.org
+/* Copyright (C) 2024-2026 by Arjan van Vught mailto:info@gd32-dmx.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -42,11 +42,8 @@
 #include "firmwareversion.h"
 #include "software_version.h"
 
-
-namespace hal
-{
-void RebootHandler()
-{
+namespace hal {
+void RebootHandler() {
     HwClock::Get()->SysToHc();
 }
 } // namespace hal
@@ -83,8 +80,7 @@ int main() // NOLINT
 
     auto time1 = time(nullptr);
 
-    for (;;)
-    {
+    for (;;) {
         hal::WatchdogFeed();
         network::Run();
         hal::Run();
@@ -94,8 +90,7 @@ int main() // NOLINT
         struct tm hw_clock;
         memset(&hw_clock, 0, sizeof(struct tm));
 
-        if (time1 != kTime2)
-        {
+        if (time1 != kTime2) {
             time1 = kTime2;
 
             auto* tm = localtime(&kTime2);
