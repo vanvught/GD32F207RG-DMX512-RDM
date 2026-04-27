@@ -375,11 +375,12 @@
 #define TIMER7_CH1_DMA_CHx		DMA_CH4
 #define TIMER7_CH2_DMA_CHx		DMA_CH0
 
-#define USART0_DMAx				DMA0
+#define USART0_RCU_DMAx     RCU_DMA0
+#define USART0_DMAx         DMA0
 #define USART0_TX_DMA_CHx		DMA_CH3
 #define USART0_RX_DMA_CHx		DMA_CH4
 
-#define USART1_DMAx				DMA0
+#define USART1_DMAx         DMA0
 #define USART1_TX_DMA_CHx		DMA_CH6
 #define USART1_RX_DMA_CHx		DMA_CH5
 
