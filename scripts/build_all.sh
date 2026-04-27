@@ -1,4 +1,9 @@
 #!/bin/bash
+
+cd ../lib-remoteconfig/http/content
+make clean && make CONTENT=modern
+cd -
+
 cd ..
 
 DIR=gd32_*
