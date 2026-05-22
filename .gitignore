@@ -54,3 +54,4 @@ udp_send
 /.cache
 compile_commands.json
 /common/scripts/gd32/venv
+/lib-hal/.cache
