@@ -33,7 +33,7 @@
 #include "osc.h"
 #include "oscsimplesend.h"
 #include "oscclientled.h"
-#include "hal_millis.h"
+#include "timing.h"
 #include "display.h"
 #include "ip4/ip4_address.h"
 #include "firmware/debug/debug_debug.h"
@@ -67,7 +67,7 @@ class OscClient {
 
     void Run() {
         if (!ping_disable_) {
-            current_millis_ = hal::Millis();
+            current_millis_ = timing::Millis();
 
             if (ping_sent_ && ((current_millis_ - ping_time_millis_) >= 1000)) {
                 ping_sent_ = false;
@@ -225,7 +225,7 @@ class OscClient {
 
     void static StaticCallbackFunction(const uint8_t* buffer, uint32_t size, uint32_t from_ip, uint16_t from_port) { s_this->Input(buffer, size, from_ip, from_port); }
 
-    bool HandleLedMessage(uint16_t bytes_received);
+    bool HandleLedMessage(uint32_t bytes_received);
 
    private:
     uint16_t port_outgoing_;
