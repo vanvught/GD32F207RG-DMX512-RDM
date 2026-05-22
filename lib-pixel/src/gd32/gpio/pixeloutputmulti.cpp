@@ -38,8 +38,7 @@
 #include "gd32_dma_memcpy32.h"
 #include "firmware/debug/debug_debug.h"
 
-namespace pixel
-{
+namespace pixel {
 static constexpr uint16_t kGpioPins[] __attribute__((aligned(4))) = {GPIO_PINx};
 static const auto* const kSPGpioPiNs = reinterpret_cast<const uint32_t*>(&kGpioPins[0]);
 static constexpr uint32_t kRtzTimerPeriod = (0.00000125f * MASTER_TIMER_CLOCK) - 1U;
@@ -50,8 +49,7 @@ static volatile uint32_t sv_updates_per_second;
 static volatile uint32_t sv_updates_previous;
 static volatile uint32_t sv_updates;
 
-static void Timer10Config()
-{
+static void Timer10Config() {
     sv_updates_per_second = 0;
     sv_updates_previous = 0;
     sv_updates = 0;
@@ -69,9 +67,9 @@ static void Timer10Config()
     timer_initpara.clockdivision = TIMER_CKDIV_DIV1;
     timer_init(TIMER10, &timer_initpara);
 
-    timer_flag_clear(TIMER10, ~0);
+    timer_flag_clear(TIMER10, UINT32_MAX);
 
-    timer_interrupt_flag_clear(TIMER10, ~0);
+    timer_interrupt_flag_clear(TIMER10, UINT32_MAX);
     timer_interrupt_enable(TIMER10, TIMER_INT_UP);
 
     NVIC_SetPriority(TIMER0_TRG_CMT_TIMER10_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL); // Lowest priority
@@ -80,51 +78,37 @@ static void Timer10Config()
     timer_enable(TIMER10);
 }
 
-void PixelOutputMulti::Blackout()
-{
+void PixelOutputMulti::Blackout() {
     DEBUG_ENTRY();
 
     auto& pixel_configuration = PixelConfiguration::Get();
 
-    if (pixel_configuration.IsRTZProtocol())
-    {
+    if (pixel_configuration.IsRTZProtocol()) {
         auto* p = reinterpret_cast<uint32_t*>(s_pixel_buffer_data);
-        for (uint32_t i = 0; i < ((buffer_size_ + 1) / 2); i++)
-        {
+        for (uint32_t i = 0; i < ((buffer_size_ + 1) / 2); i++) {
             p[i] = GPIO_PINx | (GPIO_PINx << 16);
         }
-    }
-    else
-    {
+    } else {
         const auto kType = pixel_configuration.GetType();
-        if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822) || (kType == pixel::LedType::kP9813))
-        {
+        if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822) || (kType == pixel::LedType::kP9813)) {
             const auto kCount = pixel_configuration.GetCount();
-            for (auto port_index = 0; port_index < pixel::kPortCount; port_index++)
-            {
+            for (uint32_t port_index = 0; port_index < pixel::kPortCount; port_index++) {
                 SetPixel4Bytes(port_index, 0, 0, 0, 0, 0);
 
-                for (uint32_t pixel_index = 1; pixel_index <= kCount; pixel_index++)
-                {
+                for (uint32_t pixel_index = 1; pixel_index <= kCount; pixel_index++) {
                     SetPixel4Bytes(port_index, pixel_index, 0xE0, 0, 0, 0);
                 }
 
-                if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822))
-                {
+                if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822)) {
                     SetPixel4Bytes(port_index, 1U + kCount, 0xFF, 0xFF, 0xFF, 0xFF);
-                }
-                else
-                {
+                } else {
                     SetPixel4Bytes(port_index, 1U + kCount, 0, 0, 0, 0);
                 }
             }
-        }
-        else
-        {
+        } else {
             assert(kType == pixel::LedType::kWS2801);
             auto* p = reinterpret_cast<uint32_t*>(s_pixel_buffer_data);
-            for (uint32_t i = 0; i < ((buffer_size_ + 1) / 2); i++)
-            {
+            for (uint32_t i = 0; i < ((buffer_size_ + 1) / 2); i++) {
                 p[i] = 0;
             }
         }
@@ -132,8 +116,7 @@ void PixelOutputMulti::Blackout()
 
     // Can be called any time. Make sure the previous transmit is ended.
 
-    do
-    {
+    do {
         __DMB();
     } while (sv_is_running);
 
@@ -141,27 +124,23 @@ void PixelOutputMulti::Blackout()
 
     // A blackout may not be interrupted.
 
-    do
-    {
+    do {
         __DMB();
     } while (sv_is_running);
 
     DEBUG_EXIT();
 }
 
-bool PixelOutputMulti::IsUpdating()
-{
+bool PixelOutputMulti::IsUpdating() {
     __DMB();
     return sv_is_running;
 }
 
-uint32_t PixelOutputMulti::GetUserData()
-{
+uint32_t PixelOutputMulti::GetUserData() {
     return sv_updates_per_second;
 }
 
-PixelOutputMulti::PixelOutputMulti()
-{
+PixelOutputMulti::PixelOutputMulti() {
     DEBUG_ENTRY();
 
     assert(s_this == nullptr);
@@ -197,16 +176,14 @@ PixelOutputMulti::PixelOutputMulti()
     DEBUG_EXIT();
 }
 
-void PixelOutputMulti::ApplyConfiguration()
-{
+void PixelOutputMulti::ApplyConfiguration() {
     DEBUG_ENTRY();
 
     auto& pixel_configuration = PixelConfiguration::Get();
 
     pixel_configuration.Validate();
 
-    if (!pixel_configuration.RefreshNeeded())
-    {
+    if (!pixel_configuration.RefreshNeeded()) {
         DEBUG_EXIT();
         return;
     }
@@ -214,11 +191,9 @@ void PixelOutputMulti::ApplyConfiguration()
     const auto kType = pixel_configuration.GetType();
     const auto kLedsPerPixel = pixel_configuration.GetLedsPerPixel();
 
-    if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822) || (kType == pixel::LedType::kP9813))
-    {
+    if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822) || (kType == pixel::LedType::kP9813)) {
         DEBUG_PRINTF("kMaxApA102=%u", kMaxApA102);
-        if (pixel_configuration.GetCount() > kMaxApA102)
-        {
+        if (pixel_configuration.GetCount() > kMaxApA102) {
             pixel_configuration.SetCount(kMaxApA102);
             pixel_configuration.Validate();
         }
@@ -227,8 +202,7 @@ void PixelOutputMulti::ApplyConfiguration()
     const auto kCount = pixel_configuration.GetCount();
     buffer_size_ = kCount * kLedsPerPixel;
 
-    if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822) || (kType == pixel::LedType::kP9813))
-    {
+    if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822) || (kType == pixel::LedType::kP9813)) {
         buffer_size_ += kCount;
         buffer_size_ += 8;
     }
@@ -240,29 +214,25 @@ void PixelOutputMulti::ApplyConfiguration()
     DEBUG_PRINTF("buffer_size_=%u [%u]", buffer_size_, (buffer_size_ + 1023) / 1024);
     assert(buffer_size_ <= kPixelBufferSize);
 
-    if (pixel_configuration.IsRTZProtocol())
-    {
+    if (pixel_configuration.IsRTZProtocol()) {
         Setup(pixel_configuration.GetLowCode(), pixel_configuration.GetHighCode());
-    }
-    else
-    {
+    } else {
         Setup(pixel_configuration.GetClockSpeedHz());
     }
 
     DEBUG_EXIT();
 }
 
-void PixelOutputMulti::Setup(uint8_t low_code, uint8_t high_code)
-{
+void PixelOutputMulti::Setup(uint8_t low_code, uint8_t high_code) {
     DEBUG_ENTRY();
 
     // Timer 2 is Master -> TIMER2_TRGO
     // Timer 3 is Slave -> ITI2
 
-    const auto kT0H = (__builtin_popcount(low_code) * (pixel::kRtzTimerPeriod + 1)) / 8;
-    const auto kT1H = (__builtin_popcount(high_code) * (pixel::kRtzTimerPeriod + 1)) / 8;
+    const uint32_t kT0H = (static_cast<uint32_t>(__builtin_popcount(low_code)) * (pixel::kRtzTimerPeriod + 1U)) / 8U;
+    const uint32_t kT1H = (static_cast<uint32_t>(__builtin_popcount(high_code)) * (pixel::kRtzTimerPeriod + 1U)) / 8U;
 
-    DEBUG_PRINTF("RTZ_TIMER_PERIOD=%u, kT0H=%u, kT1H=%u", pixel::kRtzTimerPeriod, kT0H, kT1H);
+    DEBUG_PRINTF("kRtzTimerPeriod=%u, kT0H=%u, kT1H=%u", pixel::kRtzTimerPeriod, kT0H, kT1H);
 
     timer_parameter_struct timer_initpara;
 
@@ -303,7 +273,7 @@ void PixelOutputMulti::Setup(uint8_t low_code, uint8_t high_code)
     timer_initpara.prescaler = 0;
     timer_initpara.alignedmode = TIMER_COUNTER_EDGE;
     timer_initpara.counterdirection = TIMER_COUNTER_UP;
-    timer_initpara.period = static_cast<uint32_t>(~0);
+    timer_initpara.period = UINT32_MAX;
     timer_initpara.clockdivision = TIMER_CKDIV_DIV1;
 
     timer_init(TIMER3, &timer_initpara);
@@ -417,8 +387,7 @@ void PixelOutputMulti::Setup(uint8_t low_code, uint8_t high_code)
     DEBUG_EXIT();
 }
 
-void PixelOutputMulti::Setup(uint32_t frequency)
-{
+void PixelOutputMulti::Setup(uint32_t frequency) {
     DEBUG_ENTRY();
 
     // BEGIN GPIO
@@ -444,8 +413,7 @@ void PixelOutputMulti::Setup(uint32_t frequency)
 
     DEBUG_PRINTF("nFrequency=%u, nTicker=%u", frequency, ticker);
 
-    if (ticker < 12)
-    { // ((nTicker / 4) - 1) >= 2
+    if (ticker < 12) { // ((nTicker / 4) - 1) >= 2
         ticker = 12;
     }
 
@@ -496,7 +464,7 @@ void PixelOutputMulti::Setup(uint32_t frequency)
     timer_initpara.prescaler = 0;
     timer_initpara.alignedmode = TIMER_COUNTER_EDGE;
     timer_initpara.counterdirection = TIMER_COUNTER_UP;
-    timer_initpara.period = static_cast<uint32_t>(~0);
+    timer_initpara.period = UINT32_MAX;
     timer_initpara.clockdivision = TIMER_CKDIV_DIV1;
 
     timer_init(TIMER3, &timer_initpara);
@@ -584,19 +552,14 @@ void PixelOutputMulti::Setup(uint32_t frequency)
     auto& pixel_configuration = PixelConfiguration::Get();
     const auto kType = pixel_configuration.GetType();
 
-    if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822) || (kType == pixel::LedType::kP9813))
-    {
+    if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822) || (kType == pixel::LedType::kP9813)) {
         const auto kCount = pixel_configuration.GetCount();
-        for (auto port_index = 0; port_index < pixel::kPortCount; port_index++)
-        {
+        for (uint32_t port_index = 0; port_index < pixel::kPortCount; port_index++) {
             SetPixel4Bytes(port_index, 0, 0, 0, 0, 0);
 
-            if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822))
-            {
+            if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822)) {
                 SetPixel4Bytes(port_index, 1U + kCount, 0xFF, 0xFF, 0xFF, 0xFF);
-            }
-            else
-            {
+            } else {
                 SetPixel4Bytes(port_index, 1U + kCount, 0, 0, 0, 0);
             }
         }
@@ -607,51 +570,37 @@ void PixelOutputMulti::Setup(uint32_t frequency)
     DEBUG_EXIT();
 }
 
-void PixelOutputMulti::FullOn()
-{
+void PixelOutputMulti::FullOn() {
     DEBUG_ENTRY();
 
     auto& pixel_configuration = PixelConfiguration::Get();
 
-    if (pixel_configuration.IsRTZProtocol())
-    {
+    if (pixel_configuration.IsRTZProtocol()) {
         auto* p = reinterpret_cast<uint32_t*>(s_pixel_buffer_data);
-        for (uint32_t i = 0; i < ((buffer_size_ + 1) / 2); i++)
-        {
+        for (uint32_t i = 0; i < ((buffer_size_ + 1) / 2); i++) {
             p[i] = 0;
         }
-    }
-    else
-    {
+    } else {
         const auto kType = pixel_configuration.GetType();
-        if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822) || (kType == pixel::LedType::kP9813))
-        {
+        if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822) || (kType == pixel::LedType::kP9813)) {
             const auto kCount = pixel_configuration.GetCount();
-            for (auto port_index = 0; port_index < pixel::kPortCount; port_index++)
-            {
+            for (uint32_t port_index = 0; port_index < pixel::kPortCount; port_index++) {
                 SetPixel4Bytes(port_index, 0, 0, 0, 0, 0);
 
-                for (uint32_t pixel_index = 1; pixel_index <= kCount; pixel_index++)
-                {
+                for (uint32_t pixel_index = 1; pixel_index <= kCount; pixel_index++) {
                     SetPixel4Bytes(port_index, pixel_index, 0xE0, 0xFF, 0xFF, 0xFF);
                 }
 
-                if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822))
-                {
+                if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822)) {
                     SetPixel4Bytes(port_index, 1U + kCount, 0xFF, 0xFF, 0xFF, 0xFF);
-                }
-                else
-                {
+                } else {
                     SetPixel4Bytes(port_index, 1U + kCount, 0, 0, 0, 0);
                 }
             }
-        }
-        else
-        {
+        } else {
             assert(kType == pixel::LedType::kWS2801);
             auto* p = reinterpret_cast<uint32_t*>(&s_pixel_buffer_data[0]);
-            for (uint32_t i = 0; i < ((buffer_size_ + 1) / 2); i++)
-            {
+            for (uint32_t i = 0; i < ((buffer_size_ + 1) / 2); i++) {
                 p[i] = 0xFF;
             }
         }
@@ -659,8 +608,7 @@ void PixelOutputMulti::FullOn()
 
     // Can be called any time. Make sure the previous transmit is ended.
 
-    do
-    {
+    do {
         __DMB();
     } while (sv_is_running);
 
@@ -668,8 +616,7 @@ void PixelOutputMulti::FullOn()
 
     // May not be interrupted.
 
-    do
-    {
+    do {
         __DMB();
     } while (sv_is_running);
 
@@ -679,10 +626,8 @@ void PixelOutputMulti::FullOn()
 #pragma GCC push_options
 #pragma GCC optimize("O3")
 
-void PixelOutputMulti::Update()
-{
-    do
-    { // https://github.com/vanvught/rpidmx512/issues/281
+void PixelOutputMulti::Update() {
+    do { // https://github.com/vanvught/rpidmx512/issues/281
         __ISB();
     } while (sv_is_running);
 
@@ -704,8 +649,7 @@ void PixelOutputMulti::Update()
 
     const auto& pixel_configuration = PixelConfiguration::Get();
 
-    if (pixel_configuration.IsRTZProtocol())
-    {
+    if (pixel_configuration.IsRTZProtocol()) {
         uint32_t chctl_ch0 = DMA_CHCTL(TIMER2_DMAx, TIMER2_CH0_DMA_CHx);
         chctl_ch0 &= ~DMA_CHXCTL_CHEN;
         DMA_CHCTL(TIMER2_DMAx, TIMER2_CH0_DMA_CHx) = chctl_ch0;
@@ -734,9 +678,7 @@ void PixelOutputMulti::Update()
         DMA_CHCTL(TIMER2_DMAx, TIMER2_CH3_DMA_CHx) = chctl_ch3;
 
         TIMER_DMAINTEN(TIMER2) |= (TIMER_DMA_CH0D | TIMER_DMA_CH2D | TIMER_DMA_CH3D);
-    }
-    else
-    {
+    } else {
         uint32_t chctl_ch2 = DMA_CHCTL(TIMER2_DMAx, TIMER2_CH2_DMA_CHx);
         chctl_ch2 &= ~DMA_CHXCTL_CHEN;
         DMA_CHCTL(TIMER2_DMAx, TIMER2_CH2_DMA_CHx) = chctl_ch2;
@@ -759,8 +701,7 @@ void PixelOutputMulti::Update()
     }
 
 #if defined(DMA_MEMCPY32_DISABLE_IRQ)
-    while (dma::memcpy32::IsActive())
-    {
+    while (dma::memcpy32::IsActive()) {
     }
 
     TIMER_CTL0(TIMER3) |= TIMER_CTL0_CEN;
@@ -776,68 +717,59 @@ void PixelOutputMulti::Update()
     sv_updates = sv_updates + 1;
 }
 
-extern "C"
-{
-    void TIMER3_IRQHandler()
-    { // Slave
-        const auto kIntFlag = TIMER_INTF(TIMER3);
+extern "C" {
+void TIMER3_IRQHandler() { // Slave
+    const auto kIntFlag = TIMER_INTF(TIMER3);
 
-        if ((kIntFlag & TIMER_INT_FLAG_CH0) == TIMER_INT_FLAG_CH0)
-        {
-            TIMER_CTL0(TIMER2) &= (~TIMER_CTL0_CEN);
+    if ((kIntFlag & TIMER_INT_FLAG_CH0) == TIMER_INT_FLAG_CH0) {
+        TIMER_CTL0(TIMER2) &= (~TIMER_CTL0_CEN);
 
-            TIMER_DMAINTEN(TIMER2) &= (~(TIMER_DMA_CH0D | TIMER_DMA_CH2D | TIMER_DMA_CH3D));
+        TIMER_DMAINTEN(TIMER2) &= static_cast<uint32_t>(~(TIMER_DMA_CH0D | TIMER_DMA_CH2D | TIMER_DMA_CH3D));
 
-            GPIO_BC(GPIOx) = GPIO_PINx;
+        GPIO_BC(GPIOx) = GPIO_PINx;
 #ifndef NDEBUG
-            GPIO_BOP(DEBUG_CS_GPIOx) = DEBUG_CS_GPIO_PINx;
+        GPIO_BOP(DEBUG_CS_GPIOx) = DEBUG_CS_GPIO_PINx;
 #endif
-            sv_is_running = false;
-        }
-
-        TIMER_INTF(TIMER3) = ~kIntFlag;
+        sv_is_running = false;
     }
 
-    void TIMER0_TRG_CMT_TIMER10_IRQHandler()
-    { // 1 Hz interrupt
-        const auto kIntFlag = TIMER_INTF(TIMER10);
+    TIMER_INTF(TIMER3) = ~kIntFlag;
+}
 
-        if ((kIntFlag & TIMER_INT_FLAG_UP) == TIMER_INT_FLAG_UP)
-        {
-            sv_updates_per_second = sv_updates - sv_updates_previous;
-            sv_updates_previous = sv_updates;
-        }
+void TIMER0_TRG_CMT_TIMER10_IRQHandler() { // 1 Hz interrupt
+    const auto kIntFlag = TIMER_INTF(TIMER10);
 
-        TIMER_INTF(TIMER10) = ~kIntFlag;
+    if ((kIntFlag & TIMER_INT_FLAG_UP) == TIMER_INT_FLAG_UP) {
+        sv_updates_per_second = sv_updates - sv_updates_previous;
+        sv_updates_previous = sv_updates;
     }
+
+    TIMER_INTF(TIMER10) = ~kIntFlag;
+}
 
 #if !defined(DMA_MEMCPY32_DISABLE_IRQ)
 #if !defined(GD32F4XX)
-    void DMA0_Channel3_IRQHandler()
-    { // DMX memcpy ready
-        if (Gd32DmaInterruptFlagGet<DMA0, DMA_CH3, DMA_INT_FLAG_FTF>())
-        {
-            Gd32DmaInterruptDisable<DMA0, DMA_CH3, (DMA_INT_FTF | DMA_INT_HTF | DMA_INT_ERR)>();
+void DMA0_Channel3_IRQHandler() { // DMX memcpy ready
+    if (Gd32DmaInterruptFlagGet<DMA0, DMA_CH3, DMA_INT_FLAG_FTF>()) {
+        Gd32DmaInterruptDisable<DMA0, DMA_CH3, (DMA_INT_FTF | DMA_INT_HTF | DMA_INT_ERR)>();
 
-            TIMER_CTL0(TIMER3) |= TIMER_CTL0_CEN;
-            TIMER_CTL0(TIMER2) |= TIMER_CTL0_CEN;
-        }
-
-        Gd32DmaInterruptFlagClear<DMA0, DMA_CH3, (DMA_INT_FLAG_FTF | DMA_INT_FLAG_G)>();
+        TIMER_CTL0(TIMER3) |= TIMER_CTL0_CEN;
+        TIMER_CTL0(TIMER2) |= TIMER_CTL0_CEN;
     }
+
+    Gd32DmaInterruptFlagClear<DMA0, DMA_CH3, (DMA_INT_FLAG_FTF | DMA_INT_FLAG_G)>();
+}
 #else
-    void DMA1_Channel0_IRQHandler()
-    { // DMX memcpy ready
-        if (Gd32DmaInterruptFlagGet<DMA1, DMA_CH0, DMA_INT_FLAG_FTF>())
-        {
-            Gd32DmaInterruptDisable<DMA1, DMA_CH0, (DMA_CHXCTL_FTFIE | DMA_CHXCTL_HTFIE | DMA_CHXFCTL_FEEIE)>();
+void DMA1_Channel0_IRQHandler() { // DMX memcpy ready
+    if (Gd32DmaInterruptFlagGet<DMA1, DMA_CH0, DMA_INT_FLAG_FTF>()) {
+        Gd32DmaInterruptDisable<DMA1, DMA_CH0, (DMA_CHXCTL_FTFIE | DMA_CHXCTL_HTFIE | DMA_CHXFCTL_FEEIE)>();
 
-            TIMER_CTL0(TIMER3) |= TIMER_CTL0_CEN;
-            TIMER_CTL0(TIMER2) |= TIMER_CTL0_CEN;
-        }
-
-        Gd32DmaInterruptFlagClear<DMA1, DMA_CH0, (DMA_INT_FLAG_FTF | DMA_INT_FLAG_TAE)>();
+        TIMER_CTL0(TIMER3) |= TIMER_CTL0_CEN;
+        TIMER_CTL0(TIMER2) |= TIMER_CTL0_CEN;
     }
+
+    Gd32DmaInterruptFlagClear<DMA1, DMA_CH0, (DMA_INT_FLAG_FTF | DMA_INT_FLAG_TAE)>();
+}
 #endif
 #endif
 }
