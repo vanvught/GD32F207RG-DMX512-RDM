@@ -31,7 +31,8 @@
 #include <time.h>
 #include <sys/time.h>
 
-#include "gd32/hal_watchdog.h"
+#include "gd32/hal.h"
+#include "watchdog.h"
 #include "network.h"
 #include "displayudf.h"
 #include "json/displayudfparams.h"
@@ -58,7 +59,7 @@ int main() // NOLINT
 
     fw.Print("RDMNet LLRP device only");
 
-    RDMNetDevice llrp_only_device;
+    RdmNetDevice llrp_only_device;
     llrp_only_device.Print();
 
     RemoteConfig remote_config(remoteconfig::Output::CONFIG, 0);
@@ -74,14 +75,14 @@ int main() // NOLINT
     displayudf_params.SetAndShow();
 
     display.Write(6, "mDNS enabled");
-    display.TextStatus("Device running", console::Colours::kConsoleGreen);
+    display.TextStatus("Device running", ansi::Colours::Colour::kGreen);
 
-    hal::WatchdogInit();
+    watchdog::Init();
 
     auto time1 = time(nullptr);
 
     for (;;) {
-        hal::WatchdogFeed();
+        watchdog::Feed();
         network::Run();
         hal::Run();
 

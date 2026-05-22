@@ -23,9 +23,8 @@
  * THE SOFTWARE.
  */
 
-#include <cstdint>
-
-#include "gd32/hal_watchdog.h"
+#include "gd32/hal.h"
+#include "watchdog.h"
 #include "network.h"
 #include "displayudf.h"
 #include "json/displayudfparams.h"
@@ -70,11 +69,6 @@ int main() // NOLINT
     DmxNodeNode dmxnode_node;
     dmxnode_node.SetOutput(&dmx_send);
 
-    for (uint32_t port_index = 0; port_index < dmxnode::kMaxPorts; port_index++) {
-        const auto kPortDirection = (dmxnode_node.GetPortDirection(port_index) == dmxnode::PortDirection::kOutput ? dmx::PortDirection::kOutput : dmx::PortDirection::kInput);
-        dmx.SetPortDirection(port_index, kPortDirection, false);
-    }
-
     const auto kActivePorts = dmxnode_node.GetActiveInputPorts() + dmxnode_node.GetActiveOutputPorts();
 
 #if defined(NODE_SHOWFILE)
@@ -96,16 +90,16 @@ int main() // NOLINT
 
     RemoteConfig remote_config(remoteconfig::Output::DMX, kActivePorts);
 
-    display.TextStatus(DmxNodeMsgConst::START, console::Colours::kConsoleYellow);
+    display.TextStatus(DmxNodeMsgConst::START, ansi::Colours::Colour::kYellow);
 
     dmxnode_node.Start();
 
-    display.TextStatus(DmxNodeMsgConst::STARTED, console::Colours::kConsoleGreen);
+    display.TextStatus(DmxNodeMsgConst::STARTED, ansi::Colours::Colour::kGreen);
 
-    hal::WatchdogInit();
+    watchdog::Init();
 
     for (;;) {
-        hal::WatchdogFeed();
+        watchdog::Feed();
         network::Run();
         dmxnode_node.Run();
 #if defined(NODE_SHOWFILE)

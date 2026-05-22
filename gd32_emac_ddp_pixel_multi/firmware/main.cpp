@@ -22,25 +22,23 @@
  * THE SOFTWARE.
  */
 
-#include "firmware/pixeldmx/show.h"
 #pragma GCC push_options
 #pragma GCC optimize("O2")
 #pragma GCC optimize("no-tree-loop-distribute-patterns")
 
-#include <cstdint>
-#include <cstdio>
 
-#include "gd32/hal_watchdog.h"
+
+#include "gd32/hal.h"
+#include "watchdog.h"
 #include "network.h"
 #include "apps/mdns.h"
 #include "displayudf.h"
 #include "json/displayudfparams.h"
 #include "ddpdisplay.h"
-#include "pixeldmxconfiguration.h"
-#include "pixeltype.h"
 #include "pixeltestpattern.h"
 #include "json/pixeldmxparams.h"
 #include "pixeldmxmulti.h"
+#include "firmware/pixeldmx/show.h"
 #if defined(NODE_RDMNET_LLRP_ONLY)
 #include "rdmnetdevice.h"
 #endif
@@ -89,7 +87,7 @@ int main() // NOLINT
     ddpdisplay.Print();
 
 #if defined(NODE_RDMNET_LLRP_ONLY)
-    RDMNetDevice llrp_only_device;
+    RdmNetDevice llrp_only_device;
     llrp_only_device.Print();
 #endif
 
@@ -108,16 +106,16 @@ int main() // NOLINT
 
     RemoteConfig remote_config(remoteconfig::Output::PIXEL, kActivePorts);
 
-    display.TextStatus("Starting DDP Display", console::Colours::kConsoleYellow);
+    display.TextStatus("Starting DDP Display", ansi::Colours::Colour::kYellow);
 
     ddpdisplay.Start();
 
-    display.TextStatus("DDP Display Started", console::Colours::kConsoleGreen);
+    display.TextStatus("DDP Display Started", ansi::Colours::Colour::kGreen);
 
-    hal::WatchdogInit();
+    watchdog::Init();
 
     for (;;) {
-        hal::WatchdogFeed();
+        watchdog::Feed();
         network::Run();
         pixeltest_pattern.Run();
         hal::Run();

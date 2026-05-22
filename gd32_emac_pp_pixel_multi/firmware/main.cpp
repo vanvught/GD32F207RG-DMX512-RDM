@@ -27,7 +27,7 @@
 #pragma GCC optimize("no-tree-loop-distribute-patterns")
 
 #include "gd32/hal.h"
-#include "gd32/hal_watchdog.h"
+#include "watchdog.h"
 #include "network.h"
 #include "apps/mdns.h"
 #include "displayudf.h"
@@ -89,7 +89,7 @@ int main() // NOLINT
     pp.Print();
 
 #if defined(NODE_RDMNET_LLRP_ONLY)
-    RDMNetDevice llrp_only_device;
+    RdmNetDevice llrp_only_device;
     llrp_only_device.Print();
 #endif
 
@@ -108,16 +108,16 @@ int main() // NOLINT
 
     RemoteConfig remote_config(remoteconfig::Output::PIXEL, kActivePorts);
 
-    display.TextStatus("Starting PixelPusher", console::Colours::kConsoleYellow);
+    display.TextStatus("Starting PixelPusher", ansi::Colours::Colour::kYellow);
 
     pp.Start();
 
-    display.TextStatus("PixelPusher Started", console::Colours::kConsoleGreen);
+    display.TextStatus("PixelPusher Started", ansi::Colours::Colour::kGreen);
 
-    hal::WatchdogInit();
+    watchdog::Init();
 
     for (;;) {
-        hal::WatchdogFeed();
+        watchdog::Feed();
         network::Run();
         pp.Run();
         pixeltest_pattern.Run();
