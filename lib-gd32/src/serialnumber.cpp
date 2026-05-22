@@ -1,5 +1,5 @@
 /**
- * @file timer5.cpp
+ * @file serialnumber.cpp
  *
  */
 /* Copyright (C) 2025-2026 by Arjan van Vught mailto:info@gd32-dmx.org
@@ -23,18 +23,21 @@
  * THE SOFTWARE.
  */
 
-#include "gd32.h" // IWYU pragma: keep
+#include <cstdint>
 
-void Timer5Config() {
-    rcu_periph_clock_enable(RCU_TIMER5);
+#include "serialnumber.h"
 
-    timer_deinit(TIMER5);
+void SerialNumber(uint8_t sn[kSnSize]) {
+#if defined(GD32H7XX)
+    const auto kMacaddressHigh = *reinterpret_cast<volatile uint32_t*>(0x1FF0F7E8);
+#elif defined(GD32F4XX)
+    const auto kMacaddressHigh = *reinterpret_cast<volatile uint32_t*>(0x1FFF7A10);
+#else
+    const auto kMacaddressHigh = *reinterpret_cast<volatile uint32_t*>(0x1FFFF7E8);
+#endif
 
-    timer_parameter_struct timer_initpara;
-    timer_struct_para_init(&timer_initpara);
-
-    timer_initpara.prescaler = TIMER_PSC_1MHZ;
-    timer_initpara.period = UINT32_MAX;
-    timer_init(TIMER5, &timer_initpara);
-    timer_enable(TIMER5);
+    sn[0] = static_cast<uint8_t>((kMacaddressHigh >> 0) & 0xFF);
+    sn[1] = static_cast<uint8_t>((kMacaddressHigh >> 8) & 0xFF);
+    sn[2] = static_cast<uint8_t>((kMacaddressHigh >> 16) & 0xFF);
+    sn[3] = static_cast<uint8_t>((kMacaddressHigh >> 24) & 0xFF);
 }
