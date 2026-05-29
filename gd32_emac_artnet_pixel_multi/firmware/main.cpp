@@ -65,19 +65,17 @@ int main() // NOLINT
     fw.Print("Art-Net 4 Pixel controller {" STR(CONFIG_DMXNODE_PIXEL_MAX_PORTS) " Ports}");
 
     DmxNodeNode dmxnode_node;
-
     PixelDmxMulti pixeldmx_multi;
+    PixelTestPattern pixeltest_pattern(pixelpatterns::Pattern::kNone, CONFIG_DMXNODE_PIXEL_MAX_PORTS);
 
     json::PixelDmxParams pixeldmx_params;
     pixeldmx_params.Load();
     pixeldmx_params.Set();
 
     const auto kPixelActivePorts = pixeldmx_multi.GetOutputPorts();
-    const auto kTestPattern = common::FromValue<pixelpatterns::Pattern>(ConfigStore::Instance().DmxLedGet(&common::store::DmxLed::test_pattern));
+    const auto kTestPattern = pixeltest_pattern.GetPattern();
 
-    PixelTestPattern pixeltest_pattern(kTestPattern, kPixelActivePorts);
-
-    if (PixelTestPattern::Get()->GetPattern() != pixelpatterns::Pattern::kNone) {
+    if (kTestPattern != pixelpatterns::Pattern::kNone) {
         dmxnode_node.SetOutput(nullptr);
     } else {
         dmxnode_node.SetOutput(&pixeldmx_multi);
@@ -103,9 +101,9 @@ int main() // NOLINT
     displayudf_params.Load();
     displayudf_params.SetAndShow();
 
-    common::firmware::pixeldmx::Show(7);
+    common::firmware::pixeldmx::Show(7, kTestPattern);
 
-    RemoteConfig remote_config(remoteconfig::Output::PIXEL, dmxnode_node.GetActiveOutputPorts());
+    RemoteConfig remote_config(remoteconfig::Output::PIXEL, kPixelActivePorts);
 
     display.TextStatus(DmxNodeMsgConst::START, ansi::Colours::Colour::kYellow);
 
