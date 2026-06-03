@@ -24,6 +24,9 @@
  */
 
 #undef NDEBUG
+#if !defined (USE_GZIP)
+#define USE_GZIP
+#endif
  
 #include <cstdint>
 #include <cstdlib>
