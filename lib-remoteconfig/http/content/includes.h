@@ -4,6 +4,9 @@
 #include "layout.js.h"
 #include "status_index.html.h"
 #include "index.html.h"
+#if defined (CONFIG_HTTPD_ENABLE_UPLOAD)
+#include "upload_index.js.h"
+#endif // (CONFIG_HTTPD_ENABLE_UPLOAD)
 #if defined (NODE_LTC_SMPTE)
 #include "config_etc.js.h"
 #endif // (NODE_LTC_SMPTE)
@@ -70,6 +73,9 @@
 #if !defined (CONFIG_HTTP_HTML_NO_PIXEL) && (defined(OUTPUT_DMX_PIXEL) || defined(OUTPUT_DMX_PIXEL_MULTI))
 #include "pixeltype.json.h"
 #endif // !defined (CONFIG_HTTP_HTML_NO_PIXEL) && (defined(OUTPUT_DMX_PIXEL) || defined(OUTPUT_DMX_PIXEL_MULTI))
+#if defined (CONFIG_HTTPD_ENABLE_UPLOAD)
+#include "upload_index.html.h"
+#endif // (CONFIG_HTTPD_ENABLE_UPLOAD)
 #if defined (DISPLAY_UDF)
 #include "config_display.js.h"
 #endif // (DISPLAY_UDF)
