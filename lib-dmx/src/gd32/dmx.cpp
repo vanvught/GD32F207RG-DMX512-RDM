@@ -50,7 +50,6 @@
 #include "gd32_uart.h"
 #include "gd32_gpio.h"
 #include "dmx_internal.h"
-#include "gd32/dmx_dma_check.h" // IWYU pragma: keep // Do not reorder/move
 #if defined(LOGIC_ANALYZER)
 #include "logic_analyzer.h" // IWYU pragma: keep
 #endif
@@ -560,8 +559,6 @@ void TIMER1_IRQHandler() {
                     [[unlikely]] assert(false);
                     break;
             }
-        } else [[unlikely]] {
-            assert(false);
         }
 
         TIMER_INTF(TIMER1) = static_cast<uint32_t>(~TIMER_INT_FLAG_CH1);
@@ -630,8 +627,6 @@ void TIMER1_IRQHandler() {
                     [[unlikely]] assert(false);
                     break;
             }
-        } else [[unlikely]] {
-            assert(false);
         }
 
         TIMER_INTF(TIMER1) = static_cast<uint32_t>(~TIMER_INT_FLAG_CH2);
@@ -698,8 +693,6 @@ void TIMER1_IRQHandler() {
                     [[unlikely]] assert(false);
                     break;
             }
-        } else [[unlikely]] {
-            assert(false);
         }
 
         TIMER_INTF(TIMER1) = static_cast<uint32_t>(~TIMER_INT_FLAG_CH3);
@@ -775,8 +768,6 @@ void TIMER4_IRQHandler() {
                     [[unlikely]] assert(false);
                     break;
             }
-        } else [[unlikely]] {
-            assert(false);
         }
 
         TIMER_INTF(TIMER4) = static_cast<uint32_t>(~TIMER_INT_FLAG_CH0);
@@ -846,8 +837,6 @@ void TIMER4_IRQHandler() {
                     [[unlikely]] assert(false);
                     break;
             }
-        } else [[unlikely]] {
-            assert(false);
         }
 
         TIMER_INTF(TIMER4) = static_cast<uint32_t>(~TIMER_INT_FLAG_CH1);
@@ -907,8 +896,6 @@ void TIMER4_IRQHandler() {
                     [[unlikely]] assert(false);
                     break;
             }
-        } else [[unlikely]] {
-            assert(false);
         }
 
         TIMER_INTF(TIMER4) = static_cast<uint32_t>(~TIMER_INT_FLAG_CH2);
@@ -968,8 +955,6 @@ void TIMER4_IRQHandler() {
                     [[unlikely]] assert(false);
                     break;
             }
-        } else [[unlikely]] {
-            assert(false);
         }
 
         TIMER_INTF(TIMER4) = static_cast<uint32_t>(~TIMER_INT_FLAG_CH3);
@@ -1792,7 +1777,7 @@ void Dmx::RdmSendDataInternal(const uint8_t* data, uint32_t length) {
 
 template <uint32_t port_index, uint32_t uart> 
 static void StartRdmOutput() {
-    DEBUG_PRINTF("port_index=%u, uart=%u", port_index, uart);
+    DEBUG_PRINTF("port_index=%u, uart=%p", port_index, reinterpret_cast<void*>(uart));
     // USART_FLAG_TC is set after power on.
     // The flag is cleared by DMA interrupt when maximum slots - 1 are transmitted.
     // TODO(a): Do we need a timeout just to be safe?
