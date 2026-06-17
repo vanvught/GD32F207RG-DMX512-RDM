@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+PYTHON="${PYTHON:-python3}"
+command -v "$PYTHON" >/dev/null 2>&1 || PYTHON=python
+command -v "$PYTHON" >/dev/null 2>&1 || { echo "No python found (need python3)"; exit 1; }
+
+if [[ ! -x "$DIR/venv/bin/python" ]]; then
+  "$PYTHON" -m venv "$DIR/venv" || {
+    echo "Failed to create venv. On Debian/Ubuntu install: python3-venv" >&2
+    exit 1
+  }
+  "$DIR/venv/bin/python" -m pip install -q -U pip
+  "$DIR/venv/bin/python" -m pip install -q pyserial
+fi
+
+exec "$DIR/venv/bin/python" "$DIR/flash.py" "$@"
+
