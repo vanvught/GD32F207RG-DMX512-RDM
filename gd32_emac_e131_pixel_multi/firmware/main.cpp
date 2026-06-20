@@ -26,7 +26,7 @@
 #pragma GCC optimize("O2")
 #pragma GCC optimize("no-tree-loop-distribute-patterns")
 
-#include "gd32/hal.h"
+#include "board.h"
 #include "watchdog.h"
 #include "network.h"
 #include "displayudf.h"
@@ -43,19 +43,19 @@
 #endif
 #include "remoteconfig.h"
 #include "configstore.h"
-#include "firmwareversion.h"
+#include "firmware/firmwareversion.h"
 #include "software_version.h"
 
-namespace hal {
+namespace board {
 void RebootHandler() {
     PixelDmxMulti::Get().Blackout();
     E131Bridge::Get()->Stop();
 }
-} // namespace hal
+} // namespace board
 
 int main() // NOLINT
 {
-    hal::Init();
+    board::Init();
     DisplayUdf display;
     ConfigStore config_store;
     network::Init();
@@ -117,6 +117,6 @@ int main() // NOLINT
         showfile.Run();
 #endif
         pixeltest_pattern.Run();
-        hal::Run();
+        board::Run();
     }
 }

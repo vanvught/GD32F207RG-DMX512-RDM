@@ -116,7 +116,7 @@ inline constexpr struct FilesContent kHttpContent[] = {
 	{ 610379173,"config_gps.js", config_gps_js_gz, 559, static_cast<http::ContentTypes>(2), true },
 #endif // (NODE_LTC_SMPTE)
 #if defined (DMXNODE_PORTS)
-	{ 3906326706,"config_dmxnode.js", config_dmxnode_js_gz, 1014, static_cast<http::ContentTypes>(2), true },
+	{ 3906326706,"config_dmxnode.js", config_dmxnode_js_gz, 1013, static_cast<http::ContentTypes>(2), true },
 #endif // (DMXNODE_PORTS)
 #if !defined (CONFIG_HTTP_HTML_NO_PIXEL) && (defined(OUTPUT_DMX_PIXEL) || defined(OUTPUT_DMX_PIXEL_MULTI))
 	{ 4089447436,"config_dmxpixel.js", config_dmxpixel_js_gz, 828, static_cast<http::ContentTypes>(2), true },
