@@ -43,26 +43,24 @@
 #include "gd32/gpio/pixeloutputmulti_config.h" // IWYU pragma: keep
 #include "gd32.h"                              // IWYU pragma: keep
 
-class PixelOutputMulti
-{
+class PixelOutputMulti {
    public:
     PixelOutputMulti();
     ~PixelOutputMulti() = default;
 
     void ApplyConfiguration();
 
-#define BIT_SET(Addr, Bit)                                                                                          \
-    {                                                                                                               \
-        *(volatile uint32_t*)(BITBAND_SRAM_BASE + (((uint32_t)&Addr) - SRAM_BASE) * 32U + (Bit & 0xFF) * 4U) = 0x1; \
+#define BIT_SET(Addr, Bit)                                                                                                                                  \
+    {                                                                                                                                                       \
+        *reinterpret_cast<volatile uint32_t*>((BITBAND_SRAM_BASE + ((reinterpret_cast<uint32_t>(&(Addr))) - SRAM_BASE) * 32U + ((Bit) & 0xFF) * 4U)) = 0x1; \
     }
 
-#define BIT_CLEAR(Addr, Bit)                                                                                          \
-    {                                                                                                                 \
-        *(volatile uint32_t*)(BITBAND_SRAM_BASE + (((uint32_t)&(Addr)) - SRAM_BASE) * 32U + (Bit & 0xFF) * 4U) = 0x0; \
+#define BIT_CLEAR(Addr, Bit)                                                                                                                                \
+    {                                                                                                                                                       \
+        *reinterpret_cast<volatile uint32_t*>((BITBAND_SRAM_BASE + ((reinterpret_cast<uint32_t>(&(Addr))) - SRAM_BASE) * 32U + ((Bit) & 0xFF) * 4U)) = 0x0; \
     }
 
-    void SetColourRTZ(uint32_t port_index, uint32_t pixel_index, uint8_t colour1, uint8_t colour2, uint8_t colour3)
-    {
+    void SetColourRTZ(uint32_t port_index, uint32_t pixel_index, uint8_t colour1, uint8_t colour2, uint8_t colour3) {
         assert(port_index < pixel::kPortCount);
 
         uint32_t j = 0;
@@ -70,34 +68,24 @@ class PixelOutputMulti
         const auto kBit = port_index + GPIO_PIN_OFFSET;
         auto* p = &s_pixel_buffer_data[kIndex];
 
-        for (uint8_t mask = 0x80; mask != 0; mask = static_cast<uint8_t>(mask >> 1))
-        {
+        for (uint8_t mask = 0x80; mask != 0; mask = static_cast<uint8_t>(mask >> 1)) {
             auto& p1 = p[j];
             auto& p2 = p[8 + j];
             auto& p3 = p[16 + j];
 
-            if (!(mask & colour1))
-            {
+            if (!(mask & colour1)) {
                 BIT_SET(p1, kBit);
-            }
-            else
-            {
+            } else {
                 BIT_CLEAR(p1, kBit);
             }
-            if (!(mask & colour2))
-            {
+            if (!(mask & colour2)) {
                 BIT_SET(p2, kBit);
-            }
-            else
-            {
+            } else {
                 BIT_CLEAR(p2, kBit);
             }
-            if (!(mask & colour3))
-            {
+            if (!(mask & colour3)) {
                 BIT_SET(p3, kBit);
-            }
-            else
-            {
+            } else {
                 BIT_CLEAR(p3, kBit);
             }
 
@@ -105,8 +93,7 @@ class PixelOutputMulti
         }
     }
 
-    void SetColourRTZ(uint32_t port_index, uint32_t pixel_index, uint8_t red, uint8_t green, uint8_t blue, uint8_t white)
-    {
+    void SetColourRTZ(uint32_t port_index, uint32_t pixel_index, uint8_t red, uint8_t green, uint8_t blue, uint8_t white) {
         assert(port_index < pixel::kPortCount);
 
         const auto kIndex = pixel_index * pixel::single::kRgbw;
@@ -115,47 +102,34 @@ class PixelOutputMulti
         auto* p = &s_pixel_buffer_data[kIndex];
         uint32_t j = 0;
 
-        for (uint8_t mask = 0x80; mask != 0; mask = static_cast<uint8_t>(mask >> 1))
-        {
+        for (uint8_t mask = 0x80; mask != 0; mask = static_cast<uint8_t>(mask >> 1)) {
             auto& p1 = p[j];
             auto& p2 = p[8 + j];
             auto& p3 = p[16 + j];
             auto& p4 = p[24 + j];
 
             // GRBW
-            if (!(mask & green))
-            {
+            if (!(mask & green)) {
                 BIT_SET(p1, kBit);
-            }
-            else
-            {
+            } else {
                 BIT_CLEAR(p1, kBit);
             }
 
-            if (!(mask & red))
-            {
+            if (!(mask & red)) {
                 BIT_SET(p2, kBit);
-            }
-            else
-            {
+            } else {
                 BIT_CLEAR(p2, kBit);
             }
 
-            if (!(mask & blue))
-            {
+            if (!(mask & blue)) {
                 BIT_SET(p3, kBit);
-            }
-            else
-            {
+            } else {
                 BIT_CLEAR(p3, kBit);
             }
 
-            if (!(mask & white))
-            {
+            if (!(mask & white)) {
                 BIT_SET(p4, kBit);
-            }
-            else
-            {
+            } else {
                 BIT_CLEAR(p4, kBit);
             }
 
@@ -163,8 +137,7 @@ class PixelOutputMulti
         }
     }
 
-    void SetColourWS2801(uint32_t port_index, uint32_t pixel_index, uint8_t colour1, uint8_t colour2, uint8_t colour3)
-    {
+    void SetColourWS2801(uint32_t port_index, uint32_t pixel_index, uint8_t colour1, uint8_t colour2, uint8_t colour3) {
         assert(port_index < pixel::kPortCount);
 
         uint32_t j = 0;
@@ -172,34 +145,24 @@ class PixelOutputMulti
         const auto kBit = port_index + GPIO_PIN_OFFSET;
         auto* p = &s_pixel_buffer_data[kIndex];
 
-        for (uint8_t mask = 0x80; mask != 0; mask = static_cast<uint8_t>(mask >> 1))
-        {
+        for (uint8_t mask = 0x80; mask != 0; mask = static_cast<uint8_t>(mask >> 1)) {
             auto& p1 = p[j];
             auto& p2 = p[8 + j];
             auto& p3 = p[16 + j];
 
-            if (mask & colour1)
-            {
+            if (mask & colour1) {
                 BIT_SET(p1, kBit);
-            }
-            else
-            {
+            } else {
                 BIT_CLEAR(p1, kBit);
             }
-            if (mask & colour2)
-            {
+            if (mask & colour2) {
                 BIT_SET(p2, kBit);
-            }
-            else
-            {
+            } else {
                 BIT_CLEAR(p2, kBit);
             }
-            if (mask & colour3)
-            {
+            if (mask & colour3) {
                 BIT_SET(p3, kBit);
-            }
-            else
-            {
+            } else {
                 BIT_CLEAR(p3, kBit);
             }
 
@@ -207,8 +170,7 @@ class PixelOutputMulti
         }
     }
 
-    void SetPixel4Bytes(uint32_t port_index, uint32_t pixel_index, uint8_t ctrl, uint8_t colour1, uint8_t colour2, uint8_t colour3)
-    {
+    void SetPixel4Bytes(uint32_t port_index, uint32_t pixel_index, uint8_t ctrl, uint8_t colour1, uint8_t colour2, uint8_t colour3) {
         assert(port_index < pixel::kPortCount);
 
         uint32_t j = 0;
@@ -216,41 +178,28 @@ class PixelOutputMulti
         const auto kBit = port_index + GPIO_PIN_OFFSET;
         auto* p = &s_pixel_buffer_data[kIndex];
 
-        for (uint8_t mask = 0x80; mask != 0; mask = static_cast<uint8_t>(mask >> 1))
-        {
-            if (mask & ctrl)
-            {
+        for (uint8_t mask = 0x80; mask != 0; mask = static_cast<uint8_t>(mask >> 1)) {
+            if (mask & ctrl) {
                 BIT_SET(p[j], kBit);
-            }
-            else
-            {
+            } else {
                 BIT_CLEAR(p[j], kBit);
             }
 
-            if (mask & colour1)
-            {
+            if (mask & colour1) {
                 BIT_SET(p[8 + j], kBit);
-            }
-            else
-            {
+            } else {
                 BIT_CLEAR(p[8 + j], kBit);
             }
 
-            if (mask & colour2)
-            {
+            if (mask & colour2) {
                 BIT_SET(p[16 + j], kBit);
-            }
-            else
-            {
+            } else {
                 BIT_CLEAR(p[16 + j], kBit);
             }
 
-            if (mask & colour3)
-            {
+            if (mask & colour3) {
                 BIT_SET(p[24 + j], kBit);
-            }
-            else
-            {
+            } else {
                 BIT_CLEAR(p[24 + j], kBit);
             }
 
@@ -287,7 +236,7 @@ class PixelOutputMulti
     static inline uint16_t s_pixel_buffer[2 * 1024 * 16] __attribute__((aligned(4))) SECTION_PIXEL;
     static inline constexpr auto kPixelBufferSize = sizeof(s_pixel_buffer) / sizeof(s_pixel_buffer[0]);
     static inline auto* s_pixel_buffer_data = reinterpret_cast<uint16_t*>(s_pixel_buffer);
-    static inline auto* s_pixel_buffer_dma = reinterpret_cast<uint16_t*>(s_pixel_buffer + kPixelBufferSize / 2);
+    static inline auto* s_pixel_buffer_dma = (s_pixel_buffer + kPixelBufferSize / 2);
     static inline constexpr uint32_t kMaxApA102 = ((kPixelBufferSize / 8) - 8) / 4;
 
     static inline PixelOutputMulti* s_this;
