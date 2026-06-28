@@ -2,11 +2,11 @@
     \file    gd32f20x_exmc.c
     \brief   EXMC driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -800,7 +800,6 @@ uint32_t exmc_sdram_bankstatus_get(uint32_t exmc_sdram_device)
     } else {
         sdstat = ((uint32_t)(EXMC_SDSTAT & EXMC_SDSDAT_STA1) >> SDSTAT_STA1_OFFSET);
     }
-
     return sdstat;
 }
 
@@ -1000,6 +999,7 @@ uint32_t exmc_sqpipsram_high_id_get(void)
 FlagStatus exmc_sqpipsram_send_command_state_get(uint32_t send_command_flag)
 {
     uint32_t flag = 0x00000000U;
+    FlagStatus retval;
 
     if(EXMC_SEND_COMMAND_FLAG_RDID == send_command_flag) {
         flag = EXMC_SRCMD;
@@ -1010,11 +1010,12 @@ FlagStatus exmc_sqpipsram_send_command_state_get(uint32_t send_command_flag)
 
     if(flag & send_command_flag) {
         /* flag is set */
-        return SET;
+        retval = SET;
     } else {
         /* flag is reset */
-        return RESET;
+        retval = RESET;
     }
+    return retval;
 }
 
 /*!
@@ -1040,6 +1041,7 @@ FlagStatus exmc_sqpipsram_send_command_state_get(uint32_t send_command_flag)
 FlagStatus exmc_flag_get(uint32_t bank, uint32_t flag)
 {
     uint32_t status = 0x00000000U;
+    FlagStatus retval;
 
     if((EXMC_BANK1_NAND == bank) || (EXMC_BANK2_NAND == bank) || (EXMC_BANK3_PCCARD == bank)) {
         /* NAND bank1,bank2 or PC card bank3 */
@@ -1051,11 +1053,12 @@ FlagStatus exmc_flag_get(uint32_t bank, uint32_t flag)
 
     if((status & flag) != (uint32_t)flag) {
         /* flag is reset */
-        return RESET;
+        retval = RESET;
     } else {
         /* flag is set */
-        return SET;
+        retval = SET;
     }
+    return retval;
 }
 
 /*!
@@ -1167,6 +1170,7 @@ void exmc_interrupt_disable(uint32_t bank, uint32_t interrupt)
 FlagStatus exmc_interrupt_flag_get(uint32_t bank, uint32_t interrupt)
 {
     uint32_t status = 0x00000000U, interrupt_enable = 0x00000000U, interrupt_state = 0x00000000U;
+    FlagStatus retval;
 
     if((EXMC_BANK1_NAND == bank) || (EXMC_BANK2_NAND == bank) || (EXMC_BANK3_PCCARD == bank)) {
         /* NAND bank1,bank2 or PC card bank3 */
@@ -1182,11 +1186,12 @@ FlagStatus exmc_interrupt_flag_get(uint32_t bank, uint32_t interrupt)
 
     if((interrupt_enable) && (interrupt_state)) {
         /* interrupt flag is set */
-        return SET;
+        retval = SET;
     } else {
         /* interrupt flag is reset */
-        return RESET;
+        retval = RESET;
     }
+    return retval;
 }
 
 /*!

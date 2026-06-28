@@ -2,11 +2,11 @@
     \file    gd32f20x_wwdgt.c
     \brief   WWDGT driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -95,13 +95,15 @@ void wwdgt_config(uint16_t counter, uint16_t window, uint32_t prescaler)
 */
 FlagStatus wwdgt_interrupt_flag_get(void)
 {
+    FlagStatus flag_status = RESET;
     uint32_t state;
     state = WWDGT_STAT & WWDGT_STAT_EWIF;
+ 
     if((WWDGT_CFG & WWDGT_CFG_EWIE) & state) {
-        return SET;
+        flag_status = SET;
     }
 
-    return RESET;
+    return flag_status;
 }
 
 /*!
@@ -112,11 +114,13 @@ FlagStatus wwdgt_interrupt_flag_get(void)
 */
 FlagStatus wwdgt_flag_get(void)
 {
-    if(WWDGT_STAT & WWDGT_STAT_EWIF) {
-        return SET;
+    FlagStatus flag_status = RESET;
+
+    if(RESET != (WWDGT_STAT & WWDGT_STAT_EWIF)) {
+        flag_status = SET;
     }
 
-    return RESET;
+    return flag_status;
 }
 
 /*!

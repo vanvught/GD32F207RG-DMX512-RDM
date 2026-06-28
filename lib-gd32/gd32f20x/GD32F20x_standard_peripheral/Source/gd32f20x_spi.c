@@ -2,11 +2,11 @@
     \file    gd32f20x_spi.c
     \brief   SPI driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -173,7 +173,7 @@ void spi_disable(uint32_t spi_periph)
       \arg        I2S_MODE_MASTERRX: I2S master receive mode
     \param[in]  standard: I2S standard
                 only one parameter can be selected which is shown as below:
-      \arg        I2S_STD_PHILLIPS: I2S phillips standard
+      \arg        I2S_STD_PHILIPS: I2S philips standard
       \arg        I2S_STD_MSB: I2S MSB standard
       \arg        I2S_STD_LSB: I2S LSB standard
       \arg        I2S_STD_PCMSHORT: I2S PCM short standard
@@ -449,6 +449,20 @@ void spi_bidirectional_transfer_config(uint32_t spi_periph, uint32_t transfer_di
 }
 
 /*!
+    \brief      clear SPI/I2S format error flag status
+    \param[in]  spi_periph: SPIx(x=0,1,2)
+    \param[in]  flag: SPI/I2S frame format error flag 
+      \arg        SPI_FLAG_FERR: only for SPI work in TI mode
+      \arg        I2S_FLAG_FERR: for I2S
+    \param[out] none
+    \retval     none
+*/
+void spi_i2s_format_error_clear(uint32_t spi_periph, uint32_t flag)
+{
+    SPI_STAT(spi_periph) = (uint32_t)(~flag);
+}
+
+/*!
     \brief      SPI transmit data
     \param[in]  spi_periph: SPIx(x=0,1,2)
     \param[in]  data: 16-bit data
@@ -540,11 +554,14 @@ void spi_crc_next(uint32_t spi_periph)
 */
 uint16_t spi_crc_get(uint32_t spi_periph, uint8_t crc)
 {
+    uint16_t crc_value = 0U;
+
     if(SPI_CRC_TX == crc) {
-        return ((uint16_t)(SPI_TCRC(spi_periph)));
+        crc_value = ((uint16_t)(SPI_TCRC(spi_periph)));
     } else {
-        return ((uint16_t)(SPI_RCRC(spi_periph)));
+        crc_value = ((uint16_t)(SPI_RCRC(spi_periph)));
     }
+    return crc_value;
 }
 
 /*!
@@ -646,11 +663,13 @@ void spi_quad_io23_output_disable(uint32_t spi_periph)
 */
 FlagStatus spi_i2s_flag_get(uint32_t spi_periph, uint32_t flag)
 {
+    FlagStatus flag_status = RESET;
     if(RESET != (SPI_STAT(spi_periph) & flag)) {
-        return SET;
+        flag_status = SET;
     } else {
-        return RESET;
+        flag_status = RESET;
     }
+    return flag_status;
 }
 
 /*!
@@ -705,6 +724,7 @@ FlagStatus spi_i2s_interrupt_flag_get(uint32_t spi_periph, uint8_t interrupt)
 {
     uint32_t reg1 = SPI_STAT(spi_periph);
     uint32_t reg2 = SPI_CTL1(spi_periph);
+    FlagStatus flag_status = RESET;
 
     switch(interrupt) {
     /* SPI/I2S transmit buffer empty interrupt */
@@ -742,8 +762,9 @@ FlagStatus spi_i2s_interrupt_flag_get(uint32_t spi_periph, uint8_t interrupt)
     }
     /*get SPI/I2S interrupt flag status */
     if((0U != reg1) && (0U != reg2)) {
-        return SET;
+        flag_status = SET;
     } else {
-        return RESET;
+        flag_status = RESET;
     }
+    return flag_status;
 }

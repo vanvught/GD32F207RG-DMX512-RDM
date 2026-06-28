@@ -2,11 +2,11 @@
     \file    gd32f20x_rcu.c
     \brief   RCU driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -706,33 +706,26 @@ void rcu_pllt_config(uint32_t pllt_src)
 ErrStatus rcu_pllt_vco_config(uint32_t pllt_psc, uint32_t pllt_mul, uint32_t ppltr_psc)
 {
     uint32_t reg = 0U;
-
+    ErrStatus status = ERROR;
+    
     /* check the function parameter */
-    if((pllt_psc < 2U) || (pllt_psc > 63U)) {
-        return ERROR;
-    } else {
-    }
+    if((pllt_psc >= 2U) && (pllt_psc <= 63U) &&
+       (pllt_mul >= 49U) && (pllt_mul <= 432U) &&
+       (ppltr_psc >= 2U) && (ppltr_psc <= 7U)) {
 
-    if((pllt_mul < 49U) || (pllt_mul > 432U)) {
-        return ERROR;
-    } else {
-    }
+         reg = RCU_PLLTCFG;
+         
+         /* reset the PLLTRPSC bits, PLLTMF bits and PLLTPSC bits */
+         reg &= ~(RCU_PLLTCFG_PLLTRPSC | RCU_PLLTCFG_PLLTMF | RCU_PLLTCFG_PLLTPSC);
+         
+         reg |= (PLLTCFG_PLLTPSC(pllt_psc) | PLLTCFG_PLLTMF(pllt_mul) | PLLTCFG_PLLTRPSC(ppltr_psc));
+         
+         RCU_PLLTCFG = reg;
+         
+         status = SUCCESS;
+       }
 
-    if((ppltr_psc < 2U) || (ppltr_psc > 7U)) {
-        return ERROR;
-    } else {
-    }
-
-    reg = RCU_PLLTCFG;
-
-    /* reset the PLLTRPSC bits, PLLTMF bits and PLLTPSC bits */
-    reg &= ~(RCU_PLLTCFG_PLLTRPSC | RCU_PLLTCFG_PLLTMF | RCU_PLLTCFG_PLLTPSC);
-
-    reg |= (PLLTCFG_PLLTPSC(pllt_psc) | PLLTCFG_PLLTMF(pllt_mul) | PLLTCFG_PLLTRPSC(ppltr_psc));
-
-    RCU_PLLTCFG = reg;
-
-    return SUCCESS;
+    return status;
 }
 
 /*!
@@ -794,6 +787,8 @@ void rcu_lxtal_drive_capability_config(uint32_t lxtal_dricap)
       \arg        RCU_PLLT_CK: TLI phase locked loop
     \param[out] none
     \retval     ErrStatus: SUCCESS or ERROR
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 ErrStatus rcu_osci_stab_wait(rcu_osci_type_enum osci)
 {
@@ -1227,12 +1222,14 @@ uint32_t rcu_clock_freq_get(rcu_clock_freq_enum clock)
 */
 FlagStatus rcu_flag_get(rcu_flag_enum flag)
 {
+    FlagStatus status = RESET;
     /* get the rcu flag */
     if(RESET != (RCU_REG_VAL(flag) & BIT(RCU_BIT_POS(flag)))) {
-        return SET;
+        status = SET;
     } else {
-        return RESET;
+        status = RESET;
     }
+    return status;
 }
 
 /*!
@@ -1304,12 +1301,14 @@ void rcu_interrupt_disable(rcu_int_enum stab_int)
 */
 FlagStatus rcu_interrupt_flag_get(rcu_int_flag_enum int_flag)
 {
-    /* get the rcu interrupt flag */
+    FlagStatus status = RESET;
+  /* get the rcu interrupt flag */
     if(RESET != (RCU_REG_VAL(int_flag) & BIT(RCU_BIT_POS(int_flag)))) {
-        return SET;
+        status = SET;
     } else {
-        return RESET;
+        status = RESET;
     }
+    return status;
 }
 
 /*!

@@ -2,11 +2,11 @@
     \file    gd32f20x_fwdgt.c
     \brief   FWDGT driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -80,28 +80,31 @@ void fwdgt_enable(void)
       \arg        FWDGT_PSC_DIV256: FWDGT prescaler set to 256
     \param[out] none
     \retval     ErrStatus: ERROR or SUCCESS
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 ErrStatus fwdgt_prescaler_value_config(uint16_t prescaler_value)
 {
     uint32_t timeout = FWDGT_PSC_TIMEOUT;
-    uint32_t flag_status = RESET;
+    uint32_t flag_status;
+    ErrStatus status = SUCCESS;
   
     /* enable write access to FWDGT_PSC */
     FWDGT_CTL = FWDGT_WRITEACCESS_ENABLE;
-  
+
+    /* configure FWDGT_PSC */
+    FWDGT_PSC = (uint32_t)prescaler_value;
+
     /* wait until the PUD flag to be reset */
     do{
         flag_status = FWDGT_STAT & FWDGT_STAT_PUD;
-    }while((--timeout > 0U) && ((uint32_t)RESET != flag_status));
+    }while((--timeout > 0U) && (0U != flag_status));
     
-    if ((uint32_t)RESET != flag_status){
-        return ERROR;
+    if (0U != flag_status){
+        status = ERROR;
     }
-    
-    /* configure FWDGT */
-    FWDGT_PSC = (uint32_t)prescaler_value; 
 
-    return SUCCESS;
+    return status;
 }
 
 /*!
@@ -109,27 +112,31 @@ ErrStatus fwdgt_prescaler_value_config(uint16_t prescaler_value)
     \param[in]  reload_value: specify reload value(0x0000 - 0x0FFF)
     \param[out] none
     \retval     ErrStatus: ERROR or SUCCESS
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 ErrStatus fwdgt_reload_value_config(uint16_t reload_value)
 {
     uint32_t timeout = FWDGT_RLD_TIMEOUT;
-    uint32_t flag_status = RESET;
-  
+    uint32_t flag_status;
+    ErrStatus status = SUCCESS;
+
     /* enable write access to FWDGT_RLD */
     FWDGT_CTL = FWDGT_WRITEACCESS_ENABLE;
-  
+
+    /* configure FWDGT_RLD */
+    FWDGT_RLD = RLD_RLD(reload_value);
+
     /* wait until the RUD flag to be reset */
     do{
         flag_status = FWDGT_STAT & FWDGT_STAT_RUD;
-    }while((--timeout > 0U) && ((uint32_t)RESET != flag_status));
+    }while((--timeout > 0U) && (0U != flag_status));
    
-    if ((uint32_t)RESET != flag_status){
-        return ERROR;
+    if (0U != flag_status){
+        status = ERROR;
     }
-    
-    FWDGT_RLD = RLD_RLD(reload_value);
 
-    return SUCCESS;
+    return status;
 }
 
 /*!
@@ -146,7 +153,7 @@ void fwdgt_counter_reload(void)
 /*!
     \brief      configure counter reload value, and prescaler divider value
     \param[in]  reload_value: specify reload value(0x0000 - 0x0FFF)
-    \param[in]  prescaler_div: FWDGT prescaler value
+    \param[in]  prescaler_value: FWDGT prescaler value
                 only one parameter can be selected which is shown as below:
       \arg        FWDGT_PSC_DIV4: FWDGT prescaler set to 4
       \arg        FWDGT_PSC_DIV8: FWDGT prescaler set to 8
@@ -157,43 +164,54 @@ void fwdgt_counter_reload(void)
       \arg        FWDGT_PSC_DIV256: FWDGT prescaler set to 256
     \param[out] none
     \retval     ErrStatus: ERROR or SUCCESS
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
-ErrStatus fwdgt_config(uint16_t reload_value, uint8_t prescaler_div)
+ErrStatus fwdgt_config(uint16_t reload_value, uint8_t prescaler_value)
 {
     uint32_t timeout = FWDGT_PSC_TIMEOUT;
-    uint32_t flag_status = RESET;
+    uint32_t flag_status;
+    ErrStatus status = SUCCESS;
+
+    /* start the free watchdog timer counter */
+    FWDGT_CTL = FWDGT_KEY_ENABLE;
 
     /* enable write access to FWDGT_PSC,and FWDGT_RLD */
     FWDGT_CTL = FWDGT_WRITEACCESS_ENABLE;
 
+    /* configure FWDGT_PSC */
+    FWDGT_PSC = (uint32_t)prescaler_value;
+
     /* wait until the PUD flag to be reset */
     do {
         flag_status = FWDGT_STAT & FWDGT_STAT_PUD;
-    } while((--timeout > 0U) && ((uint32_t)RESET != flag_status));
+    } while((--timeout > 0U) && (0U != flag_status));
 
-    if((uint32_t)RESET != flag_status) {
-        return ERROR;
+    if(0U != flag_status) {
+        status = ERROR;
     }
 
-    /* configure FWDGT */
-    FWDGT_PSC = (uint32_t)prescaler_div;
+    if(SUCCESS == status) {
+        /* configure FWDGT_RLD */
+        FWDGT_RLD = RLD_RLD(reload_value);
 
-    timeout = FWDGT_RLD_TIMEOUT;
-    /* wait until the RUD flag to be reset */
-    do {
-        flag_status = FWDGT_STAT & FWDGT_STAT_RUD;
-    } while((--timeout > 0U) && ((uint32_t)RESET != flag_status));
+        /* wait until the RUD flag to be reset */
+        timeout = FWDGT_RLD_TIMEOUT;
+        do {
+            flag_status = FWDGT_STAT & FWDGT_STAT_RUD;
+        } while((--timeout > 0U) && (0U != flag_status));
 
-    if((uint32_t)RESET != flag_status) {
-        return ERROR;
+        if(0U != flag_status) {
+            status = ERROR;
+        }
     }
 
-    FWDGT_RLD = RLD_RLD(reload_value);
+    if(SUCCESS == status) {
+        /* reload the counter */
+        FWDGT_CTL = FWDGT_KEY_RELOAD;
+    }
 
-    /* reload the counter */
-    FWDGT_CTL = FWDGT_KEY_RELOAD;
-
-    return SUCCESS;
+    return status;
 }
 
 /*!
@@ -207,9 +225,9 @@ ErrStatus fwdgt_config(uint16_t reload_value, uint8_t prescaler_div)
 */
 FlagStatus fwdgt_flag_get(uint16_t flag)
 {
-    if(FWDGT_STAT & flag) {
-        return SET;
+    FlagStatus flag_status = RESET;
+    if(RESET != (FWDGT_STAT & flag)) {
+        flag_status = SET;
     }
-
-    return RESET;
+    return flag_status;
 }

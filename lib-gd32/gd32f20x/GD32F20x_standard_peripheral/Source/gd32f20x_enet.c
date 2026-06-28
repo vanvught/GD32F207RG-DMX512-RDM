@@ -2,11 +2,11 @@
     \file    gd32f20x_enet.c
     \brief   ENET driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -315,6 +315,8 @@ void enet_initpara_config(enet_option_enum option, uint32_t para)
       \arg        ENET_BROADCAST_FRAMES_DROP: the address filters filter all incoming broadcast frames
     \param[out] none
     \retval     ErrStatus: ERROR or SUCCESS
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 ErrStatus enet_init(enet_mediamode_enum mediamode, enet_chksumconf_enum checksum, enet_frmrecept_enum recept)
 {
@@ -324,20 +326,22 @@ ErrStatus enet_init(enet_mediamode_enum mediamode, enet_chksumconf_enum checksum
     uint16_t phy_value = 0U;
     ErrStatus phy_state = ERROR, enet_state = ERROR;
 
+#if 0 // AvV    
     /* PHY interface configuration, configure SMI clock and reset PHY chip */
-/** AvV **/
-//  if(ERROR == enet_phy_config()) {
-//      _ENET_DELAY_(PHY_RESETDELAY);
-//      if(ERROR == enet_phy_config()) {
-//          return enet_state;
-//      }
-//  }
-/** AvV **/
+    if(ERROR == enet_phy_config()) {
+        _ENET_DELAY_(PHY_RESETDELAY);
+        if(ERROR == enet_phy_config()) {
+            return enet_state;
+        }
+    }
+#endif // AvV    
     /* initialize ENET peripheral with generally concerned parameters */
     enet_default_init();
 
     /* 1st, configure mediamode */
     media_temp = (uint32_t)mediamode;
+    
+#if 0 // AvV    
     /* if is PHY auto negotiation */
     if((uint32_t)ENET_AUTO_NEGOTIATION == media_temp) {
         /* wait for PHY_LINKED_STATUS bit be set */
@@ -383,28 +387,23 @@ ErrStatus enet_init(enet_mediamode_enum mediamode, enet_chksumconf_enum checksum
             media_temp = ENET_MODE_HALFDUPLEX;
         }
         /* configure the communication speed of MAC following the auto-negotiation result */
-#if(PHY_TYPE == RTL8201F)	/** AvV **/
-		if ((uint16_t) RESET == (phy_value & PHY_SPEED_STATUS)) {
-#else
-        if ((uint16_t) RESET != (phy_value & PHY_SPEED_STATUS)) {
-#endif
+        if((uint16_t)RESET != (phy_value & PHY_SPEED_STATUS)) {
             media_temp |= ENET_SPEEDMODE_10M;
         } else {
             media_temp |= ENET_SPEEDMODE_100M;
         }
     } else {
-/** AvV **/
-//      phy_value = (uint16_t)((media_temp & ENET_MAC_CFG_DPM) >> 3U);
-//      phy_value |= (uint16_t)((media_temp & ENET_MAC_CFG_SPD) >> 1U);
-//      phy_state = enet_phy_write_read(ENET_PHY_WRITE, PHY_ADDRESS, PHY_REG_BCR, &phy_value);
-//      if(!phy_state) {
-//          /* return ERROR due to write timeout */
-//          return enet_state;
-//      }
-//      /* PHY configuration need some time */
-//      _ENET_DELAY_(PHY_CONFIGDELAY);
-/** AvV **/
+        phy_value = (uint16_t)((media_temp & ENET_MAC_CFG_DPM) >> 3U);
+        phy_value |= (uint16_t)((media_temp & ENET_MAC_CFG_SPD) >> 1U);
+        phy_state = enet_phy_write_read(ENET_PHY_WRITE, PHY_ADDRESS, PHY_REG_BCR, &phy_value);
+        if(!phy_state) {
+            /* return ERROR due to write timeout */
+            return enet_state;
+        }
+        /* PHY configuration need some time */
+        _ENET_DELAY_(PHY_CONFIGDELAY);
     }
+#endif // AvV    
     /* after configuring the PHY, use mediamode to configure registers */
     reg_value = ENET_MAC_CFG;
     /* configure ENET_MAC_CFG register */
@@ -605,6 +604,8 @@ ErrStatus enet_init(enet_mediamode_enum mediamode, enet_chksumconf_enum checksum
     \param[in]  none
     \param[out] none
     \retval     ErrStatus: SUCCESS or ERROR
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 ErrStatus enet_software_reset(void)
 {
@@ -1266,6 +1267,8 @@ ErrStatus enet_phy_config(void)
     \param[in]  pvalue: the value will be written to the PHY register in ENET_PHY_WRITE direction
     \param[out] pvalue: the value will be read from the PHY register in ENET_PHY_READ direction
     \retval     ErrStatus: SUCCESS or ERROR
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 ErrStatus enet_phy_write_read(enet_phydirection_enum direction, uint16_t phy_address, uint16_t phy_reg, uint16_t *pvalue)
 {
@@ -1621,6 +1624,8 @@ void enet_rxprocess_check_recovery(void)
     \param[in]  none
     \param[out] none
     \retval     ErrStatus: ERROR or SUCCESS
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 ErrStatus enet_txfifo_flush(void)
 {
@@ -2197,6 +2202,8 @@ ErrStatus enet_ptpframe_receive_normal_mode(uint8_t *buffer, uint32_t bufsize, u
     \param[out] timestamp: pointer to the table which stores the timestamp high and low
                 note -- if the input is NULL, timestamp is ignored
     \retval     ErrStatus: SUCCESS or ERROR
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 ErrStatus enet_ptpframe_transmit_normal_mode(uint8_t *buffer, uint32_t length, uint32_t timestamp[])
 {
@@ -2471,6 +2478,8 @@ void enet_ptp_feature_disable(uint32_t feature)
       \arg        ENET_PTP_COARSEMODE: the system timestamp uses the coarse method for updating
     \param[out] none
     \retval     ErrStatus: SUCCESS or ERROR
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 
 ErrStatus enet_ptp_timestamp_function_config(enet_ptp_function_enum func)
@@ -2623,6 +2632,8 @@ void enet_ptp_system_time_get(enet_ptp_systime_struct *systime_struct)
     \param[in]  accuracy_cfg: the value to be added to the subsecond value of system time
     \param[out] none
     \retval     none
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 void enet_ptp_start(int32_t updatemethod, uint32_t init_sec, uint32_t init_subsec, uint32_t carry_cfg, uint32_t accuracy_cfg)
 {
@@ -2675,6 +2686,8 @@ void enet_ptp_finecorrection_adjfreq(int32_t carry_cfg)
                   sign: ENET_PTP_TIME_POSITIVE, ENET_PTP_TIME_NEGATIVE
     \param[out] none
     \retval     none
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 void enet_ptp_coarsecorrection_systime_update(enet_ptp_systime_struct *systime_struct)
 {
@@ -2709,6 +2722,8 @@ void enet_ptp_coarsecorrection_systime_update(enet_ptp_systime_struct *systime_s
                   sign: ENET_PTP_TIME_POSITIVE, ENET_PTP_TIME_NEGATIVE
     \param[out] none
     \retval     none
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 void enet_ptp_finecorrection_settime(enet_ptp_systime_struct *systime_struct)
 {
@@ -2786,7 +2801,7 @@ static void enet_default_init(void)
     reg_value &= MAC_CFG_MASK;
     reg_value |= ENET_WATCHDOG_ENABLE | ENET_JABBER_ENABLE | ENET_INTERFRAMEGAP_96BIT \
                  | ENET_SPEEDMODE_10M | ENET_MODE_HALFDUPLEX | ENET_LOOPBACKMODE_DISABLE \
-                 | ENET_CARRIERSENSE_ENABLE | ENET_RECEIVEOWN_ENABLE \
+                 | ENET_CARRIERSENSE_DISABLE | ENET_RECEIVEOWN_ENABLE \
                  | ENET_RETRYTRANSMISSION_ENABLE | ENET_BACKOFFLIMIT_10 \
                  | ENET_DEFERRALCHECK_DISABLE \
                  | ENET_AUTO_PADCRC_DROP_DISABLE \
@@ -2814,6 +2829,18 @@ static void enet_default_init(void)
 
     /* configure ENET_MAC_VLT register */
     ENET_MAC_VLT = ENET_VLANTAGCOMPARISON_16BIT | MAC_VLT_VLTI(0);
+
+    /* disable MAC interrupt */
+    ENET_MAC_INTMSK |= ENET_MAC_INTMSK_TMSTIM | ENET_MAC_INTMSK_WUMIM;
+
+    /* MSC */
+    /* disable MSC Rx interrupt */
+    ENET_MSC_RINTMSK |= ENET_MSC_RINTMSK_RFAEIM | ENET_MSC_RINTMSK_RFCEIM \
+                        | ENET_MSC_RINTMSK_RGUFIM;
+
+    /* disable MSC Tx interrupt */
+    ENET_MSC_TINTMSK |= ENET_MSC_TINTMSK_TGFIM | ENET_MSC_TINTMSK_TGFMSCIM \
+                        | ENET_MSC_TINTMSK_TGFSCIM;
 
     /* DMA */
     /* configure ENET_DMA_CTL register */

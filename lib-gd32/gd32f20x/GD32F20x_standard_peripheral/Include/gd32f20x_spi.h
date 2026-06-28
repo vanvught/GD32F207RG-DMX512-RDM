@@ -2,11 +2,11 @@
     \file    gd32f20x_spi.h
     \brief   definitions for the SPI
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -207,7 +207,7 @@ typedef struct {
 
 /* I2S standard */
 #define I2SCTL_I2SSTD(regval)           (BITS(4,5) & ((uint32_t)(regval) << 4))
-#define I2S_STD_PHILLIPS                I2SCTL_I2SSTD(0)                        /*!< I2S phillips standard */
+#define I2S_STD_PHILIPS                I2SCTL_I2SSTD(0)                        /*!< I2S philips standard */
 #define I2S_STD_MSB                     I2SCTL_I2SSTD(1)                        /*!< I2S MSB standard */
 #define I2S_STD_LSB                     I2SCTL_I2SSTD(2)                        /*!< I2S LSB standard */
 #define I2S_STD_PCMSHORT                I2SCTL_I2SSTD(3)                        /*!< I2S PCM short standard */
@@ -296,6 +296,8 @@ void spi_dma_disable(uint32_t spi_periph, uint8_t dma);
 void spi_i2s_data_frame_format_config(uint32_t spi_periph, uint16_t frame_format);
 /* configure SPI bidirectional transfer direction */
 void spi_bidirectional_transfer_config(uint32_t spi_periph, uint32_t transfer_direction);
+/* clear TI Mode Format Error flag status */
+void spi_i2s_format_error_clear(uint32_t spi_periph, uint32_t flag);
 /* SPI transmit data */
 void spi_i2s_data_transmit(uint32_t spi_periph, uint16_t data);
 /* SPI receive data */

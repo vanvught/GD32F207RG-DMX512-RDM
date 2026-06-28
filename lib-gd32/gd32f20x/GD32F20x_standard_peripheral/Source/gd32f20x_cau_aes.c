@@ -2,11 +2,11 @@
     \file    gd32f20x_cau_aes.c
     \brief   CAU_AES driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -35,6 +35,7 @@ OF SUCH DAMAGE.
 #include "gd32f20x_cau.h"
 
 #define AESBSY_TIMEOUT    ((uint32_t)0x00010000U)
+#define BLOCK_DATA_SIZE   ((uint32_t)0x00000010U)
 
 /* AES key structure parameter config */
 static void cau_aes_key_config(uint8_t *key, uint16_t keysize, cau_key_parameter_struct *cau_key_initpara);
@@ -55,10 +56,12 @@ static ErrStatus cau_aes_calculate(uint8_t *input, uint32_t in_length, uint8_t *
                   output: pointer to the returned buffer
     \param[out] none
     \retval     ErrStatus: SUCCESS or ERROR
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 ErrStatus cau_aes_ecb(uint32_t algo_dir, uint8_t *key, uint16_t keysize, cau_text_struct *text)
 {
-    ErrStatus ret = ERROR;
+    ErrStatus ret = SUCCESS;
     cau_key_parameter_struct key_initpara;
     __IO uint32_t counter = 0U;
     uint32_t busystatus = 0U;
@@ -87,22 +90,24 @@ ErrStatus cau_aes_ecb(uint32_t algo_dir, uint8_t *key, uint16_t keysize, cau_tex
         } while((AESBSY_TIMEOUT != counter) && (RESET != busystatus));
 
         if(RESET != busystatus) {
-            return ERROR;
+            ret = ERROR;
         }
     }
 
-    /* initialize the CAU peripheral */
-    cau_init(algo_dir, CAU_MODE_AES_ECB, CAU_SWAPPING_8BIT);
-
-    /* flush the IN and OUT FIFOs */
-    cau_fifo_flush();
-
-    /* enable the CAU peripheral */
-    cau_enable();
-    /* AES calculate process */
-    ret = cau_aes_calculate(text->input, text->in_length, text->output);
-    /* disable the CAU peripheral */
-    cau_disable();
+    if(ret == SUCCESS) {
+        /* initialize the CAU peripheral */
+        cau_init(algo_dir, CAU_MODE_AES_ECB, CAU_SWAPPING_8BIT);
+        
+        /* flush the IN and OUT FIFOs */
+        cau_fifo_flush();
+        
+        /* enable the CAU peripheral */
+        cau_enable();
+        /* AES calculate process */
+        ret = cau_aes_calculate(text->input, text->in_length, text->output);
+        /* disable the CAU peripheral */
+        cau_disable();
+    }
 
     return ret;
 }
@@ -122,10 +127,12 @@ ErrStatus cau_aes_ecb(uint32_t algo_dir, uint8_t *key, uint16_t keysize, cau_tex
                   output: pointer to the returned buffer
     \param[out] none
     \retval     ErrStatus: SUCCESS or ERROR
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 ErrStatus cau_aes_cbc(uint32_t algo_dir, uint8_t *key, uint16_t keysize, uint8_t iv[16], cau_text_struct *text)
 {
-    ErrStatus ret = ERROR;
+    ErrStatus ret = SUCCESS;
     cau_key_parameter_struct key_initpara;
     cau_iv_parameter_struct iv_initpara;
     __IO uint32_t counter = 0U;
@@ -157,32 +164,34 @@ ErrStatus cau_aes_cbc(uint32_t algo_dir, uint8_t *key, uint16_t keysize, uint8_t
         } while((AESBSY_TIMEOUT != counter) && (RESET != busystatus));
 
         if(RESET != busystatus) {
-            return ERROR;
+            ret = ERROR;
         }
     }
 
-    /* initialize the CAU peripheral */
-    cau_init(algo_dir, CAU_MODE_AES_CBC, CAU_SWAPPING_8BIT);
+    if(ret == SUCCESS) {
+        /* initialize the CAU peripheral */
+        cau_init(algo_dir, CAU_MODE_AES_CBC, CAU_SWAPPING_8BIT);
 
-    /* vectors initialization */
-    iv_initpara.iv_0_high = __REV(*(uint32_t *)(ivaddr));
-    ivaddr += 4U;
-    iv_initpara.iv_0_low = __REV(*(uint32_t *)(ivaddr));
-    ivaddr += 4U;
-    iv_initpara.iv_1_high = __REV(*(uint32_t *)(ivaddr));
-    ivaddr += 4U;
-    iv_initpara.iv_1_low = __REV(*(uint32_t *)(ivaddr));
-    cau_iv_init(&iv_initpara);
+        /* vectors initialization */
+        iv_initpara.iv_0_high = __REV(*(uint32_t *)(ivaddr));
+        ivaddr += 4U;
+        iv_initpara.iv_0_low = __REV(*(uint32_t *)(ivaddr));
+        ivaddr += 4U;
+        iv_initpara.iv_1_high = __REV(*(uint32_t *)(ivaddr));
+        ivaddr += 4U;
+        iv_initpara.iv_1_low = __REV(*(uint32_t *)(ivaddr));
+        cau_iv_init(&iv_initpara);
 
-    /* flush the IN and OUT FIFOs */
-    cau_fifo_flush();
+        /* flush the IN and OUT FIFOs */
+        cau_fifo_flush();
 
-    /* enable the CAU peripheral */
-    cau_enable();
-    /* AES calculate process */
-    ret = cau_aes_calculate(text->input, text->in_length, text->output);
-    /* disable the CAU peripheral */
-    cau_disable();
+        /* enable the CAU peripheral */
+        cau_enable();
+        /* AES calculate process */
+        ret = cau_aes_calculate(text->input, text->in_length, text->output);
+        /* disable the CAU peripheral */
+        cau_disable();
+    }
 
     return ret;
 }
@@ -318,6 +327,8 @@ static void cau_aes_key_config(uint8_t *key, uint16_t keysize, cau_key_parameter
     \param[in]  output: pointer to the returned buffer
     \param[out] none
     \retval     ErrStatus: SUCCESS or ERROR
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 static ErrStatus cau_aes_calculate(uint8_t *input, uint32_t in_length, uint8_t *output)
 {
@@ -326,44 +337,46 @@ static ErrStatus cau_aes_calculate(uint8_t *input, uint32_t in_length, uint8_t *
     uint32_t i = 0U;
     __IO uint32_t counter = 0U;
     uint32_t busystatus = 0U;
+    ErrStatus ret = SUCCESS;
 
     /* the clock is not enabled or there is no embeded CAU peripheral */
     if(DISABLE == cau_enable_state_get()) {
-        return ERROR;
-    }
+        ret = ERROR;
+    } else {
+        for(i = 0U; i < in_length; i += BLOCK_DATA_SIZE) {
+            /* write data to the IN FIFO */
+            cau_data_write(*(uint32_t *)(inputaddr));
+            inputaddr += 4U;
+            cau_data_write(*(uint32_t *)(inputaddr));
+            inputaddr += 4U;
+            cau_data_write(*(uint32_t *)(inputaddr));
+            inputaddr += 4U;
+            cau_data_write(*(uint32_t *)(inputaddr));
+            inputaddr += 4U;
 
-    for(i = 0U; i < in_length; i += 16U) {
-        /* write data to the IN FIFO */
-        cau_data_write(*(uint32_t *)(inputaddr));
-        inputaddr += 4U;
-        cau_data_write(*(uint32_t *)(inputaddr));
-        inputaddr += 4U;
-        cau_data_write(*(uint32_t *)(inputaddr));
-        inputaddr += 4U;
-        cau_data_write(*(uint32_t *)(inputaddr));
-        inputaddr += 4U;
-
-        /* wait until the complete message has been processed */
-        counter = 0U;
-        do {
-            busystatus = cau_flag_get(CAU_FLAG_BUSY);
-            counter++;
-        } while((AESBSY_TIMEOUT != counter) && (RESET != busystatus));
-
-        if(RESET != busystatus) {
-            return ERROR;
-        } else {
-            /* read the output block from the output FIFO */
-            *(uint32_t *)(outputaddr) = cau_data_read();
-            outputaddr += 4U;
-            *(uint32_t *)(outputaddr) = cau_data_read();
-            outputaddr += 4U;
-            *(uint32_t *)(outputaddr) = cau_data_read();
-            outputaddr += 4U;
-            *(uint32_t *)(outputaddr) = cau_data_read();
-            outputaddr += 4U;
+            /* wait until the complete message has been processed */
+            counter = 0U;
+            do {
+                busystatus = cau_flag_get(CAU_FLAG_BUSY);
+                counter++;
+            } while((AESBSY_TIMEOUT != counter) && (RESET != busystatus));
+    
+            if(RESET != busystatus) {
+                ret = ERROR;
+                break;
+            } else {
+                /* read the output block from the output FIFO */
+                *(uint32_t *)(outputaddr) = cau_data_read();
+                outputaddr += 4U;
+                *(uint32_t *)(outputaddr) = cau_data_read();
+                outputaddr += 4U;
+                *(uint32_t *)(outputaddr) = cau_data_read();
+                outputaddr += 4U;
+                *(uint32_t *)(outputaddr) = cau_data_read();
+                outputaddr += 4U;
+            }
         }
     }
 
-    return SUCCESS;
+    return ret;
 }

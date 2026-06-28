@@ -2,11 +2,11 @@
     \file    gd32f20x_hau_sha_md5.c
     \brief   HAU_SHA_MD5 driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -252,9 +252,12 @@ static void hau_sha_md5_digest_read(uint32_t algo, uint8_t *output)
     \param[in]  output: the result digest
     \param[out] none
     \retval     ErrStatus: SUCCESS or ERROR
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 static ErrStatus hau_hash_calculate(uint32_t algo, uint8_t *input, uint32_t in_length, uint8_t *output)
 {
+    ErrStatus status = SUCCESS;
     hau_init_parameter_struct init_para;
 
     __IO uint32_t num_last_valid = 0U;
@@ -294,12 +297,12 @@ static ErrStatus hau_hash_calculate(uint32_t algo, uint8_t *input, uint32_t in_l
     } while((SHAMD5_BSY_TIMEOUT != counter) && (RESET != busystatus));
 
     if(RESET != busystatus) {
-        return ERROR;
+        status = ERROR;
     } else {
         /* read the message digest */
         hau_sha_md5_digest_read(algo, output);
     }
-    return SUCCESS;
+    return status;
 }
 
 /*!
@@ -312,9 +315,12 @@ static ErrStatus hau_hash_calculate(uint32_t algo, uint8_t *input, uint32_t in_l
     \param[in]  output: the result digest
     \param[out] none
     \retval     ErrStatus: SUCCESS or ERROR
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 static ErrStatus hau_hmac_calculate(uint32_t algo, uint8_t *key, uint32_t keysize, uint8_t *input, uint32_t in_length, uint8_t *output)
 {
+    ErrStatus status = SUCCESS;
     hau_init_parameter_struct init_para;
 
     __IO uint16_t num_last_valid = 0U;
@@ -363,7 +369,7 @@ static ErrStatus hau_hmac_calculate(uint32_t algo, uint8_t *key, uint32_t keysiz
     } while((SHAMD5_BSY_TIMEOUT != counter) && (RESET != busystatus));
 
     if(RESET != busystatus) {
-        return ERROR;
+        status = ERROR;
     } else {
         /* configure the number of valid bits in last word of the message */
         hau_last_word_validbits_num_config((uint32_t)num_last_valid);
@@ -385,7 +391,7 @@ static ErrStatus hau_hmac_calculate(uint32_t algo, uint8_t *key, uint32_t keysiz
         } while((SHAMD5_BSY_TIMEOUT != counter) && (RESET != busystatus));
 
         if(RESET != busystatus) {
-            return ERROR;
+            status = ERROR;
         } else {
             /* configure the number of valid bits in last word of the key */
             hau_last_word_validbits_num_config((uint32_t)num_key_valid);
@@ -408,12 +414,12 @@ static ErrStatus hau_hmac_calculate(uint32_t algo, uint8_t *key, uint32_t keysiz
             } while((SHAMD5_BSY_TIMEOUT != counter) && (RESET != busystatus));
 
             if(RESET != busystatus) {
-                return ERROR;
+                status = ERROR;
             } else {
                 /* read the message digest */
                 hau_sha_md5_digest_read(algo, output);
             }
         }
     }
-    return SUCCESS;
+    return status;
 }

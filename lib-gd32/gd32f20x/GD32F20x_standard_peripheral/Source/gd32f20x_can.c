@@ -2,11 +2,11 @@
     \file    gd32f20x_can.c
     \brief   CAN driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -73,7 +73,7 @@ void can_struct_para_init(can_struct_type_enum type, void* p_struct)
 {
     uint8_t i;
 
-    if(NULL == p_struct){
+    if(NULL == p_struct) {
         CAN_ERROR_HANDLE("struct parameter can not be NULL \r\n");
     }
 
@@ -110,14 +110,14 @@ void can_struct_para_init(can_struct_type_enum type, void* p_struct)
     /* used for can_message_transmit() */
     case CAN_TX_MESSAGE_STRUCT:
         for(i = 0U; i < 8U; i++) {
-            ((can_trasnmit_message_struct *)p_struct)->tx_data[i] = 0U;
+            ((can_transmit_message_struct *)p_struct)->tx_data[i] = 0U;
         }
 
-        ((can_trasnmit_message_struct *)p_struct)->tx_dlen = 0u;
-        ((can_trasnmit_message_struct *)p_struct)->tx_efid = 0U;
-        ((can_trasnmit_message_struct *)p_struct)->tx_ff = (uint8_t)CAN_FF_STANDARD;
-        ((can_trasnmit_message_struct *)p_struct)->tx_ft = (uint8_t)CAN_FT_DATA;
-        ((can_trasnmit_message_struct *)p_struct)->tx_sfid = 0U;
+        ((can_transmit_message_struct *)p_struct)->tx_dlen = 0u;
+        ((can_transmit_message_struct *)p_struct)->tx_efid = 0U;
+        ((can_transmit_message_struct *)p_struct)->tx_ff = (uint8_t)CAN_FF_STANDARD;
+        ((can_transmit_message_struct *)p_struct)->tx_ft = (uint8_t)CAN_FT_DATA;
+        ((can_transmit_message_struct *)p_struct)->tx_sfid = 0U;
 
         break;
     /* used for can_message_receive() */
@@ -144,7 +144,7 @@ void can_struct_para_init(can_struct_type_enum type, void* p_struct)
     \brief      initialize CAN
     \param[in]  can_periph
       \arg        CANx(x=0,1)
-    \param[in]  can_parameter_init: parameters for CAN initializtion
+    \param[in]  can_parameter_init: parameters for CAN initialization
       \arg        working_mode: CAN_NORMAL_MODE, CAN_LOOPBACK_MODE, CAN_SILENT_MODE, CAN_SILENT_LOOPBACK_MODE
       \arg        resync_jump_width: CAN_BT_SJW_xTQ(x=1, 2, 3, 4)
       \arg        time_segment_1: CAN_BT_BS1_xTQ(1..16)
@@ -158,6 +158,8 @@ void can_struct_para_init(can_struct_type_enum type, void* p_struct)
       \arg        prescaler: 0x0001 - 0x0400
     \param[out] none
     \retval     ErrStatus: SUCCESS or ERROR
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 ErrStatus can_init(uint32_t can_periph, can_parameter_struct* can_parameter_init)
 {
@@ -201,19 +203,19 @@ ErrStatus can_init(uint32_t can_periph, can_parameter_struct* can_parameter_init
         } else {
             CAN_CTL(can_periph) &= ~CAN_CTL_AWU;
         }
-        /* automatic retransmission mode disable */
+        /* automatic retransmission mode */
         if(ENABLE == can_parameter_init->auto_retrans) {
             CAN_CTL(can_periph) &= ~CAN_CTL_ARD;
         } else {
             CAN_CTL(can_periph) |= CAN_CTL_ARD;
         }
-        /* receive fifo overwrite mode */
+        /* receive FIFO overwrite mode */
         if(ENABLE == can_parameter_init->rec_fifo_overwrite) {
             CAN_CTL(can_periph) &= ~CAN_CTL_RFOD;
         } else {
             CAN_CTL(can_periph) |= CAN_CTL_RFOD;
         }
-        /* transmit fifo order */
+        /* transmit FIFO order */
         if(ENABLE == can_parameter_init->trans_fifo_order) {
             CAN_CTL(can_periph) |= CAN_CTL_TFO;
         } else {
@@ -423,7 +425,7 @@ void can_time_trigger_mode_disable(uint32_t can_periph)
     \param[out] none
     \retval     mailbox_number
 */
-uint8_t can_message_transmit(uint32_t can_periph, can_trasnmit_message_struct *transmit_message)
+uint8_t can_message_transmit(uint32_t can_periph, can_transmit_message_struct *transmit_message)
 {
     uint8_t mailbox_number = CAN_MAILBOX0;
 
@@ -437,36 +439,41 @@ uint8_t can_message_transmit(uint32_t can_periph, can_trasnmit_message_struct *t
     } else {
         mailbox_number = CAN_NOMAILBOX;
     }
-    /* return no mailbox empty */
-    if(CAN_NOMAILBOX == mailbox_number) {
-        return CAN_NOMAILBOX;
-    }
 
-    CAN_TMI(can_periph, mailbox_number) &= CAN_TMI_TEN;
-    if(CAN_FF_STANDARD == transmit_message->tx_ff) {
-        /* set transmit mailbox standard identifier */
-        CAN_TMI(can_periph, mailbox_number) |= (uint32_t)(TMI_SFID(transmit_message->tx_sfid) | \
-                                               transmit_message->tx_ft);
-    } else {
-        /* set transmit mailbox extended identifier */
-        CAN_TMI(can_periph, mailbox_number) |= (uint32_t)(TMI_EFID(transmit_message->tx_efid) | \
-                                               transmit_message->tx_ff | \
-                                               transmit_message->tx_ft);
+    /* got one empty mailbox */
+    if(CAN_NOMAILBOX != mailbox_number) {
+        CAN_TMI(can_periph, mailbox_number) &= CAN_TMI_TEN;
+        if(CAN_FF_STANDARD == transmit_message->tx_ff) {
+            /* set transmit mailbox standard identifier */
+            CAN_TMI(can_periph, mailbox_number) |= (uint32_t)(TMI_SFID(transmit_message->tx_sfid) | \
+                                                   transmit_message->tx_ft);
+        } else {
+            /* set transmit mailbox extended identifier */
+            CAN_TMI(can_periph, mailbox_number) |= (uint32_t)(TMI_EFID(transmit_message->tx_efid) | \
+                                                   transmit_message->tx_ff | \
+                                                   transmit_message->tx_ft);
+        }
+        /* set the data length */
+        CAN_TMP(can_periph, mailbox_number) &= ~CAN_TMP_DLENC;
+        
+        /* Classic CAN frame data length does not exceed 8 */
+        if (transmit_message->tx_dlen > 8U) {
+            transmit_message->tx_dlen = 8U;
+        }
+        
+        CAN_TMP(can_periph, mailbox_number) |= transmit_message->tx_dlen;
+        /* set the data */
+        CAN_TMDATA0(can_periph, mailbox_number) = TMDATA0_DB3(transmit_message->tx_data[3]) | \
+                TMDATA0_DB2(transmit_message->tx_data[2]) | \
+                TMDATA0_DB1(transmit_message->tx_data[1]) | \
+                TMDATA0_DB0(transmit_message->tx_data[0]);
+        CAN_TMDATA1(can_periph, mailbox_number) = TMDATA1_DB7(transmit_message->tx_data[7]) | \
+                TMDATA1_DB6(transmit_message->tx_data[6]) | \
+                TMDATA1_DB5(transmit_message->tx_data[5]) | \
+                TMDATA1_DB4(transmit_message->tx_data[4]);
+        /* enable transmission */
+        CAN_TMI(can_periph, mailbox_number) |= CAN_TMI_TEN;
     }
-    /* set the data length */
-    CAN_TMP(can_periph, mailbox_number) &= ~CAN_TMP_DLENC;
-    CAN_TMP(can_periph, mailbox_number) |= transmit_message->tx_dlen;
-    /* set the data */
-    CAN_TMDATA0(can_periph, mailbox_number) = TMDATA0_DB3(transmit_message->tx_data[3]) | \
-            TMDATA0_DB2(transmit_message->tx_data[2]) | \
-            TMDATA0_DB1(transmit_message->tx_data[1]) | \
-            TMDATA0_DB0(transmit_message->tx_data[0]);
-    CAN_TMDATA1(can_periph, mailbox_number) = TMDATA1_DB7(transmit_message->tx_data[7]) | \
-            TMDATA1_DB6(transmit_message->tx_data[6]) | \
-            TMDATA1_DB5(transmit_message->tx_data[5]) | \
-            TMDATA1_DB4(transmit_message->tx_data[4]);
-    /* enable transmission */
-    CAN_TMI(can_periph, mailbox_number) |= CAN_TMI_TEN;
 
     return mailbox_number;
 }
@@ -477,7 +484,7 @@ uint8_t can_message_transmit(uint32_t can_periph, can_trasnmit_message_struct *t
       \arg        CANx(x=0,1)
     \param[in]  mailbox_number
                 only one parameter can be selected which is shown as below:
-      \arg        CAN_MAILBOX(x=0,1,2)
+      \arg        CAN_MAILBOXx(x=0,1,2)
     \param[out] none
     \retval     can_transmit_state_enum
 */
@@ -538,25 +545,63 @@ can_transmit_state_enum can_transmit_states(uint32_t can_periph, uint8_t mailbox
                 only one parameter can be selected which is shown as below:
       \arg        CAN_MAILBOXx(x=0,1,2)
     \param[out] none
-    \retval     none
+    \retval     ErrStatus: ERROR or SUCCESS
 */
-void can_transmission_stop(uint32_t can_periph, uint8_t mailbox_number)
+ErrStatus can_transmission_stop(uint32_t can_periph, uint8_t mailbox_number)
 {
+    ErrStatus reval = SUCCESS;
+    /* timeout for CAN_TSTAT_MSTx bits */
+    uint32_t timeout = CAN_TIMEOUT;
+    uint32_t reg_value0 = 0U;
+    uint32_t reg_value1 = 0U;
+
+    /* get the status of transmit FIFO order */
+    reg_value0 = CAN_CTL(can_periph) & CAN_CTL_TFO;
+
     if(CAN_MAILBOX0 == mailbox_number) {
-        CAN_TSTAT(can_periph) |= CAN_TSTAT_MST0;
-        while(CAN_TSTAT_MST0 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST0)) {
+        reg_value1 = CAN_TSTAT(can_periph) & (CAN_TSTAT_TMLS0 | CAN_ALL_MAILBOX_EMPTY);
+        if((CAN_CTL_TFO == reg_value0) && (CAN_TSTAT_TMLS0 == reg_value1)){
+            reval = ERROR;
+        } else {
+            CAN_TSTAT(can_periph) |= CAN_TSTAT_MST0;
+            while((CAN_TSTAT_MST0 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST0)) && (0U != timeout)) {
+                timeout--;
+            }
+            if(CAN_TSTAT_MST0 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST0)){
+                reval = ERROR;
+            }
         }
     } else if(CAN_MAILBOX1 == mailbox_number) {
-        CAN_TSTAT(can_periph) |= CAN_TSTAT_MST1;
-        while(CAN_TSTAT_MST1 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST1)) {
+        reg_value1 = CAN_TSTAT(can_periph) & (CAN_TSTAT_TMLS1 | CAN_ALL_MAILBOX_EMPTY);
+        if((CAN_CTL_TFO == reg_value0) && (CAN_TSTAT_TMLS1 == reg_value1)){
+            reval = ERROR;
+        }else{
+            CAN_TSTAT(can_periph) |= CAN_TSTAT_MST1;
+            while((CAN_TSTAT_MST1 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST1)) && (0U != timeout)) {
+                timeout--;
+            }
+            if(CAN_TSTAT_MST1 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST1)){
+                reval = ERROR;
+            }
         }
+        
     } else if(CAN_MAILBOX2 == mailbox_number) {
-        CAN_TSTAT(can_periph) |= CAN_TSTAT_MST2;
-        while(CAN_TSTAT_MST2 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST2)) {
+        reg_value1 = CAN_TSTAT(can_periph) & (CAN_TSTAT_TMLS2 | CAN_ALL_MAILBOX_EMPTY);
+        if((CAN_CTL_TFO == reg_value0) && (CAN_TSTAT_TMLS2 == reg_value1)){
+            reval = ERROR;
+        }else{
+            CAN_TSTAT(can_periph) |= CAN_TSTAT_MST2;
+            while((CAN_TSTAT_MST2 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST2)) && (0U != timeout)) {
+                timeout--;
+            }
+            if(CAN_TSTAT_MST2 == (CAN_TSTAT(can_periph) & CAN_TSTAT_MST2)){
+                reval = ERROR;
+            }
         }
     } else {
         /* illegal parameters */
     }
+    return reval;
 }
 
 /*!
@@ -664,13 +709,15 @@ uint8_t can_receive_message_length_get(uint32_t can_periph, uint8_t fifo_number)
     \brief      set CAN working mode
     \param[in]  can_periph
       \arg        CANx(x=0,1)
-    \param[in]  can_working_mode
+    \param[in]  working_mode
                 only one parameter can be selected which is shown as below:
       \arg        CAN_MODE_INITIALIZE
       \arg        CAN_MODE_NORMAL
       \arg        CAN_MODE_SLEEP
     \param[out] none
     \retval     ErrStatus: SUCCESS or ERROR
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 ErrStatus can_working_mode_set(uint32_t can_periph, uint8_t working_mode)
 {
@@ -683,7 +730,7 @@ ErrStatus can_working_mode_set(uint32_t can_periph, uint8_t working_mode)
         CAN_CTL(can_periph) &= (~(uint32_t)CAN_CTL_SLPWMOD);
         /* set initialize mode */
         CAN_CTL(can_periph) |= (uint8_t)CAN_CTL_IWMOD;
-        /* wait the acknowledge */
+        /* wait the acknowledgment */
         while((CAN_STAT_IWS != (CAN_STAT(can_periph) & CAN_STAT_IWS)) && (0U != timeout)) {
             timeout--;
         }
@@ -695,7 +742,7 @@ ErrStatus can_working_mode_set(uint32_t can_periph, uint8_t working_mode)
     } else if(CAN_MODE_NORMAL == working_mode) {
         /* enter normal mode */
         CAN_CTL(can_periph) &= ~(uint32_t)(CAN_CTL_SLPWMOD | CAN_CTL_IWMOD);
-        /* wait the acknowledge */
+        /* wait the acknowledgment */
         while((0U != (CAN_STAT(can_periph) & (CAN_STAT_IWS | CAN_STAT_SLPWS))) && (0U != timeout)) {
             timeout--;
         }
@@ -709,7 +756,7 @@ ErrStatus can_working_mode_set(uint32_t can_periph, uint8_t working_mode)
         CAN_CTL(can_periph) &= (~(uint32_t)CAN_CTL_IWMOD);
         /* set sleep mode */
         CAN_CTL(can_periph) |= (uint8_t)CAN_CTL_SLPWMOD;
-        /* wait the acknowledge */
+        /* wait the acknowledgment */
         while((CAN_STAT_SLPWS != (CAN_STAT(can_periph) & CAN_STAT_SLPWS)) && (0U != timeout)) {
             timeout--;
         }
@@ -730,6 +777,8 @@ ErrStatus can_working_mode_set(uint32_t can_periph, uint8_t working_mode)
       \arg        CANx(x=0,1)
     \param[out] none
     \retval     ErrStatus: SUCCESS or ERROR
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 ErrStatus can_wakeup(uint32_t can_periph)
 {
@@ -852,12 +901,16 @@ uint8_t can_transmit_error_number_get(uint32_t can_periph)
 */
 FlagStatus can_flag_get(uint32_t can_periph, can_flag_enum flag)
 {
+    FlagStatus reval = RESET;
+
     /* get flag and interrupt enable state */
     if(RESET != (CAN_REG_VAL(can_periph, flag) & BIT(CAN_BIT_POS(flag)))) {
-        return SET;
+        reval = SET;
     } else {
-        return RESET;
+        reval = RESET;
     }
+
+    return reval;
 }
 
 /*!
@@ -985,6 +1038,8 @@ FlagStatus can_interrupt_flag_get(uint32_t can_periph, can_interrupt_flag_enum f
     uint32_t ret1 = RESET;
     uint32_t ret2 = RESET;
 
+    FlagStatus reval = RESET;
+
     /* get the status of interrupt flag */
     if(flag == CAN_INT_FLAG_RFL0) {
         ret1 = can_receive_message_length_get(can_periph, CAN_FIFO0);
@@ -998,10 +1053,12 @@ FlagStatus can_interrupt_flag_get(uint32_t can_periph, can_interrupt_flag_enum f
     /* get the status of interrupt enable bit */
     ret2 = CAN_INTEN(can_periph) & BIT(CAN_BIT_POS1(flag));
     if(ret1 && ret2) {
-        return SET;
+        reval = SET;
     } else {
-        return RESET;
+        reval = RESET;
     }
+
+    return reval;
 }
 
 /*!

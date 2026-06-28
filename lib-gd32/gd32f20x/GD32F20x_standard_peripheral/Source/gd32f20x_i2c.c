@@ -2,11 +2,11 @@
     \file    gd32f20x_i2c.c
     \brief   I2C driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -575,11 +575,13 @@ void i2c_smbus_arp_config(uint32_t i2c_periph, uint32_t arpstate)
 */
 FlagStatus i2c_flag_get(uint32_t i2c_periph, i2c_flag_enum flag)
 {
+    FlagStatus temp = RESET;
     if(RESET != (I2C_REG_VAL(i2c_periph, flag) & BIT(I2C_BIT_POS(flag)))) {
-        return SET;
+        temp = SET;
     } else {
-        return RESET;
+        /* do nothing */
     }
+    return temp;
 }
 
 /*!
@@ -665,6 +667,7 @@ void i2c_interrupt_disable(uint32_t i2c_periph, i2c_interrupt_enum interrupt)
 */
 FlagStatus i2c_interrupt_flag_get(uint32_t i2c_periph, i2c_interrupt_flag_enum int_flag)
 {
+    FlagStatus temp = RESET;
     uint32_t intenable = 0U, flagstatus = 0U, bufie;
 
     /* check BUFIE */
@@ -683,10 +686,11 @@ FlagStatus i2c_interrupt_flag_get(uint32_t i2c_periph, i2c_interrupt_flag_enum i
         }
     }
     if((0U != flagstatus) && (0U != intenable)) {
-        return SET;
+        temp = SET;
     } else {
-        return RESET;
+        /* do nothing */
     }
+    return temp;
 }
 
 /*!

@@ -2,11 +2,11 @@
     \file    gd32f20x_dci.c
     \brief   DCI driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -256,6 +256,7 @@ uint32_t dci_data_read(void)
 FlagStatus dci_flag_get(uint32_t flag)
 {
     uint32_t stat = 0U;
+    FlagStatus retval;
 
     if(flag >> 31) {
         /* get flag status from DCI_STAT1 register */
@@ -266,10 +267,11 @@ FlagStatus dci_flag_get(uint32_t flag)
     }
 
     if(flag & stat) {
-        return SET;
+        retval = SET;
     } else {
-        return RESET;
+        retval = RESET;
     }
+    return retval;
 }
 
 /*!
@@ -317,11 +319,14 @@ void dci_interrupt_disable(uint32_t interrupt)
 */
 FlagStatus dci_interrupt_flag_get(uint32_t int_flag)
 {
+    FlagStatus retval;
+
     if(RESET == (DCI_INTF & int_flag)) {
-        return RESET;
+        retval = RESET;
     } else {
-        return SET;
+        retval = SET;
     }
+    return retval;
 }
 
 /*!

@@ -2,11 +2,11 @@
     \file    gd32f20x_fmc.c
     \brief   FMC driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -35,9 +35,9 @@ OF SUCH DAMAGE.
 #include "gd32f20x_fmc.h"
 
 /* return the  FMC bank0 state */
-fmc_state_enum fmc_bank0_state_get(void);	/** AvV **/
+fmc_state_enum fmc_bank0_state_get(void); // AvV
 /* return the  FMC bank1 state */
-fmc_state_enum fmc_bank1_state_get(void);	/** AvV **/
+fmc_state_enum fmc_bank1_state_get(void); // AvV
 /* check FMC bank0 ready or not */
 static fmc_state_enum fmc_bank0_ready_wait(uint32_t timeout);
 /* check FMC bank1 ready or not */
@@ -45,7 +45,7 @@ static fmc_state_enum fmc_bank1_ready_wait(uint32_t timeout);
 
 /*!
     \brief      set the wait state counter value
-    \param[in]  wscnt��wait state counter value
+    \param[in]  wscnt：wait state counter value
                 only one parameter can be selected which is shown as below:
       \arg        WS_WSCNT_0: FMC 0 wait state
       \arg        WS_WSCNT_1: FMC 1 wait state
@@ -182,6 +182,8 @@ fmc_state_enum fmc_page_erase(uint32_t page_address)
                 FMC_CTL0 |= FMC_CTL0_PER;
                 FMC_ADDR0 = page_address;
                 FMC_CTL0 |= FMC_CTL0_START;
+                __NOP();
+                __NOP();
                 /* wait for the FMC ready */
                 fmc_state = fmc_bank0_ready_wait(FMC_TIMEOUT_COUNT);
                 /* reset the PER bit */
@@ -198,6 +200,8 @@ fmc_state_enum fmc_page_erase(uint32_t page_address)
                     FMC_ADDR0 = page_address;
                 }
                 FMC_CTL1 |= FMC_CTL1_START;
+                __NOP();
+                __NOP();
                 /* wait for the FMC ready */
                 fmc_state = fmc_bank1_ready_wait(FMC_TIMEOUT_COUNT);
                 /* reset the PER bit */
@@ -211,6 +215,8 @@ fmc_state_enum fmc_page_erase(uint32_t page_address)
             FMC_CTL0 |= FMC_CTL0_PER;
             FMC_ADDR0 = page_address;
             FMC_CTL0 |= FMC_CTL0_START;
+            __NOP();
+            __NOP();
             /* wait for the FMC ready */
             fmc_state = fmc_bank0_ready_wait(FMC_TIMEOUT_COUNT);
             /* reset the PER bit */
@@ -433,6 +439,8 @@ fmc_state_enum fmc_halfword_program(uint32_t address, uint16_t data)
     \param[in]  none
     \param[out] none
     \retval     none
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 void ob_unlock(void)
 {
@@ -766,11 +774,13 @@ FlagStatus ob_spc_get(void)
 */
 FlagStatus fmc_flag_get(uint32_t flag)
 {
+    FlagStatus status = RESET;
     if(RESET != (FMC_REG_VAL(flag) & BIT(FMC_BIT_POS(flag)))) {
-        return SET;
+        status = SET;
     } else {
-        return RESET;
+        status = RESET;
     }
+    return status;
 }
 
 /*!
@@ -840,6 +850,7 @@ FlagStatus fmc_interrupt_flag_get(fmc_interrupt_flag_enum int_flag)
 {
     uint32_t ret1 = RESET;
     uint32_t ret2 = RESET;
+    FlagStatus status = RESET;
 
     if(FMC_STAT0_REG_OFFSET == FMC_REG_OFFSET_GET(int_flag)) {
         /* get the status of interrupt flag */
@@ -854,10 +865,11 @@ FlagStatus fmc_interrupt_flag_get(fmc_interrupt_flag_enum int_flag)
     }
 
     if(ret1 && ret2) {
-        return SET;
+        status = SET;
     } else {
-        return RESET;
+        status = RESET;
     }
+    return status;
 }
 
 /*!
@@ -884,7 +896,7 @@ void fmc_interrupt_flag_clear(fmc_interrupt_flag_enum int_flag)
     \param[out] none
     \retval     state of FMC, refer to fmc_state_enum
 */
-fmc_state_enum fmc_bank0_state_get(void) /** AvV **/
+fmc_state_enum fmc_bank0_state_get(void)
 {
     fmc_state_enum fmc_state = FMC_READY;
 
@@ -909,7 +921,7 @@ fmc_state_enum fmc_bank0_state_get(void) /** AvV **/
     \param[out] none
     \retval     state of FMC, refer to fmc_state_enum
 */
-fmc_state_enum fmc_bank1_state_get(void)	/** AvV **/
+fmc_state_enum fmc_bank1_state_get(void)
 {
     fmc_state_enum fmc_state = FMC_READY;
 
@@ -934,6 +946,8 @@ fmc_state_enum fmc_bank1_state_get(void)	/** AvV **/
     \param[in]  timeout: count of loop
     \param[out] none
     \retval     state of FMC, refer to fmc_state_enum
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 static fmc_state_enum fmc_bank0_ready_wait(uint32_t timeout)
 {
@@ -958,6 +972,8 @@ static fmc_state_enum fmc_bank0_ready_wait(uint32_t timeout)
     \param[in]  timeout: count of loop
     \param[out] none
     \retval     state of FMC, refer to fmc_state_enum
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 static fmc_state_enum fmc_bank1_ready_wait(uint32_t timeout)
 {

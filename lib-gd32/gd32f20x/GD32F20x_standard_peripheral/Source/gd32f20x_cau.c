@@ -2,11 +2,11 @@
     \file    gd32f20x_cau.c
     \brief   CAU driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -35,7 +35,6 @@ OF SUCH DAMAGE.
 #include "gd32f20x_cau.h"
 #include "gd32f20x_rcu.h"
 
-#define FLAG_MASK     ((uint32_t)0x00000020U)
 
 /*!
     \brief      reset the CAU peripheral
@@ -318,7 +317,7 @@ FlagStatus cau_flag_get(uint32_t flag)
     FlagStatus ret_flag = RESET;
 
     /* check if the flag is in CAU_STAT1 register */
-    if(RESET != (flag & FLAG_MASK)) {
+    if(1U == (flag >> 31U)) {
         reg = CAU_STAT1;
     } else {
         /* the flag is in CAU_STAT0 register */
@@ -326,7 +325,7 @@ FlagStatus cau_flag_get(uint32_t flag)
     }
 
     /* check the status of the specified CAU flag */
-    if(RESET != (reg & flag)) {
+    if(0U != (reg & flag)) {
         ret_flag = SET;
     }
 

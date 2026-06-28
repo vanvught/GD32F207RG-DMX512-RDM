@@ -2,11 +2,11 @@
     \file    gd32f20x_dma.c
     \brief   DMA driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -595,6 +595,7 @@ FlagStatus dma_interrupt_flag_get(uint32_t dma_periph, dma_channel_enum channelx
 {
     uint32_t interrupt_enable = 0U, interrupt_flag = 0U;
     uint32_t gif_check = 0x0FU, gif_enable = 0x0EU;
+    FlagStatus status = RESET;
 
     switch(flag) {
     case DMA_INT_FLAG_FTF:
@@ -626,10 +627,12 @@ FlagStatus dma_interrupt_flag_get(uint32_t dma_periph, dma_channel_enum channelx
 
     /* when the interrupt flag is set and enabled, return SET */
     if(interrupt_flag && interrupt_enable) {
-        return SET;
+        status = SET;
     } else {
-        return RESET;
+        status = RESET;
     }
+    
+    return status;
 }
 
 /*!

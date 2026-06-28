@@ -2,11 +2,11 @@
     \file    gd32f20x_rtc.c
     \brief   RTC driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -68,6 +68,8 @@ void rtc_configuration_mode_exit(void)
     \param[in]  none
     \param[out] none
     \retval     none
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 void rtc_lwoff_wait(void)
 {
@@ -81,6 +83,8 @@ void rtc_lwoff_wait(void)
     \param[in]  none
     \param[out] none
     \retval     none
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 void rtc_register_sync_wait(void)
 {
@@ -215,11 +219,13 @@ void rtc_interrupt_disable(uint32_t interrupt)
 */
 FlagStatus rtc_flag_get(uint32_t flag)
 {
+    FlagStatus status = RESET;
     if(RESET != (RTC_CTL & flag)) {
-        return SET;
+        status = SET;
     } else {
-        return RESET;
+        status = RESET;
     }
+    return status;
 }
 
 /*!

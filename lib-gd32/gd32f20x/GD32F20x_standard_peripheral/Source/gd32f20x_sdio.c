@@ -2,11 +2,11 @@
     \file    gd32f20x_sdio.c
     \brief   SDIO driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -777,15 +777,16 @@ void sdio_interrupt_disable(uint32_t int_flag)
 FlagStatus sdio_interrupt_flag_get(uint32_t int_flag)
 {
     uint32_t state = 0U;
+    FlagStatus retval = RESET;
     state = SDIO_STAT;
     if(state & int_flag) {
         state = SDIO_INTEN;
         /* check whether the corresponding bit in SDIO_INTEN is set or not */
         if(state & int_flag) {
-            return SET;
+            retval = SET;
         }
     }
-    return RESET;
+    return retval;
 }
 
 /*!

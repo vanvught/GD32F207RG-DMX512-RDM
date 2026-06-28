@@ -2,11 +2,11 @@
     \file    gd32f20x_bkp.c
     \brief   BKP driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -330,11 +330,13 @@ void bkp_waveform_detect_config(uint16_t waveform_detect_mode, ControlStatus new
 */
 FlagStatus bkp_flag_get(uint16_t flag)
 {
+    FlagStatus status = RESET;
     if(RESET != (BKP_TPCS & flag)) {
-        return SET;
+        status = SET;
     } else {
-        return RESET;
+        status = RESET;
     }
+    return status;
 }
 
 /*!
@@ -410,11 +412,13 @@ void bkp_tamper_interrupt_disable(uint16_t bkp_interrupt)
 */
 FlagStatus bkp_interrupt_flag_get(uint16_t flag)
 {
+    FlagStatus status = RESET;
     if(RESET != (BKP_TPCS & flag)) {
-        return SET;
-    } else {
-        return RESET;
+        status = SET;
+    }else{
+        status = RESET;
     }
+    return status;
 }
 
 /*!

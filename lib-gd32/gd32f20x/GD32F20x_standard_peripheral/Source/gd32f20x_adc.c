@@ -2,11 +2,11 @@
     \file    gd32f20x_adc.c
     \brief   ADC driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -207,6 +207,8 @@ void adc_disable(uint32_t adc_periph)
     \param[in]  adc_periph: ADCx, x=0,1,2
     \param[out] none
     \retval     none
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 void adc_calibration_enable(uint32_t adc_periph)
 {

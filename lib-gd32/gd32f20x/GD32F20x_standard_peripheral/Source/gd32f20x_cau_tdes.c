@@ -2,11 +2,11 @@
     \file    gd32f20x_cau_tdes.c
     \brief   CAU_TDES driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -161,6 +161,8 @@ ErrStatus cau_tdes_cbc(uint32_t algo_dir, uint8_t key[24], uint8_t iv[8], cau_te
     \param[in]  output: pointer to the returned buffer
     \param[out] none
     \retval     ErrStatus: SUCCESS or ERROR
+    \note       This function contain scenarios leading to an infinite loop.
+                Modify according to the user's actual usage scenarios.
 */
 static ErrStatus cau_tdes_calculate(uint8_t *input, uint32_t in_length, uint8_t *output)
 {
@@ -169,36 +171,37 @@ static ErrStatus cau_tdes_calculate(uint8_t *input, uint32_t in_length, uint8_t 
     uint32_t i = 0U;
     __IO uint32_t counter = 0U;
     uint32_t busystatus = 0U;
+    ErrStatus status = SUCCESS;
 
     /* the clock is not enabled or there is no embedded CAU peripheral */
     if(DISABLE == cau_enable_state_get()) {
-        return ERROR;
-    }
-
-    for(i = 0U; i < in_length; i += 8U) {
-        /* write data to the IN FIFO */
-        cau_data_write(*(uint32_t *)(inputaddr));
-        inputaddr += 4U;
-        cau_data_write(*(uint32_t *)(inputaddr));
-        inputaddr += 4U;
-
-        /* wait until the complete message has been processed */
-        counter = 0U;
-        do {
-            busystatus = cau_flag_get(CAU_FLAG_BUSY);
-            counter++;
-        } while((TDESBSY_TIMEOUT != counter) && (RESET != busystatus));
-
-        if(RESET != busystatus) {
-            return ERROR;
-        } else {
-            /* read the output block from the output FIFO */
-            *(uint32_t *)(outputaddr) = cau_data_read();
-            outputaddr += 4U;
-            *(uint32_t *)(outputaddr) = cau_data_read();
-            outputaddr += 4U;
+        status = ERROR;
+    } else {
+        for(i = 0U; i < in_length; i += 8U) {
+            /* write data to the IN FIFO */
+            cau_data_write(*(uint32_t *)(inputaddr));
+            inputaddr += 4U;
+            cau_data_write(*(uint32_t *)(inputaddr));
+            inputaddr += 4U;
+    
+            /* wait until the complete message has been processed */
+            counter = 0U;
+            do {
+                busystatus = cau_flag_get(CAU_FLAG_BUSY);
+                counter++;
+            } while((TDESBSY_TIMEOUT != counter) && (RESET != busystatus));
+    
+            if(RESET != busystatus) {
+                status = ERROR;
+                break;
+            } else {
+                /* read the output block from the output FIFO */
+                *(uint32_t *)(outputaddr) = cau_data_read();
+                outputaddr += 4U;
+                *(uint32_t *)(outputaddr) = cau_data_read();
+                outputaddr += 4U;
+            }
         }
     }
-
-    return SUCCESS;
+    return status;
 }

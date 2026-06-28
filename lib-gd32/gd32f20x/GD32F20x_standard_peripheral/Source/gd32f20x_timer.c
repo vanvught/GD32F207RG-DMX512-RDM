@@ -2,11 +2,11 @@
     \file    gd32f20x_timer.c
     \brief   TIMER driver
 
-    \version 2023-06-30, V2.5.0, firmware for GD32F20x
+    \version 2026-02-06, V3.0.0, firmware for GD32F20x
 */
 
 /*
-    Copyright (c) 2023, GigaDevice Semiconductor Inc.
+    Copyright (c) 2026, GigaDevice Semiconductor Inc.
 
     Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -1886,11 +1886,15 @@ void timer_external_clock_mode1_disable(uint32_t timer_periph)
 */
 FlagStatus timer_flag_get(uint32_t timer_periph, uint32_t flag)
 {
+    FlagStatus timer_flag = RESET;
+    
     if(RESET != (TIMER_INTF(timer_periph) & flag)) {
-        return SET;
+        timer_flag = SET;
     } else {
-        return RESET;
+        timer_flag = RESET;
     }
+    
+    return timer_flag;
 }
 
 /*!
@@ -1978,13 +1982,17 @@ void timer_interrupt_disable(uint32_t timer_periph, uint32_t interrupt)
 */
 FlagStatus timer_interrupt_flag_get(uint32_t timer_periph, uint32_t int_flag)
 {
+    FlagStatus timer_interrupt_flag = RESET;
+    
     uint32_t val;
     val = (TIMER_DMAINTEN(timer_periph) & int_flag);
     if((RESET != (TIMER_INTF(timer_periph) & int_flag)) && (RESET != val)) {
-        return SET;
+        timer_interrupt_flag = SET;
     } else {
-        return RESET;
+        timer_interrupt_flag = RESET;
     }
+    
+    return timer_interrupt_flag;
 }
 
 /*!
