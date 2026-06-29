@@ -4,8 +4,9 @@
            GD32F20x Device Series
 */
 
-/* Copyright (c) 2012 ARM LIMITED
-
+/* Copyright (c) 2009 - 2014 ARM LIMITED
+   Copyright (c) 2026, GigaDevice Semiconductor Inc.
+   
    All rights reserved.
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are met:
@@ -50,6 +51,8 @@ extern uint32_t SystemCoreClock;
 extern void SystemInit (void);
 /* update the SystemCoreClock with current core clock retrieved from cpu registers */
 extern void SystemCoreClockUpdate (void);
+/* get firmware version */
+extern uint32_t gd32f20x_firmware_version_get(void);
 
 #ifdef __cplusplus
 }
