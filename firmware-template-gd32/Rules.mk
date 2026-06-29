@@ -10,7 +10,7 @@ AR	 = $(PREFIX)ar
 
 BOARD?=BOARD_GD32F207RG
 ENET_PHY?=RTL8201F
-MCU?=GD32F207RG
+MCU=GD32F207RG
 
 TARGET=gd32f207.bin
 LIST=$(FAMILY).list
@@ -31,8 +31,8 @@ include ../common/make/DmxNodeNodeType.mk
 include ../common/make/DmxNodeOutputType.mk
 include ../common/make/gd32/Includes.mk
 include ../common/make/Artnet.mk
-include ../common/make/gd32/Validate.mk
 include ../common/make/Timestamp.mk
+include ../common/make/gd32/Validate.mk
 
 LIBS+=gd32 clib
 
