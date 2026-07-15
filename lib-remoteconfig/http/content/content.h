@@ -75,9 +75,6 @@
 #if !defined (CONFIG_HTTP_HTML_NO_DMX) && (defined(OUTPUT_DMX_SEND) || defined(OUTPUT_DMX_SEND_MULTI))
 #include "config_dmxsend.js.h"
 #endif // !defined (CONFIG_HTTP_HTML_NO_DMX) && (defined(OUTPUT_DMX_SEND) || defined(OUTPUT_DMX_SEND_MULTI))
-#if !defined (CONFIG_HTTP_HTML_NO_PIXEL) && (defined(OUTPUT_DMX_PIXEL) || defined(OUTPUT_DMX_PIXEL_MULTI))
-#include "pixeltype.json.h"
-#endif // !defined (CONFIG_HTTP_HTML_NO_PIXEL) && (defined(OUTPUT_DMX_PIXEL) || defined(OUTPUT_DMX_PIXEL_MULTI))
 #if defined (CONFIG_HTTPD_ENABLE_UPLOAD)
 #include "upload_index.html.h"
 #endif // (CONFIG_HTTPD_ENABLE_UPLOAD)
@@ -100,7 +97,7 @@ inline constexpr struct FilesContent kHttpContent[] = {
 #endif // defined(NODE_ARTNET) || defined(NODE_ARTNET_MULTI)
 	{ 2226674728,"layout.js", layout_js_gz, 570, static_cast<http::ContentTypes>(2), true },
 	{ 4041167307,"status_index.html", status_index_html_gz, 604, static_cast<http::ContentTypes>(0), true },
-	{ 4024653090,"index.html", index_html_gz, 725, static_cast<http::ContentTypes>(0), true },
+	{ 4024653090,"index.html", index_html_gz, 735, static_cast<http::ContentTypes>(0), true },
 #if defined (CONFIG_HTTPD_ENABLE_UPLOAD)
 	{ 1750204712,"upload_index.js", upload_index_js_gz, 1631, static_cast<http::ContentTypes>(2), true },
 #endif // (CONFIG_HTTPD_ENABLE_UPLOAD)
@@ -130,7 +127,7 @@ inline constexpr struct FilesContent kHttpContent[] = {
 	{ 1186793998,"config_dmxmonitor.js", config_dmxmonitor_js_gz, 538, static_cast<http::ContentTypes>(2), true },
 #endif // !defined (CONFIG_HTTP_HTML_NO_DMX) && defined(OUTPUT_DMX_MONITOR)
 #if defined (NODE_LTC_SMPTE)
-	{ 1947358610,"config_ltc.js", config_ltc_js_gz, 1913, static_cast<http::ContentTypes>(2), true },
+	{ 1947358610,"config_ltc.js", config_ltc_js_gz, 1972, static_cast<http::ContentTypes>(2), true },
 #endif // (NODE_LTC_SMPTE)
 #if defined (NODE_LTC_SMPTE)
 	{ 3844231377,"config_tcnet.js", config_tcnet_js_gz, 618, static_cast<http::ContentTypes>(2), true },
@@ -167,9 +164,6 @@ inline constexpr struct FilesContent kHttpContent[] = {
 #if !defined (CONFIG_HTTP_HTML_NO_DMX) && (defined(OUTPUT_DMX_SEND) || defined(OUTPUT_DMX_SEND_MULTI))
 	{ 381868932,"config_dmxsend.js", config_dmxsend_js_gz, 662, static_cast<http::ContentTypes>(2), true },
 #endif // !defined (CONFIG_HTTP_HTML_NO_DMX) && (defined(OUTPUT_DMX_SEND) || defined(OUTPUT_DMX_SEND_MULTI))
-#if !defined (CONFIG_HTTP_HTML_NO_PIXEL) && (defined(OUTPUT_DMX_PIXEL) || defined(OUTPUT_DMX_PIXEL_MULTI))
-	{ 2632765249,"pixeltype.json", pixeltype_json_gz, 277, static_cast<http::ContentTypes>(3), true },
-#endif // !defined (CONFIG_HTTP_HTML_NO_PIXEL) && (defined(OUTPUT_DMX_PIXEL) || defined(OUTPUT_DMX_PIXEL_MULTI))
 #if defined (CONFIG_HTTPD_ENABLE_UPLOAD)
 	{ 137651886,"upload_index.html", upload_index_html_gz, 563, static_cast<http::ContentTypes>(0), true },
 #endif // (CONFIG_HTTPD_ENABLE_UPLOAD)
