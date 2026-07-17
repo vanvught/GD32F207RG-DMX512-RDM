@@ -34,8 +34,6 @@
 # error This file should be included later
 #endif
 
-#include <stdint.h>
-
 /**
  * U(S)ART
  */
