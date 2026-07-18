@@ -35,7 +35,6 @@
 #include "dmxnodemsgconst.h"
 #include "artnettriggerhandler.h"
 #include "firmware/pixeldmx/show.h"
-#include "common/utils/utils_enum.h"
 #include "pixeltestpattern.h"
 #include "json/pixeldmxparams.h"
 #include "pixeldmxmulti.h"
@@ -54,8 +53,7 @@ void RebootHandler() {
 }
 } // namespace board
 
-int main() // NOLINT
-{
+int main() { // NOLINT
     board::Init();
     DisplayUdf display;
     ConfigStore config_store;
