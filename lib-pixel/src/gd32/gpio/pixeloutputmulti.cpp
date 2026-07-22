@@ -38,6 +38,15 @@
 #include "gd32_dma_memcpy32.h"
 #include "firmware/debug/debug_debug.h"
 
+#if defined(GD32F20X) || defined(GD32F4XX)
+[[gnu::section(".pixel"), gnu::aligned(4), gnu::used]]
+uint16_t PixelOutputMulti::s_pixel_buffer[PixelOutputMulti::kPixelBufferSize];
+#else
+alignas(4) uint16_t PixelOutputMulti::s_pixel_buffer[PixelOutputMulti::kPixelBufferSize];
+#endif
+
+PixelOutputMulti *PixelOutputMulti::s_this = nullptr;
+
 namespace pixel {
 static constexpr uint16_t kGpioPins[] __attribute__((aligned(4))) = {GPIO_PINx};
 static const auto* const kSPGpioPiNs = reinterpret_cast<const uint32_t*>(&kGpioPins[0]);

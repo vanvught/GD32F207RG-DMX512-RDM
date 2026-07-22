@@ -217,29 +217,22 @@ class PixelOutputMulti {
 
     static PixelOutputMulti* Get() { return s_this; }
 
-   private:
-    void Setup(uint8_t low_code, uint8_t high_code);
-    void Setup(uint32_t frequency);
+private:
+	void Setup(uint8_t low_code, uint8_t high_code);
+	void Setup(uint32_t frequency);
 
-   private:
-    uint32_t buffer_size_{0};
+	uint32_t buffer_size_{0};
 
-    /**
-     * https://www.gd32-dmx.org/memory.html
-     */
-#if defined(GD32F20X) || defined(GD32F4XX)
-#define SECTION_PIXEL __attribute__((section(".pixel")))
-#else
-#define SECTION_PIXEL
-#endif
+	static constexpr uint32_t kPixelBufferSize = 2U * 1024U * 16U;
+	static constexpr uint32_t kPixelDmaOffset = kPixelBufferSize / 2U;
+	static constexpr uint32_t kMaxApA102 = ((kPixelBufferSize / 8U) - 8U) / 4U;
 
-    static inline uint16_t s_pixel_buffer[2 * 1024 * 16] __attribute__((aligned(4))) SECTION_PIXEL;
-    static inline constexpr auto kPixelBufferSize = sizeof(s_pixel_buffer) / sizeof(s_pixel_buffer[0]);
-    static inline auto* s_pixel_buffer_data = reinterpret_cast<uint16_t*>(s_pixel_buffer);
-    static inline auto* s_pixel_buffer_dma = (s_pixel_buffer + kPixelBufferSize / 2);
-    static inline constexpr uint32_t kMaxApA102 = ((kPixelBufferSize / 8) - 8) / 4;
+	static uint16_t s_pixel_buffer[kPixelBufferSize];
 
-    static inline PixelOutputMulti* s_this;
+	static inline auto *s_pixel_buffer_data = reinterpret_cast<uint16_t *>(s_pixel_buffer);
+	static inline auto *s_pixel_buffer_dma = (s_pixel_buffer + (kPixelBufferSize / 2));
+
+	static PixelOutputMulti *s_this;
 };
 
 #pragma GCC pop_options
