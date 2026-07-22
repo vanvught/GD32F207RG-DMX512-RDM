@@ -115,29 +115,63 @@ SECTIONS
     . = ALIGN(4);
   } >RAM1
 
-  .sram2 :
+  .sram2 (NOLOAD) :
   {
-	. = ALIGN(4);
-    *(.sram2)
-    *(.sram2*)
-	. = ALIGN(4);
+    . = ALIGN(4);
+    _ssram2 = .;
+    KEEP(*(.sram2))
+    KEEP(*(.sram2.*))
+    . = ALIGN(4);
+    _esram2 = .;
+  } > RAM2
+
+  .dmx (NOLOAD) :
+  {
+    . = ALIGN(4);
     _sdmx = .;
-    *(.dmx)
-	. = ALIGN(4);
+    KEEP(*(.dmx))
+    KEEP(*(.dmx.*))
+    . = ALIGN(4);
     _edmx = .;
-	. = ALIGN(4);
-	_spixel = .;
-    *(.pixel)
-	. = ALIGN(4);
-	_epixel = .;
-  	. = ALIGN(4);
+  } > RAM2
+
+  .network (NOLOAD) :
+  {
+    . = ALIGN(4);
     _snetwork = .;
-    *(.network*)
+    KEEP(*(.network))
+    KEEP(*(.network.*))
     . = ALIGN(4);
     _enetwork = .;
-  	. = ALIGN(4);
-    *(.http*)
-  } >RAM2 
+  } > RAM2
+
+  .pixel (NOLOAD) :
+  {
+    . = ALIGN(4);
+    _spixel = .;
+    KEEP(*(.pixel))
+    KEEP(*(.pixel.*))
+    . = ALIGN(4);
+    _epixel = .;
+  } > RAM2
+
+  .http (NOLOAD) :
+  {
+    . = ALIGN(4);
+    _shttp = .;
+    KEEP(*(.http))
+    KEEP(*(.http.*))
+    KEEP(*(.httpd))
+    KEEP(*(.httpd.*))
+    . = ALIGN(4);
+    _ehttp = .;
+  } > RAM2
+  
+  ASSERT(. <= ORIGIN(RAM2) + LENGTH(RAM2), "RAM2 overflow")
+  ASSERT(_edmx <= ORIGIN(RAM2) + LENGTH(RAM2), "DMX section exceeds RAM2")
+  ASSERT(_enetwork <= ORIGIN(RAM2) + LENGTH(RAM2), "Network section exceeds RAM2")
+  ASSERT(_epixel <= ORIGIN(RAM2) + LENGTH(RAM2), "Pixel section exceeds RAM2")
+  ASSERT(_ehttp <= ORIGIN(RAM2) + LENGTH(RAM2), "HTTP section exceeds RAM2")
 
   /DISCARD/ :
   {
