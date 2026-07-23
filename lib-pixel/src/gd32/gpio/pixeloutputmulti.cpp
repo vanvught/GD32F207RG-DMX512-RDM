@@ -22,10 +22,6 @@
  * THE SOFTWARE.
  */
 
-#if defined(DEBUG_PIXEL)
-#undef NDEBUG
-#endif
-
 #include <cstdint>
 #include <cassert>
 
@@ -36,7 +32,7 @@
 #include "gd32_gpio.h"
 #include "gd32_dma.h"
 #include "gd32_dma_memcpy32.h"
-#include "firmware/debug/debug_debug.h"
+#include "pixel_debug.h"
 
 #if defined(GD32F20X) || defined(GD32F4XX)
 [[gnu::section(".pixel"), gnu::aligned(4), gnu::used]]
@@ -88,7 +84,7 @@ static void Timer10Config() {
 }
 
 void PixelOutputMulti::Blackout() {
-    DEBUG_ENTRY();
+    PIXEL_DEBUG_ENTRY();
 
     auto& pixel_configuration = PixelConfiguration::Get();
 
@@ -137,7 +133,7 @@ void PixelOutputMulti::Blackout() {
         __DMB();
     } while (sv_is_running);
 
-    DEBUG_EXIT();
+    PIXEL_DEBUG_EXIT();
 }
 
 bool PixelOutputMulti::IsUpdating() {
@@ -150,7 +146,7 @@ uint32_t PixelOutputMulti::GetUserData() {
 }
 
 PixelOutputMulti::PixelOutputMulti() {
-    DEBUG_ENTRY();
+    PIXEL_DEBUG_ENTRY();
 
     assert(s_this == nullptr);
     s_this = this;
@@ -182,18 +178,18 @@ PixelOutputMulti::PixelOutputMulti() {
 
     ApplyConfiguration();
 
-    DEBUG_EXIT();
+    PIXEL_DEBUG_EXIT();
 }
 
 void PixelOutputMulti::ApplyConfiguration() {
-    DEBUG_ENTRY();
+    PIXEL_DEBUG_ENTRY();
 
     auto& pixel_configuration = PixelConfiguration::Get();
 
     pixel_configuration.Validate();
 
     if (!pixel_configuration.RefreshNeeded()) {
-        DEBUG_EXIT();
+        PIXEL_DEBUG_EXIT();
         return;
     }
 
@@ -201,7 +197,7 @@ void PixelOutputMulti::ApplyConfiguration() {
     const auto kLedsPerPixel = pixel_configuration.GetLedsPerPixel();
 
     if ((kType == pixel::LedType::kAPA102) || (kType == pixel::LedType::kSK9822) || (kType == pixel::LedType::kP9813)) {
-        DEBUG_PRINTF("kMaxApA102=%u", kMaxApA102);
+        PIXEL_DEBUG_PRINTF("kMaxApA102=%u", kMaxApA102);
         if (pixel_configuration.GetCount() > kMaxApA102) {
             pixel_configuration.SetCount(kMaxApA102);
             pixel_configuration.Validate();
@@ -218,9 +214,9 @@ void PixelOutputMulti::ApplyConfiguration() {
 
     buffer_size_ *= 8;
 
-    DEBUG_PRINTF("PORT_COUNT=%u, kPixelBufferSize=%u [%u]", pixel::kPortCount, kPixelBufferSize, (kPixelBufferSize + 1023) / 1024);
-    DEBUG_PRINTF("s_pixel_buffer_data=%p, s_pixel_buffer_dma=%p", s_pixel_buffer_data, s_pixel_buffer_dma);
-    DEBUG_PRINTF("buffer_size_=%u [%u]", buffer_size_, (buffer_size_ + 1023) / 1024);
+    PIXEL_DEBUG_PRINTF("PORT_COUNT=%u, kPixelBufferSize=%u [%u]", pixel::kPortCount, kPixelBufferSize, (kPixelBufferSize + 1023) / 1024);
+    PIXEL_DEBUG_PRINTF("s_pixel_buffer_data=%p, s_pixel_buffer_dma=%p", s_pixel_buffer_data, s_pixel_buffer_dma);
+    PIXEL_DEBUG_PRINTF("buffer_size_=%u [%u]", buffer_size_, (buffer_size_ + 1023) / 1024);
     assert(buffer_size_ <= kPixelBufferSize);
 
     if (pixel_configuration.IsRTZProtocol()) {
@@ -229,11 +225,11 @@ void PixelOutputMulti::ApplyConfiguration() {
         Setup(pixel_configuration.GetClockSpeedHz());
     }
 
-    DEBUG_EXIT();
+    PIXEL_DEBUG_EXIT();
 }
 
 void PixelOutputMulti::Setup(uint8_t low_code, uint8_t high_code) {
-    DEBUG_ENTRY();
+    PIXEL_DEBUG_ENTRY();
 
     // Timer 2 is Master -> TIMER2_TRGO
     // Timer 3 is Slave -> ITI2
@@ -241,7 +237,7 @@ void PixelOutputMulti::Setup(uint8_t low_code, uint8_t high_code) {
     const uint32_t kT0H = (static_cast<uint32_t>(__builtin_popcount(low_code)) * (pixel::kRtzTimerPeriod + 1U)) / 8U;
     const uint32_t kT1H = (static_cast<uint32_t>(__builtin_popcount(high_code)) * (pixel::kRtzTimerPeriod + 1U)) / 8U;
 
-    DEBUG_PRINTF("kRtzTimerPeriod=%u, kT0H=%u, kT1H=%u", pixel::kRtzTimerPeriod, kT0H, kT1H);
+    PIXEL_DEBUG_PRINTF("kRtzTimerPeriod=%u, kT0H=%u, kT1H=%u", pixel::kRtzTimerPeriod, kT0H, kT1H);
 
     timer_parameter_struct timer_initpara;
 
@@ -393,11 +389,11 @@ void PixelOutputMulti::Setup(uint8_t low_code, uint8_t high_code) {
 
     // END DMA configuration
 
-    DEBUG_EXIT();
+    PIXEL_DEBUG_EXIT();
 }
 
 void PixelOutputMulti::Setup(uint32_t frequency) {
-    DEBUG_ENTRY();
+    PIXEL_DEBUG_ENTRY();
 
     // BEGIN GPIO
 
@@ -420,7 +416,7 @@ void PixelOutputMulti::Setup(uint32_t frequency) {
 
     auto ticker = (MASTER_TIMER_CLOCK / frequency);
 
-    DEBUG_PRINTF("nFrequency=%u, nTicker=%u", frequency, ticker);
+    PIXEL_DEBUG_PRINTF("nFrequency=%u, nTicker=%u", frequency, ticker);
 
     if (ticker < 12) { // ((nTicker / 4) - 1) >= 2
         ticker = 12;
@@ -576,11 +572,11 @@ void PixelOutputMulti::Setup(uint32_t frequency) {
 
     // END Buffer setup
 
-    DEBUG_EXIT();
+    PIXEL_DEBUG_EXIT();
 }
 
 void PixelOutputMulti::FullOn() {
-    DEBUG_ENTRY();
+    PIXEL_DEBUG_ENTRY();
 
     auto& pixel_configuration = PixelConfiguration::Get();
 
@@ -629,7 +625,7 @@ void PixelOutputMulti::FullOn() {
         __DMB();
     } while (sv_is_running);
 
-    DEBUG_EXIT();
+    PIXEL_DEBUG_EXIT();
 }
 
 #pragma GCC push_options
