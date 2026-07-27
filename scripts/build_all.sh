@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cd ../lib-remoteconfig/http/content
-make clean && make CONTENT=modern
+make clean && make CONTENT=modern USE_GZIP=1
 cd -
 
 cd ..
