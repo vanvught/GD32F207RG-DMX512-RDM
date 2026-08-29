@@ -28,11 +28,11 @@
 
 #if !defined(BOARD_16X4U_PIXEL)
 # error This file should not be included
-#endif
+#endif // BOARD_16X4U_PIXEL
 
 #if defined (MCU_GD32F450_MCU_H_)
 # error This file should be included later
-#endif
+#endif // defined (MCU_GD32F450_MCU_H_)
 
 /**
  * LEDs
@@ -128,7 +128,7 @@ inline constexpr uint32_t kTcnet = 0;
 static constexpr uint32_t kPortARx = 0;
 static constexpr uint32_t kPortATx = 0;
 } // namespace panelled
-#endif
+#endif // __cplusplus
 
 /**
  * SPI flash
@@ -199,4 +199,4 @@ static constexpr uint32_t kPortATx = 0;
 
 #include "gpio_header.h"
 
-#endif /* BOARD_16X4U_PIXEL_H_ */
+#endif // BOARD_16X4U_PIXEL_H_

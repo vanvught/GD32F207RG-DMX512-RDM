@@ -30,11 +30,11 @@
 
 #if !defined(BOARD_GD32F207C_EVAL)
 # error This file should not be included
-#endif
+#endif // BOARD_GD32F207C_EVAL
 
 #if defined (MCU_GD32F20X_MCU_H_)
 # error This file should be included later
-#endif
+#endif // defined (MCU_GD32F20X_MCU_H_)
 
 /**
  * LEDs
@@ -161,7 +161,7 @@ inline constexpr uint32_t kTcnet = 0;
 static constexpr uint32_t kPortARx = 0;
 static constexpr uint32_t kPortATx = 0;
 } // namespace panelled
-#endif
+#endif // __cplusplus
 
 /**
  * SPI flash
@@ -252,7 +252,7 @@ static constexpr uint32_t kPortATx = 0;
 #define SPI_LCD_BL_GPIO		GD32_PORT_TO_GPIO(GD32_GPIO_PORTA, 11)
 #if defined(SPI_LCD_HAVE_CS_GPIO)
 # define SPI_LCD_CS_GPIO	GD32_PORT_TO_GPIO(GD32_GPIO_PORTA, 15)
-#endif
+#endif // SPI_LCD_HAVE_CS_GPIO
 
 /**
  * FT8xx LCD
@@ -263,4 +263,4 @@ static constexpr uint32_t kPortATx = 0;
 
 #include "gpio_header.h"
 
-#endif /* BOARD_GD32F207C_EVAL_H_ */
+#endif // BOARD_GD32F207C_EVAL_H_

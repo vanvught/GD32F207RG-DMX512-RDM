@@ -28,7 +28,7 @@
 
 #if !defined(GD32F20X_CL)
 # error This file should not be included
-#endif
+#endif // GD32F20X_CL
 
 #include <stdint.h>
 
@@ -41,4 +41,4 @@
 
 #include "gd32f20x_mcu.h"
 
-#endif /* MCU_GD32F207_MCU_H_ */
+#endif // MCU_GD32F207_MCU_H_
