@@ -27,12 +27,11 @@
 #define DDPDISPLAY_H_
 
 #include <cstdint>
-#include <algorithm>
 
 #include "ddp.h"
 #include "dmxnode_outputtype.h"
-#include "ip4/ip4_address.h"
 #include "network_iface.h"
+#include "common/utils/utils_math.h"
 
 #if !defined(DMXNODE_PORTS)
 #error DMXNODE_PORTS is not defined
@@ -86,7 +85,7 @@ class DdpDisplay
         count_ = count;
         strip_data_length_ = count * channels_per_pixel;
         dmxnode_output_type_data_max_length_ = (channels_per_pixel == 4 ? 512U : 510U);
-        active_ports_ = std::min(active_ports, ddpdisplay::configuration::pixel::kMaxPorts);
+        active_ports_ = common::Min(active_ports, ddpdisplay::configuration::pixel::kMaxPorts);
     }
 
     uint32_t GetCount() const { return count_; }

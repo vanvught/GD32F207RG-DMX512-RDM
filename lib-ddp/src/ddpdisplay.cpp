@@ -217,7 +217,7 @@ void DdpDisplay::HandleData() {
         const auto kOutportIndexEnd = data_source_index + 4;
 
         while ((offset < s_offset_compare[port_index]) && (data_source_index < kOutportIndexEnd)) {
-            const auto kOutLength = std::min(std::min(length, dmxnode_output_type_data_max_length_), strip_data_length_);
+            const auto kOutLength = common::Min(common::Min(length, dmxnode_output_type_data_max_length_), strip_data_length_);
 
             dmxnode::Data::SetSourceA(data_source_index, &kReceivedData[receiver_buffer_index], kOutLength);
             s_port_length[data_source_index] = kOutLength;
@@ -239,7 +239,7 @@ void DdpDisplay::HandleData() {
 
     for (uint32_t port_index = ddpdisplay::configuration::pixel::kMaxPorts; (port_index < ddpdisplay::configuration::kMaxPorts) && (length != 0); port_index++) {
         if (offset < s_offset_compare[port_index]) {
-            const auto kLength = std::min(length, dmxnode::kUniverseSize);
+            const auto kLength = common::Min(length, dmxnode::kUniverseSize);
 
             //			DEBUG_PRINTF("==> nPortIndex=%u, nOffset=%u, nLength=%u, nLightSetLength=%u, nLightSetPortIndex=%u", nPortIndex, nOffset, nLength,
             // nLightSetLength, nLightSetPortIndex);

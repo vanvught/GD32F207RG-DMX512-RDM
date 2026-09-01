@@ -37,7 +37,6 @@
 #pragma GCC optimize("no-tree-loop-distribute-patterns")
 
 #include <cstdint>
-#include <algorithm>
 #include <cassert>
 
 #include "dmxnodedata.h"
@@ -48,6 +47,7 @@
 #include "gpio.h"
 #endif
 #include "firmware/debug/debug_debug.h"
+#include "common/utils/utils_math.h"
 
 namespace pixeldmxmulti {
 #if !defined(CONFIG_DMXNODE_PIXEL_MAX_PORTS)
@@ -250,7 +250,7 @@ class PixelDmxMulti final : public PixelDmxConfiguration {
         const auto kGroups = PixelDmxConfiguration::GetGroups();
         const auto kBeginIndex = port_info.begin_index_port[kSwitch];
         const auto kChannelsPerPixel = PixelDmxConfiguration::GetLedsPerPixel();
-        const auto kEndIndex = std::min(kGroups, (kBeginIndex + (length / kChannelsPerPixel)));
+        const auto kEndIndex = common::Min(kGroups, (kBeginIndex + (length / kChannelsPerPixel)));
         const auto kGroupingCount = PixelDmxConfiguration::GetGroupingCount();
         const auto kPixelType = PixelDmxConfiguration::GetType();
         const auto kIsRtzProtocol = PixelDmxConfiguration::IsRTZProtocol();

@@ -151,7 +151,7 @@ void PixelPusher::Input(const uint8_t* buffer, uint32_t size, [[maybe_unused]] u
         const auto kPortIndexStart = data[0] * universes_;
         uint32_t port_index;
         for (port_index = kPortIndexStart; port_index < (kPortIndexStart + universes_) && (size > 0); port_index++) {
-            const auto kLength = std::min(std::min(size, pp::configuration::UNIVERSE_MAX_LENGTH), strip_data_length_ - 1);
+            const auto kLength = common::Min(common::Min(size, pp::configuration::UNIVERSE_MAX_LENGTH), strip_data_length_ - 1);
 
             //          DEBUG_PRINTF("i=%u, port_index=%u, size=%u, kLength=%u", i, port_index, size, kLength);
 
