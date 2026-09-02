@@ -1,0 +1,16 @@
+BOARD=BOARD_GD32F207RG
+
+DEFINES=
+
+DEFINES+=CONFIG_CLIB_USE_UART0
+
+DEFINES+=CONFIG_DEBUG_STACK
+DEFINES+=NDEBUG
+
+SRCDIR=
+LIBS=
+
+include Common.mk
+include ../firmware-template-gd32/Rules.mk
+
+prerequisites:

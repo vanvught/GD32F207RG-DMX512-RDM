@@ -52,12 +52,16 @@ LDLIBS:=$(addprefix -l,$(LIBS))
 # The variables for the dependency check
 LIBDEP=$(addprefix ../lib-,$(LIBS))
 
-DEFINES+=-DHTTPD_CONTENT_SIZE=2048
-DEFINES+=-DTCP_MAX_TCBS_ALLOWED=8
-DEFINES+=-DCONFIG_NETWORK_MEMORY_BLOCKS=16
+ifeq ($(findstring CONFIG_REMOTECONFIG_MINIMUM,$(DEFINES)),CONFIG_REMOTECONFIG_MINIMUM)
+else
+	DEFINES+=-DHTTPD_CONTENT_SIZE=2048
+	DEFINES+=-DTCP_MAX_TCBS_ALLOWED=8
+	DEFINES+=-DCONFIG_NETWORK_MEMORY_BLOCKS=16
+endif
 
 COPS=-DGD32 -D$(FAMILY_UCA) -D$(LINE_UC) -D$(MCU) -D$(BOARD) -DPHY_TYPE=$(ENET_PHY)
-COPS+=$(strip $(DEFINES) $(MAKE_FLAGS) $(INCLUDES) $(LIBINCDIRS))
+COPS+=$(sort $(DEFINES) $(MAKE_FLAGS))
+COPS+=$(strip $(INCLUDES) $(LIBINCDIRS))
 COPS+=$(strip $(ARMOPS) $(CMSISOPS))
 COPS+=-Os -nostartfiles -ffreestanding -nostdlib
 COPS+=-fstack-usage
@@ -176,6 +180,7 @@ $(TARGET): $(BUILD)main.elf
 		-O binary \
 		$@ \
 		--remove-section=.tcmsram* \
+		--remove-section=.ram* \
 		--remove-section=.sram1* \
 		--remove-section=.sram2* \
 		--remove-section=.ramadd* \
