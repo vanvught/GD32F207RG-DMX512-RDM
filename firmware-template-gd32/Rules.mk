@@ -25,6 +25,7 @@ PROJECT=$(notdir $(patsubst %/,%,$(CURDIR)))
 $(info $$PROJECT [${PROJECT}])
 
 DEFINES:=$(addprefix -D,$(DEFINES))
+DEFINES+=-DPHY_TYPE=$(ENET_PHY)
 
 include ../common/make/gd32/Board.mk
 include ../common/make/gd32/Mcu.mk
@@ -59,7 +60,7 @@ else
 	DEFINES+=-DCONFIG_NETWORK_MEMORY_BLOCKS=16
 endif
 
-COPS=-DGD32 -D$(FAMILY_UCA) -D$(LINE_UC) -D$(MCU) -D$(BOARD) -DPHY_TYPE=$(ENET_PHY)
+COPS=-DGD32 -D$(FAMILY_UCA) -D$(LINE_UC) -D$(MCU) -D$(BOARD)
 COPS+=$(sort $(DEFINES) $(MAKE_FLAGS))
 COPS+=$(strip $(INCLUDES) $(LIBINCDIRS))
 COPS+=$(strip $(ARMOPS) $(CMSISOPS))
