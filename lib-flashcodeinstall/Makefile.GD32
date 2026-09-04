@@ -1,9 +1,8 @@
-DEFINES=NDEBUG
+DEFINES =NDEBUG
 
-EXTRA_INCLUDES=
+EXTRA_INCLUDES=../lib-gd32/include ../lib-gd32/src
 
-EXTRA_SRCDIR=
+EXTRA_SRCDIR=src/spi/gd32
 
 include Rules.mk
 include ../firmware-template-gd32/lib/Rules.mk
-	
