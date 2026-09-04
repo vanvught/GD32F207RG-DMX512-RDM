@@ -66,8 +66,10 @@ int main() {
 
     const auto kIsNotRemote = (bkp_data_read(BKP_DATA_1) != 0xA5A5);
     const auto kIsNotKey = (gpio_input_bit_get(KEY_BOOTLOADER_TFTP_GPIOx, KEY_BOOTLOADER_TFTP_GPIO_PINx));
+    const uint32_t* reset_p = reinterpret_cast<uint32_t*>(FLASH_BASE + OFFSET_UIMAGE + 4);
+    const auto kIsEmpty = (*reset_p == UINT32_MAX);
 
-    if (kIsNotRemote && kIsNotKey) {
+    if (kIsNotRemote && kIsNotKey && !kIsEmpty) {
         // https://developer.arm.com/documentation/ka001423/1-0
         // 1. Disable interrupt response.
         __disable_irq();
@@ -97,7 +99,6 @@ int main() {
         // 7. Enable interrupts.
         __enable_irq();
         // 8. Call the reset handler
-        const uint32_t* reset_p = reinterpret_cast<uint32_t*>(FLASH_BASE + OFFSET_UIMAGE + 4);
         asm volatile("bx %0;" : : "r"(*reset_p));
     }
 
@@ -108,7 +109,7 @@ int main() {
     FirmwareVersion fw(kSoftwareVersion, __DATE__, __TIME__);
     FlashCodeInstall flashcode_install;
 
-    printf("Remote=%c, Key=%c\n", kIsNotRemote ? 'N' : 'Y', kIsNotKey ? 'N' : 'Y');
+    printf("Remote=%c, Key=%c, Empty=%c\n", kIsNotRemote ? 'N' : 'Y', kIsNotKey ? 'N' : 'Y', kIsEmpty ? 'Y' : 'N');
     fw.Print("Bootloader TFTP Server");
 
     RemoteConfig remote_config(remoteconfig::Output::CONFIG);

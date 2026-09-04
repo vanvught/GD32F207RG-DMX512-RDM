@@ -10,8 +10,6 @@ DEFINES+=CONFIG_NETWORK_MEMORY_BLOCKS=1
 DEFINES+=UDP_MAX_PORTS_ALLOWED=3
 DEFINES+=ENET_RXBUF_NUM=2 ENET_TXBUF_NUM=2
 
-DEFINES+=RTL8201F_LED1_LINK_ALL
-
 SRCDIR=firmware lib
 
 LIBS=remoteconfig flashcodeinstall configstore display flashcode flash
