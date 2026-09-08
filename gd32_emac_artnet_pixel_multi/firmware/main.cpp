@@ -33,7 +33,9 @@
 #include "json/displayudfparams.h"
 #include "dmxnodenode.h"
 #include "dmxnodemsgconst.h"
+#ifdef ARTNET_HAVE_TRIGGER
 #include "artnettriggerhandler.h"
+#endif
 #include "firmware/pixeldmx/show.h"
 #include "pixeltestpattern.h"
 #include "json/pixeldmxparams.h"
@@ -79,9 +81,11 @@ int main() { // NOLINT
         dmxnode_node.SetOutput(&pixeldmx_multi);
     }
 
+#ifdef ARTNET_HAVE_TRIGGER
     ArtNetTriggerHandler trigger_handler(&pixeldmx_multi);
+#endif
 
-#if defined(NODE_SHOWFILE)
+#ifdef NODE_SHOWFILE
     ShowFile showfile;
     showfile.Print();
 #endif
@@ -115,7 +119,7 @@ int main() { // NOLINT
         watchdog::Feed();
         network::Run();
         dmxnode_node.Run();
-#if defined(NODE_SHOWFILE)
+#ifdef NODE_SHOWFILE
         showfile.Run();
 #endif
         pixeltest_pattern.Run();
