@@ -64,11 +64,11 @@ COPS=-DGD32 -D$(FAMILY_UCA) -D$(LINE_UC) -D$(MCU) -D$(BOARD)
 COPS+=$(sort $(DEFINES) $(MAKE_FLAGS))
 COPS+=$(strip $(INCLUDES) $(LIBINCDIRS))
 COPS+=$(strip $(ARMOPS) $(CMSISOPS))
-COPS+=-Os -nostartfiles -ffreestanding -nostdlib
+COPS+=-Os -nostartfiles -fno-builtin  -D_GNU_SOURCE
 COPS+=-fstack-usage
 COPS+=-ffunction-sections -fdata-sections
 COPS+=-Wall -Werror -Wpedantic -Wextra -Wunused -Wsign-conversion -Wconversion -Wduplicated-cond -Wlogical-op
-COPS+=--specs=nosys.specs
+COPS+=--specs=nano.specs
 COPS+=-flto=auto
 
 include ../common/make/CppOps.mk
