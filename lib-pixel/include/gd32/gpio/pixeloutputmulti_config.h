@@ -26,7 +26,7 @@
 #ifndef GD32_GPIO_PIXELOUTPUTMULTI_CONFIG_H_
 #define GD32_GPIO_PIXELOUTPUTMULTI_CONFIG_H_
 
-#if defined(BOARD_GD32F207RG)
+#ifdef BOARD_GD32F207RG
 #include "board_gd32f207rg.h"
 #elif defined(BOARD_GD32F407RE)
 #include "board_gd32f407re.h"
@@ -42,7 +42,7 @@
 #include "board_gd32f470z_eval.h"
 #else
 #error Board is not supported
-#endif
+#endif // BOARD_GD32F207RG
 
 namespace pixel
 {

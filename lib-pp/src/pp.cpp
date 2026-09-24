@@ -48,9 +48,9 @@
 #include "firmware/debug/debug_debug.h"
 
 namespace {
-#if !defined(CONFIG_PP_16BITSTUFF)
+#ifndef CONFIG_PP_16BITSTUFF
 constexpr uint8_t kCommandMagic[16] = {0x40, 0x09, 0x2d, 0xa6, 0x15, 0xa5, 0xdd, 0xe5, 0x6a, 0x9d, 0x4d, 0x5a, 0xcf, 0x09, 0xaf, 0x50};
-#endif
+#endif // CONFIG_PP_16BITSTUFF
 
 union pcast32 {
     uint32_t u32;
@@ -93,19 +93,19 @@ void PixelPusher::Start() {
     handle_data_ = network::udp::Begin(pp::UDP_PORT_DATA, StaticCallbackFunction);
     assert(handle_data_ != -1);
 
-#if !defined(CONFIG_PP_16BITSTUFF)
+#ifndef CONFIG_PP_16BITSTUFF
     discovery_packet_.pixelpusher.base.strips_attached = static_cast<uint8_t>(active_ports_);
 #else
     discovery_packet_.pixelpusher.base.strips_attached = 1;
-#endif
+#endif // CONFIG_PP_16BITSTUFF
     discovery_packet_.pixelpusher.base.pixels_per_strip = static_cast<uint16_t>(count_);
     discovery_packet_.pixelpusher.ext.strip_count_16 = static_cast<uint16_t>(active_ports_);
-#if !defined(CONFIG_PP_16BITSTUFF)
+#ifndef CONFIG_PP_16BITSTUFF
     discovery_packet_.pixelpusher.ext.pusher_flags = 0;
 #else
     static const uint32_t nPusherFlags = (m_hasGlobalBrightness ? static_cast<uint32_t>(pp::PusherFlags::GLOBAL_BRIGHTNESS) : 0) | static_cast<uint32_t>(pp::PusherFlags::DYNAMICS) | static_cast<uint32_t>(pp::PusherFlags::_16BITSTUFF);
     discovery_packet_.pixelpusher.ext.pusher_flags = nPusherFlags;
-#endif
+#endif // CONFIG_PP_16BITSTUFF
 
     strip_data_length_ = 1U + count_ * pp::configuration::CHANNELS_PER_PIXEL;
 
@@ -134,7 +134,7 @@ void PixelPusher::Input(const uint8_t* buffer, uint32_t size, [[maybe_unused]] u
     size -= 4;
     data += 4;
 
-#if !defined(CONFIG_PP_16BITSTUFF)
+#ifndef CONFIG_PP_16BITSTUFF
     if (size >= sizeof(kCommandMagic) && memcmp(data, kCommandMagic, sizeof(kCommandMagic)) == 0) {
         HandlePusherCommand(data + sizeof(kCommandMagic), size - sizeof(kCommandMagic));
         return;
@@ -151,7 +151,7 @@ void PixelPusher::Input(const uint8_t* buffer, uint32_t size, [[maybe_unused]] u
         const auto kPortIndexStart = data[0] * universes_;
         uint32_t port_index;
         for (port_index = kPortIndexStart; port_index < (kPortIndexStart + universes_) && (size > 0); port_index++) {
-            const auto kLength = common::Min(common::Min(size, pp::configuration::UNIVERSE_MAX_LENGTH), strip_data_length_ - 1);
+            const auto kLength =std::min(std::min(size, pp::configuration::UNIVERSE_MAX_LENGTH), strip_data_length_ - 1);
 
             //          DEBUG_PRINTF("i=%u, port_index=%u, size=%u, kLength=%u", i, port_index, size, kLength);
 
@@ -173,7 +173,7 @@ void PixelPusher::Input(const uint8_t* buffer, uint32_t size, [[maybe_unused]] u
         }
     }
 #else
-#endif
+#endif // CONFIG_PP_16BITSTUFF
 }
 
 void PixelPusher::Run() {
@@ -191,9 +191,9 @@ void PixelPusher::Run() {
 void PixelPusher::HandlePusherCommand([[maybe_unused]] const uint8_t* buffer, [[maybe_unused]] uint32_t size) {
     DEBUG_ENTRY();
     DEBUG_PRINTF("pBuffer=%p, nSize=%u", reinterpret_cast<const void*>(buffer), static_cast<unsigned>(size));
-#if !defined(CONFIG_PP_16BITSTUFF)
+#ifndef CONFIG_PP_16BITSTUFF
 #else
-#endif
+#endif // CONFIG_PP_16BITSTUFF
     DEBUG_EXIT();
 }
 

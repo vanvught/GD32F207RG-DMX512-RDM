@@ -26,12 +26,12 @@
 #ifndef GD32_GPIO_PIXELOUTPUTMULTI_H_
 #define GD32_GPIO_PIXELOUTPUTMULTI_H_
 
-#if defined(DEBUG_PIXEL)
-#if defined(NDEBUG)
+#ifdef DEBUG_PIXEL
+#ifdef NDEBUG
 #undef NDEBUG
 #define _NDEBUG
-#endif
-#endif
+#endif // NDEBUG
+#endif // DEBUG_PIXEL
 
 #pragma GCC push_options
 #pragma GCC optimize("O3")
@@ -236,9 +236,9 @@ private:
 };
 
 #pragma GCC pop_options
-#if defined(_NDEBUG)
+#ifdef _NDEBUG
 #undef _NDEBUG
 #define NDEBUG
-#endif
+#endif // _NDEBUG
 
 #endif // GD32_GPIO_PIXELOUTPUTMULTI_H_

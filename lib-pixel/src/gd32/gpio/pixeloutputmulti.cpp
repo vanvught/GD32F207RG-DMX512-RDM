@@ -39,7 +39,7 @@
 uint16_t PixelOutputMulti::s_pixel_buffer[PixelOutputMulti::kPixelBufferSize];
 #else
 alignas(4) uint16_t PixelOutputMulti::s_pixel_buffer[PixelOutputMulti::kPixelBufferSize];
-#endif
+#endif // defined(GD32F20X) || defined(GD32F4XX)
 
 PixelOutputMulti *PixelOutputMulti::s_this = nullptr;
 
@@ -152,26 +152,26 @@ PixelOutputMulti::PixelOutputMulti() {
     s_this = this;
 
     rcu_periph_clock_enable(RCU_GPIOx);
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     gpio_init(GPIOx, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GPIO_PINx);
 #else
     gpio_mode_set(GPIOx, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLDOWN, GPIO_PINx);
     gpio_output_options_set(GPIOx, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PINx);
-#endif
+#endif // GD32F4XX
 
     GPIO_BC(GPIOx) = GPIO_PINx;
 
 #ifndef NDEBUG
     rcu_periph_clock_enable(DEBUG_CS_RCU_GPIOx);
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     gpio_init(DEBUG_CS_GPIOx, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, DEBUG_CS_GPIO_PINx);
 #else
     gpio_mode_set(DEBUG_CS_GPIOx, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLDOWN, DEBUG_CS_GPIO_PINx);
     gpio_output_options_set(DEBUG_CS_GPIOx, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, DEBUG_CS_GPIO_PINx);
-#endif
+#endif // GD32F4XX
 
     GPIO_BOP(DEBUG_CS_GPIOx) = DEBUG_CS_GPIO_PINx;
-#endif
+#endif // NDEBUG
 
     dma::memcpy32::Init();
     Timer10Config();
@@ -307,85 +307,85 @@ void PixelOutputMulti::Setup(uint8_t low_code, uint8_t high_code) {
     dma_deinit(TIMER2_DMAx, TIMER2_CH0_DMA_CHx);
     dma_struct_para_init(&dma_init_struct);
     dma_init_struct.direction = DMA_MEMORY_TO_PERIPHERAL;
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     dma_init_struct.memory_addr = reinterpret_cast<uint32_t>(pixel::kSPGpioPiNs);
 #else
     dma_init_struct.memory0_addr = reinterpret_cast<uint32_t>(pixel::kSPGpioPiNs);
-#endif
+#endif // GD32F4XX
     dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_DISABLE;
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     dma_init_struct.memory_width = DMA_MEMORY_WIDTH_16BIT;
-#endif
+#endif // GD32F4XX
     dma_init_struct.periph_addr = GPIOx + GPIOx_BOP_OFFSET;
     dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     dma_init_struct.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
 #else
     dma_init_struct.periph_memory_width = DMA_PERIPH_WIDTH_16BIT;
-#endif
+#endif // GD32F4XX
     dma_init_struct.priority = DMA_PRIORITY_LOW;
     dma_init(TIMER2_DMAx, TIMER2_CH0_DMA_CHx, &dma_init_struct);
     dma_circulation_disable(TIMER2_DMAx, TIMER2_CH0_DMA_CHx);
     dma_memory_to_memory_disable(TIMER2_DMAx, TIMER2_CH0_DMA_CHx);
-#if defined(GD32F4XX)
+#ifdef GD32F4XX
     dma_channel_subperipheral_select(TIMER2_DMAx, TIMER2_CH0_DMA_CHx, TIMER2_CH0_DMA_SUBPERIx);
-#endif
+#endif // GD32F4XX
 
     // Timer 2 Channel 2
     dma_deinit(TIMER2_DMAx, TIMER2_CH2_DMA_CHx);
     dma_struct_para_init(&dma_init_struct);
     dma_init_struct.direction = DMA_MEMORY_TO_PERIPHERAL;
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     dma_init_struct.memory_addr = reinterpret_cast<uint32_t>(s_pixel_buffer_dma);
 #else
     dma_init_struct.memory0_addr = reinterpret_cast<uint32_t>(s_pixel_buffer_dma);
-#endif
+#endif // GD32F4XX
     dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     dma_init_struct.memory_width = DMA_MEMORY_WIDTH_16BIT;
-#endif
+#endif // GD32F4XX
     dma_init_struct.periph_addr = GPIOx + GPIOx_BC_OFFSET;
     dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     dma_init_struct.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
 #else
     dma_init_struct.periph_memory_width = DMA_PERIPH_WIDTH_16BIT;
-#endif
+#endif // GD32F4XX
     dma_init_struct.priority = DMA_PRIORITY_LOW;
     dma_init(TIMER2_DMAx, TIMER2_CH2_DMA_CHx, &dma_init_struct);
     dma_circulation_disable(TIMER2_DMAx, TIMER2_CH2_DMA_CHx);
     dma_memory_to_memory_disable(TIMER2_DMAx, TIMER2_CH2_DMA_CHx);
-#if defined(GD32F4XX)
+#ifdef GD32F4XX
     dma_channel_subperipheral_select(TIMER2_DMAx, TIMER2_CH2_DMA_CHx, TIMER2_CH2_DMA_SUBPERIx);
-#endif
+#endif // GD32F4XX
 
     // Timer 2 Channel 3
     dma_deinit(TIMER2_DMAx, TIMER2_CH3_DMA_CHx);
     dma_struct_para_init(&dma_init_struct);
     dma_init_struct.direction = DMA_MEMORY_TO_PERIPHERAL;
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     dma_init_struct.memory_addr = reinterpret_cast<uint32_t>(pixel::kSPGpioPiNs);
 #else
     dma_init_struct.memory0_addr = reinterpret_cast<uint32_t>(pixel::kSPGpioPiNs);
-#endif
+#endif // GD32F4XX
     dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_DISABLE;
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     dma_init_struct.memory_width = DMA_MEMORY_WIDTH_16BIT;
-#endif
+#endif // GD32F4XX
     dma_init_struct.periph_addr = GPIOx + GPIOx_BC_OFFSET;
     dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     dma_init_struct.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
 #else
     dma_init_struct.periph_memory_width = DMA_PERIPH_WIDTH_16BIT;
-#endif
+#endif // GD32F4XX
     dma_init_struct.priority = DMA_PRIORITY_LOW;
     dma_init(TIMER2_DMAx, TIMER2_CH3_DMA_CHx, &dma_init_struct);
     dma_circulation_disable(TIMER2_DMAx, TIMER2_CH3_DMA_CHx);
     dma_memory_to_memory_disable(TIMER2_DMAx, TIMER2_CH3_DMA_CHx);
-#if defined(GD32F4XX)
+#ifdef GD32F4XX
     dma_channel_subperipheral_select(TIMER2_DMAx, TIMER2_CH3_DMA_CHx, TIMER2_CH3_DMA_SUBPERIx);
-#endif
+#endif // GD32F4XX
 
     // END DMA configuration
 
@@ -398,14 +398,14 @@ void PixelOutputMulti::Setup(uint32_t frequency) {
     // BEGIN GPIO
 
     rcu_periph_clock_enable(TIMER2CH0_RCU_GPIOx);
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     rcu_periph_clock_enable(RCU_AF);
     gpio_init(TIMER2CH0_GPIOx, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, TIMER2CH0_GPIO_PINx);
 #else
     gpio_mode_set(TIMER2CH0_GPIOx, GPIO_MODE_AF, GPIO_PUPD_NONE, TIMER2CH0_GPIO_PINx);
     gpio_output_options_set(TIMER2CH0_GPIOx, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, TIMER2CH0_GPIO_PINx);
     gpio_af_set(TIMER2CH0_GPIOx, GPIO_AF_2, TIMER2CH0_GPIO_PINx);
-#endif
+#endif // GD32F4XX
 
     // END GPIO
 
@@ -498,57 +498,57 @@ void PixelOutputMulti::Setup(uint32_t frequency) {
     dma_deinit(TIMER2_DMAx, TIMER2_CH2_DMA_CHx);
     dma_struct_para_init(&dma_init_struct);
     dma_init_struct.direction = DMA_MEMORY_TO_PERIPHERAL;
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     dma_init_struct.memory_addr = reinterpret_cast<uint32_t>(pixel::kSPGpioPiNs);
 #else
     dma_init_struct.memory0_addr = reinterpret_cast<uint32_t>(pixel::kSPGpioPiNs);
-#endif
+#endif // GD32F4XX
     dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_DISABLE;
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     dma_init_struct.memory_width = DMA_MEMORY_WIDTH_16BIT;
-#endif
+#endif // GD32F4XX
     dma_init_struct.periph_addr = GPIOx + GPIOx_BC_OFFSET;
     dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     dma_init_struct.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
 #else
     dma_init_struct.periph_memory_width = DMA_PERIPH_WIDTH_16BIT;
-#endif
+#endif // GD32F4XX
     dma_init_struct.priority = DMA_PRIORITY_LOW;
     dma_init(TIMER2_DMAx, TIMER2_CH2_DMA_CHx, &dma_init_struct);
     dma_circulation_disable(TIMER2_DMAx, TIMER2_CH2_DMA_CHx);
     dma_memory_to_memory_disable(TIMER2_DMAx, TIMER2_CH2_DMA_CHx);
-#if defined(GD32F4XX)
+#ifdef GD32F4XX
     dma_channel_subperipheral_select(TIMER2_DMAx, TIMER2_CH2_DMA_CHx, TIMER2_CH2_DMA_SUBPERIx);
-#endif
+#endif // GD32F4XX
 
     // Timer 2 Channel 3
     dma_deinit(TIMER2_DMAx, TIMER2_CH3_DMA_CHx);
     dma_struct_para_init(&dma_init_struct);
     dma_init_struct.direction = DMA_MEMORY_TO_PERIPHERAL;
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     dma_init_struct.memory_addr = reinterpret_cast<uint32_t>(s_pixel_buffer_data);
 #else
     dma_init_struct.memory0_addr = reinterpret_cast<uint32_t>(s_pixel_buffer_dma);
-#endif
+#endif // GD32F4XX
     dma_init_struct.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     dma_init_struct.memory_width = DMA_MEMORY_WIDTH_16BIT;
-#endif
+#endif // GD32F4XX
     dma_init_struct.periph_addr = GPIOx + GPIOx_BOP_OFFSET;
     dma_init_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
-#if !defined(GD32F4XX)
+#ifndef GD32F4XX
     dma_init_struct.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
 #else
     dma_init_struct.periph_memory_width = DMA_PERIPH_WIDTH_16BIT;
-#endif
+#endif // GD32F4XX
     dma_init_struct.priority = DMA_PRIORITY_LOW;
     dma_init(TIMER2_DMAx, TIMER2_CH3_DMA_CHx, &dma_init_struct);
     dma_circulation_disable(TIMER2_DMAx, TIMER2_CH3_DMA_CHx);
     dma_memory_to_memory_disable(TIMER2_DMAx, TIMER2_CH3_DMA_CHx);
-#if defined(GD32F4XX)
+#ifdef GD32F4XX
     dma_channel_subperipheral_select(TIMER2_DMAx, TIMER2_CH3_DMA_CHx, TIMER2_CH3_DMA_SUBPERIx);
-#endif
+#endif // GD32F4XX
 
     // END DMA configuration
 
@@ -648,9 +648,9 @@ void PixelOutputMulti::Update() {
     TIMER_CTL0(TIMER2) = timer2_ctl0;
     TIMER_CNT(TIMER2) = 0;
 
-#if defined(DMA_MEMCPY32_DISABLE_IRQ)
+#ifdef DMA_MEMCPY32_DISABLE_IRQ
     dma::memcpy32::StartDma(reinterpret_cast<uint8_t*>(s_pixel_buffer_dma), reinterpret_cast<uint8_t*>(s_pixel_buffer_data), buffer_size_ / 2);
-#endif
+#endif // DMA_MEMCPY32_DISABLE_IRQ
 
     const auto& pixel_configuration = PixelConfiguration::Get();
 
@@ -705,7 +705,7 @@ void PixelOutputMulti::Update() {
         TIMER_DMAINTEN(TIMER2) |= (TIMER_DMA_CH2D | TIMER_DMA_CH3D);
     }
 
-#if defined(DMA_MEMCPY32_DISABLE_IRQ)
+#ifdef DMA_MEMCPY32_DISABLE_IRQ
     while (dma::memcpy32::IsActive()) {
     }
 
@@ -713,11 +713,11 @@ void PixelOutputMulti::Update() {
     TIMER_CTL0(TIMER2) |= TIMER_CTL0_CEN;
 #else
     dma::memcpy32::StartDma(reinterpret_cast<uint8_t*>(s_pixel_buffer_dma), reinterpret_cast<uint8_t*>(s_pixel_buffer_data), buffer_size_ / 2);
-#endif
+#endif // DMA_MEMCPY32_DISABLE_IRQ
 
 #ifndef NDEBUG
     GPIO_BC(DEBUG_CS_GPIOx) = DEBUG_CS_GPIO_PINx;
-#endif
+#endif // NDEBUG
 
     sv_updates = sv_updates + 1;
 }
@@ -734,7 +734,7 @@ void TIMER3_IRQHandler() { // Slave
         GPIO_BC(GPIOx) = GPIO_PINx;
 #ifndef NDEBUG
         GPIO_BOP(DEBUG_CS_GPIOx) = DEBUG_CS_GPIO_PINx;
-#endif
+#endif // NDEBUG
         sv_is_running = false;
     }
 
@@ -752,8 +752,8 @@ void TIMER0_TRG_CMT_TIMER10_IRQHandler() { // 1 Hz interrupt
     TIMER_INTF(TIMER10) = ~kIntFlag;
 }
 
-#if !defined(DMA_MEMCPY32_DISABLE_IRQ)
-#if !defined(GD32F4XX)
+#ifndef DMA_MEMCPY32_DISABLE_IRQ
+#ifndef GD32F4XX
 void DMA0_Channel3_IRQHandler() { // DMX memcpy ready
     if (Gd32DmaInterruptFlagGet<DMA0, DMA_CH3, DMA_INT_FLAG_FTF>()) {
         Gd32DmaInterruptDisable<DMA0, DMA_CH3, (DMA_INT_FTF | DMA_INT_HTF | DMA_INT_ERR)>();
@@ -775,6 +775,6 @@ void DMA1_Channel0_IRQHandler() { // DMX memcpy ready
 
     Gd32DmaInterruptFlagClear<DMA1, DMA_CH0, (DMA_INT_FLAG_FTF | DMA_INT_FLAG_TAE)>();
 }
-#endif
-#endif
+#endif // GD32F4XX
+#endif // DMA_MEMCPY32_DISABLE_IRQ
 }

@@ -25,14 +25,14 @@
 #ifndef PIXELOUTPUTMULTI_H_
 #define PIXELOUTPUTMULTI_H_
 
-#if defined(H3)
+#ifdef H3
 #include "h3/pixeloutputmulti.h"
 #elif defined(GD32)
 #include "gd32/gpio/pixeloutputmulti.h"
 #else
 #error Platform is not supported
-#endif
+#endif // H3
 
 using PixelOutputType = PixelOutputMulti;
 
-#endif  // PIXELOUTPUTMULTI_H_
+#endif // PIXELOUTPUTMULTI_H_

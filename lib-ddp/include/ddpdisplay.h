@@ -27,49 +27,42 @@
 #define DDPDISPLAY_H_
 
 #include <cstdint>
+#include <algorithm>
 
 #include "ddp.h"
 #include "dmxnode_outputtype.h"
 #include "network_iface.h"
-#include "common/utils/utils_math.h"
 
-#if !defined(DMXNODE_PORTS)
+#ifndef DMXNODE_PORTS
 #error DMXNODE_PORTS is not defined
-#endif
+#endif // DMXNODE_PORTS
 
-#if !defined(CONFIG_DMXNODE_PIXEL_MAX_PORTS)
+#ifndef CONFIG_DMXNODE_PIXEL_MAX_PORTS
 #error CONFIG_DMXNODE_PIXEL_MAX_PORTS is not defined
-#endif
+#endif // CONFIG_DMXNODE_PIXEL_MAX_PORTS
 
-namespace ddpdisplay
-{
-namespace lightset
-{
+namespace ddpdisplay {
+namespace lightset {
 static constexpr uint32_t kMaxPorts = DMXNODE_PORTS;
 } // namespace lightset
-namespace configuration
-{
-namespace pixel
-{
+namespace configuration {
+namespace pixel {
 static constexpr uint32_t kMaxPorts = CONFIG_DMXNODE_PIXEL_MAX_PORTS;
 } // namespace pixel
-namespace dmx
-{
-#if defined OUTPUT_DMX_SEND_MULTI
+namespace dmx {
+#ifdef OUTPUT_DMX_SEND_MULTI
 static constexpr uint32_t kMaxPorts = 2;
 #else
 static constexpr uint32_t kMaxPorts = 0;
-#endif
+#endif // OUTPUT_DMX_SEND_MULTI
 } // namespace dmx
 static constexpr uint32_t kMaxPorts = configuration::pixel::kMaxPorts + configuration::dmx::kMaxPorts;
 } // namespace configuration
 } // namespace ddpdisplay
 
-static_assert(ddpdisplay::lightset::kMaxPorts == ddpdisplay::configuration::dmx::kMaxPorts + ddpdisplay::configuration::pixel::kMaxPorts * 4,
-              "Configuration errror");
+static_assert(ddpdisplay::lightset::kMaxPorts == ddpdisplay::configuration::dmx::kMaxPorts + ddpdisplay::configuration::pixel::kMaxPorts * 4, "Configuration errror");
 
-class DdpDisplay
-{
+class DdpDisplay {
    public:
     DdpDisplay();
     ~DdpDisplay();
@@ -80,21 +73,20 @@ class DdpDisplay
     void Stop();
     void Print();
 
-    void SetCount(uint32_t count, uint32_t channels_per_pixel, uint32_t active_ports)
-    {
+    void SetCount(uint32_t count, uint32_t channels_per_pixel, uint32_t active_ports) {
         count_ = count;
         strip_data_length_ = count * channels_per_pixel;
         dmxnode_output_type_data_max_length_ = (channels_per_pixel == 4 ? 512U : 510U);
-        active_ports_ = common::Min(active_ports, ddpdisplay::configuration::pixel::kMaxPorts);
+        active_ports_ = std::min(active_ports, ddpdisplay::configuration::pixel::kMaxPorts);
     }
 
-    uint32_t GetCount() const { return count_; }
+    [[nodiscard]] uint32_t GetCount() const { return count_; }
 
-    uint32_t GetChannelsPerPixel() const { return strip_data_length_ / count_; }
+    [[nodiscard]] uint32_t GetChannelsPerPixel() const { return strip_data_length_ / count_; }
 
     void SetOutput(DmxNodeOutputType* output_type) { dmxnode_output_type_ = output_type; }
 
-    DmxNodeOutputType* GetOutput() const { return dmxnode_output_type_; }
+    [[nodiscard]] DmxNodeOutputType* GetOutput() const { return dmxnode_output_type_; }
 
     void Input(const uint8_t* buffer, uint32_t size, uint32_t from_ip, uint16_t from_port);
 
@@ -105,12 +97,8 @@ class DdpDisplay
     void HandleQuery();
     void HandleData();
 
-    void static StaticCallbackFunction(const uint8_t* buffer, uint32_t size, uint32_t from_ip, uint16_t from_port)
-    {
-        s_this->Input(buffer, size, from_ip, from_port);
-    }
+    void static StaticCallbackFunction(const uint8_t* buffer, uint32_t size, uint32_t from_ip, uint16_t from_port) { s_this->Input(buffer, size, from_ip, from_port); }
 
-   private:
     int32_t handle_{-1};
     uint8_t* receive_buffer_{nullptr};
     uint32_t from_ip_{0};

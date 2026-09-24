@@ -40,11 +40,10 @@
 #include <cstdint>
 
 #include "dmxnode_outputtype.h"
-#include "common/utils/utils_math.h"
 
-#if !defined(DMXNODE_PORTS)
+#ifndef DMXNODE_PORTS
 #error DMXNODE_PORTS is not defined
-#endif
+#endif // DMXNODE_PORTS
 
 namespace pp {
 namespace lightset {
@@ -88,9 +87,9 @@ enum class StripFlags : uint8_t {
     BRIGHTNESS = 0x20     ///< Strip configured for hardware that supports brightness
 };
 
-#if !defined(PACKED)
+#ifndef PACKED
 #define PACKED __attribute__((__packed__))
-#endif
+#endif // PACKED
 
 struct PixelPusherBase {
     uint8_t strips_attached; ///< if PFLAG_16BITSTUFF, this must be set to 1, causing all strips to have same flags
@@ -150,7 +149,7 @@ enum class Type : uint8_t {
     DYNAMICS = 0x06,
 };
 namespace packet {
-#if !defined(CONFIG_PP_16BITSTUFF)
+#ifndef CONFIG_PP_16BITSTUFF
 struct GlobalBrightness {
     uint32_t sequence_number;
     uint8_t magic_number[16]; ///< static constexpr uint8_t COMMAND_MAGIC[16] defined in pp.cpp
@@ -166,7 +165,7 @@ struct StripBrightness {
     uint16_t brightness; ///< 0xFFFF for 1.0
 } PACKED;
 #else
-#endif
+#endif // CONFIG_PP_16BITSTUFF
 } // namespace packet
 } // namespace command
 } // namespace pp
@@ -174,16 +173,16 @@ struct StripBrightness {
 class PixelPusher {
    public:
     PixelPusher();
-    ~PixelPusher() {}
+    ~PixelPusher() = default;
 
     void SetOutput(DmxNodeOutputType* output_type) { dmxnode_output_type_ = output_type; }
 
     [[nodiscard]] DmxNodeOutputType* GetOutput() const { return dmxnode_output_type_; }
 
     void SetCount(uint32_t count, uint32_t active_ports, bool has_global_brightness) {
-        count_ = common::Min(count, pp::configuration::COUNT_MAX);
+        count_ =std::min(count, pp::configuration::COUNT_MAX);
         universes_ = 1 + (count_ / (1 + (pp::configuration::UNIVERSE_MAX_LENGTH / pp::configuration::CHANNELS_PER_PIXEL)));
-        active_ports_ = common::Min(active_ports, pp::lightset::MAX_PORTS / 3U);
+        active_ports_ =std::min(active_ports, pp::lightset::MAX_PORTS / 3U);
         port_index_last_ = active_ports_ * universes_;
         has_global_brightness_ = has_global_brightness;
     }

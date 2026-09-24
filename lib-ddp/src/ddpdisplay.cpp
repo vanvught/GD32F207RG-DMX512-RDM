@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  */
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <cassert>
@@ -178,17 +179,18 @@ void DdpDisplay::HandleQuery() {
     if ((packet->header.id & ddp::id::STATUS) == ddp::id::CONFIG) {
         DEBUG_PUTS("id::CONFIG");
 
-        const auto kLength =
-            static_cast<uint32_t>(snprintf(reinterpret_cast<char*>(packet->data), network::udp::kDataSize - 1, json::kConfigReply, IP2STR(network::GetPrimaryIp()), IP2STR(network::GetNetmask()), IP2STR(network::GetGatewayIp()),
-                                           active_ports_ > 0 ? static_cast<unsigned>(count_) : 0, active_ports_ > 1 ? static_cast<unsigned>(count_) : 0,
+        const auto kLength = static_cast<uint32_t>(snprintf(
+            reinterpret_cast<char*>(packet->data), network::udp::kDataSize - 1, json::kConfigReply, IP2STR(network::GetPrimaryIp()), IP2STR(network::GetNetmask()), IP2STR(network::GetGatewayIp()),
+            active_ports_ > 0 ? static_cast<unsigned>(count_) : 0, active_ports_ > 1 ? static_cast<unsigned>(count_) : 0,
 #if CONFIG_DMXNODE_PIXEL_MAX_PORTS > 2
-                                           active_ports_ > 2 ? static_cast<unsigned>(count_) : 0, active_ports_ > 3 ? static_cast<unsigned>(count_) : 0, active_ports_ > 4 ? static_cast<unsigned>(count_) : 0, active_ports_ > 5 ? static_cast<unsigned>(count_) : 0, active_ports_ > 6 ? static_cast<unsigned>(count_) : 0, active_ports_ > 7 ? static_cast<unsigned>(count_) : 0,
+            active_ports_ > 2 ? static_cast<unsigned>(count_) : 0, active_ports_ > 3 ? static_cast<unsigned>(count_) : 0, active_ports_ > 4 ? static_cast<unsigned>(count_) : 0, active_ports_ > 5 ? static_cast<unsigned>(count_) : 0,
+            active_ports_ > 6 ? static_cast<unsigned>(count_) : 0, active_ports_ > 7 ? static_cast<unsigned>(count_) : 0,
 #endif
 #if CONFIG_DMXNODE_PIXEL_MAX_PORTS == 16
-                                           active_ports_ > 8 ? static_cast<unsigned>(count_) : 0, active_ports_ > 9 ? static_cast<unsigned>(count_) : 0, active_ports_ > 10 ? static_cast<unsigned>(count_) : 0, active_ports_ > 11 ? static_cast<unsigned>(count_) : 0, active_ports_ > 12 ? static_cast<unsigned>(count_) : 0, active_ports_ > 13 ? static_cast<unsigned>(count_) : 0,
-                                           active_ports_ > 14 ? static_cast<unsigned>(count_) : 0, active_ports_ > 15 ? static_cast<unsigned>(count_) : 0,
+            active_ports_ > 8 ? static_cast<unsigned>(count_) : 0, active_ports_ > 9 ? static_cast<unsigned>(count_) : 0, active_ports_ > 10 ? static_cast<unsigned>(count_) : 0, active_ports_ > 11 ? static_cast<unsigned>(count_) : 0,
+            active_ports_ > 12 ? static_cast<unsigned>(count_) : 0, active_ports_ > 13 ? static_cast<unsigned>(count_) : 0, active_ports_ > 14 ? static_cast<unsigned>(count_) : 0, active_ports_ > 15 ? static_cast<unsigned>(count_) : 0,
 #endif
-                                           ddpdisplay::configuration::dmx::kMaxPorts == 0 ? 0 : static_cast<unsigned>(dmxnode::kUniverseSize), ddpdisplay::configuration::dmx::kMaxPorts == 0 ? 0 : static_cast<unsigned>(dmxnode::kUniverseSize)));
+            ddpdisplay::configuration::dmx::kMaxPorts == 0 ? 0 : static_cast<unsigned>(dmxnode::kUniverseSize), ddpdisplay::configuration::dmx::kMaxPorts == 0 ? 0 : static_cast<unsigned>(dmxnode::kUniverseSize)));
 
         packet->header.flags1 = ddp::flags1::VER1 | ddp::flags1::REPLY | ddp::flags1::PUSH;
         packet->header.len[0] = static_cast<uint8_t>(kLength >> 8);
@@ -217,7 +219,7 @@ void DdpDisplay::HandleData() {
         const auto kOutportIndexEnd = data_source_index + 4;
 
         while ((offset < s_offset_compare[port_index]) && (data_source_index < kOutportIndexEnd)) {
-            const auto kOutLength = common::Min(common::Min(length, dmxnode_output_type_data_max_length_), strip_data_length_);
+            const auto kOutLength = std::min({length, dmxnode_output_type_data_max_length_, strip_data_length_});
 
             dmxnode::Data::SetSourceA(data_source_index, &kReceivedData[receiver_buffer_index], kOutLength);
             s_port_length[data_source_index] = kOutLength;
@@ -239,7 +241,7 @@ void DdpDisplay::HandleData() {
 
     for (uint32_t port_index = ddpdisplay::configuration::pixel::kMaxPorts; (port_index < ddpdisplay::configuration::kMaxPorts) && (length != 0); port_index++) {
         if (offset < s_offset_compare[port_index]) {
-            const auto kLength = common::Min(length, dmxnode::kUniverseSize);
+            const auto kLength = std::min(length, dmxnode::kUniverseSize);
 
             //			DEBUG_PRINTF("==> nPortIndex=%u, nOffset=%u, nLength=%u, nLightSetLength=%u, nLightSetPortIndex=%u", nPortIndex, nOffset, nLength,
             // nLightSetLength, nLightSetPortIndex);

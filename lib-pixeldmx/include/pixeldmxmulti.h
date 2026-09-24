@@ -25,34 +25,34 @@
 #ifndef PIXELDMXMULTI_H_
 #define PIXELDMXMULTI_H_
 
-#if defined(DEBUG_PIXELDMX)
-#if defined(NDEBUG)
+#ifdef DEBUG_PIXELDMX
+#ifdef NDEBUG
 #undef NDEBUG
 #define _NDEBUG
-#endif
-#endif
+#endif // NDEBUG
+#endif // DEBUG_PIXELDMX
 
 #pragma GCC push_options
 #pragma GCC optimize("O3")
 #pragma GCC optimize("no-tree-loop-distribute-patterns")
 
 #include <cstdint>
+#include <algorithm>
 #include <cassert>
 
 #include "dmxnodedata.h"
 #include "pixeloutputmulti.h"
 #include "pixeldmxconfiguration.h"
 #include "logic_analyzer.h"
-#if defined(PIXELDMXSTARTSTOP_GPIO)
+#ifdef PIXELDMXSTARTSTOP_GPIO
 #include "gpio.h"
-#endif
+#endif // PIXELDMXSTARTSTOP_GPIO
 #include "firmware/debug/debug_debug.h"
-#include "common/utils/utils_math.h"
 
 namespace pixeldmxmulti {
-#if !defined(CONFIG_DMXNODE_PIXEL_MAX_PORTS)
+#ifndef CONFIG_DMXNODE_PIXEL_MAX_PORTS
 #error
-#endif
+#endif // CONFIG_DMXNODE_PIXEL_MAX_PORTS
 static constexpr auto kMaxPorts = CONFIG_DMXNODE_PIXEL_MAX_PORTS;
 } // namespace pixeldmxmulti
 
@@ -66,10 +66,10 @@ class PixelDmxMulti final : public PixelDmxConfiguration {
 
         ApplyConfiguration();
 
-#if defined(PIXELDMXSTARTSTOP_GPIO)
+#ifdef PIXELDMXSTARTSTOP_GPIO
         gpio::Fsel(PIXELDMXSTARTSTOP_GPIO, gpio::Select::kOutput);
         gpio::Clr(PIXELDMXSTARTSTOP_GPIO);
-#endif
+#endif // PIXELDMXSTARTSTOP_GPIO
 
         DEBUG_EXIT();
     }
@@ -88,7 +88,7 @@ class PixelDmxMulti final : public PixelDmxConfiguration {
 
 #ifndef NDEBUG
         PixelDmxConfiguration::Print();
-#endif
+#endif // NDEBUG
 
         output_type_.ApplyConfiguration();
         output_type_.Blackout();
@@ -104,11 +104,11 @@ class PixelDmxMulti final : public PixelDmxConfiguration {
             started_[1] |= (1U << (port_index - 32));
         }
 
-#if defined(PIXELDMXSTARTSTOP_GPIO)
+#ifdef PIXELDMXSTARTSTOP_GPIO
         if ((started_[0] != 0) || (started_[1] != 0)) {
             gpio::Set(PIXELDMXSTARTSTOP_GPIO);
         }
-#endif
+#endif // PIXELDMXSTARTSTOP_GPIO
     }
 
     void Stop(uint32_t port_index) {
@@ -125,14 +125,14 @@ class PixelDmxMulti final : public PixelDmxConfiguration {
             }
         }
 
-#if defined(PIXELDMXSTARTSTOP_GPIO)
+#ifdef PIXELDMXSTARTSTOP_GPIO
         if ((started_[0] == 0) && (started_[1] == 0)) {
             gpio::Clr(PIXELDMXSTARTSTOP_GPIO);
         }
-#endif
+#endif // PIXELDMXSTARTSTOP_GPIO
     }
 
-    template <bool doUpdate> 
+    template <bool kDoUpdate> 
     void SetData(uint32_t port_index, const uint8_t* data, uint32_t length) {
         logic_analyzer::Ch0Set();
 
@@ -140,7 +140,7 @@ class PixelDmxMulti final : public PixelDmxConfiguration {
 
         auto& port_info = PixelDmxConfiguration::GetPortInfo();
 
-        if constexpr (doUpdate) {
+        if constexpr (kDoUpdate) {
             if (port_index == port_info.protocol_port_index_last) {
                 logic_analyzer::Ch1Set();
 
@@ -181,10 +181,10 @@ class PixelDmxMulti final : public PixelDmxConfiguration {
         logic_analyzer::Ch1Clear();
     }
 
-#if defined(OUTPUT_HAVE_STYLESWITCH)
+#ifdef OUTPUT_HAVE_STYLESWITCH
     void SetOutputStyle([[maybe_unused]] uint32_t port_index, [[maybe_unused]] dmxnode::OutputStyle output_style) {}
     dmxnode::OutputStyle GetOutputStyle([[maybe_unused]] uint32_t port_index) const { return dmxnode::OutputStyle::kDelta; }
-#endif
+#endif // OUTPUT_HAVE_STYLESWITCH
 
     void Blackout(bool blackout = true) {
         blackout_ = blackout;
@@ -237,20 +237,20 @@ class PixelDmxMulti final : public PixelDmxConfiguration {
         assert(data != nullptr);
         assert(length <= dmxnode::kUniverseSize);
 
-#if defined(NODE_DDP_DISPLAY)
+#ifdef NODE_DDP_DISPLAY
         const auto kOutIndex = (port_index / 4);
         const auto kSwitch = port_index - (kOutIndex * 4);
 #else
         const auto kUniverses = PixelDmxConfiguration::GetUniverses();
         const auto kOutIndex = (port_index / kUniverses);
         const auto kSwitch = port_index - (kOutIndex * kUniverses);
-#endif
+#endif // NODE_DDP_DISPLAY
         auto& port_info = PixelDmxConfiguration::GetPortInfo();
 
         const auto kGroups = PixelDmxConfiguration::GetGroups();
         const auto kBeginIndex = port_info.begin_index_port[kSwitch];
         const auto kChannelsPerPixel = PixelDmxConfiguration::GetLedsPerPixel();
-        const auto kEndIndex = common::Min(kGroups, (kBeginIndex + (length / kChannelsPerPixel)));
+        const auto kEndIndex =std::min(kGroups, (kBeginIndex + (length / kChannelsPerPixel)));
         const auto kGroupingCount = PixelDmxConfiguration::GetGroupingCount();
         const auto kPixelType = PixelDmxConfiguration::GetType();
         const auto kIsRtzProtocol = PixelDmxConfiguration::IsRTZProtocol();
@@ -260,23 +260,23 @@ class PixelDmxMulti final : public PixelDmxConfiguration {
         if (kChannelsPerPixel == 3) {
             // Define a lambda to handle pixel setting based on color order
             auto set_pixels_colour_rtz = [&](uint32_t portindex, uint32_t pixelindex, uint8_t r, uint8_t g, uint8_t b) {
-#if defined(CONFIG_PIXELDMX_ENABLE_GAMMATABLE)
+#ifdef CONFIG_PIXELDMX_ENABLE_GAMMATABLE
                 const auto kGammaTable = PixelDmxConfiguration::GetGammaTable();
                 r = kGammaTable[r];
                 g = kGammaTable[g];
                 b = kGammaTable[b];
-#endif
+#endif // CONFIG_PIXELDMX_ENABLE_GAMMATABLE
                 output_type_.SetColourRTZ(portindex, pixelindex, r, g, b);
             };
 
             // Define a lambda to handle pixel setting based on color order
             auto set_pixels_colour3 = [&](uint32_t portindex, uint32_t pixelindex, uint8_t r, uint8_t g, uint8_t b) {
-#if defined(CONFIG_PIXELDMX_ENABLE_GAMMATABLE)
+#ifdef CONFIG_PIXELDMX_ENABLE_GAMMATABLE
                 const auto kGammaTable = PixelDmxConfiguration::GetGammaTable();
                 r = kGammaTable[r];
                 g = kGammaTable[g];
                 b = kGammaTable[b];
-#endif
+#endif // CONFIG_PIXELDMX_ENABLE_GAMMATABLE
 
                 switch (kPixelType) {
                     case pixel::LedType::kWS2801:
@@ -351,9 +351,9 @@ class PixelDmxMulti final : public PixelDmxConfiguration {
 };
 
 #pragma GCC pop_options
-#if defined(_NDEBUG)
+#ifdef _NDEBUG
 #undef _NDEBUG
 #define NDEBUG
-#endif
+#endif // _NDEBUG
 
 #endif // PIXELDMXMULTI_H_
