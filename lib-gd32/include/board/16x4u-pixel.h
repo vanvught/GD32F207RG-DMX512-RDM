@@ -26,13 +26,13 @@
 #ifndef BOARD_16X4U_PIXEL_H_
 #define BOARD_16X4U_PIXEL_H_
 
-#if !defined(BOARD_16X4U_PIXEL)
+#ifndef BOARD_16X4U_PIXEL
 # error This file should not be included
 #endif // BOARD_16X4U_PIXEL
 
-#if defined (MCU_GD32F450_MCU_H_)
+#ifdef MCU_GD32F450_MCU_H_
 # error This file should be included later
-#endif // defined (MCU_GD32F450_MCU_H_)
+#endif // MCU_GD32F450_MCU_H_
 
 /**
  * LEDs

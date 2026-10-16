@@ -26,7 +26,7 @@
 #ifndef MCU_GD32F207_MCU_H_
 #define MCU_GD32F207_MCU_H_
 
-#if !defined(GD32F20X_CL)
+#ifndef GD32F20X_CL
 # error This file should not be included
 #endif // GD32F20X_CL
 
