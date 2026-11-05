@@ -25,13 +25,6 @@
 #ifndef PIXELDMXMULTI_H_
 #define PIXELDMXMULTI_H_
 
-#ifdef DEBUG_PIXELDMX
-#ifdef NDEBUG
-#undef NDEBUG
-#define _NDEBUG
-#endif // NDEBUG
-#endif // DEBUG_PIXELDMX
-
 #pragma GCC push_options
 #pragma GCC optimize("O3")
 #pragma GCC optimize("no-tree-loop-distribute-patterns")
@@ -47,6 +40,9 @@
 #ifdef PIXELDMXSTARTSTOP_GPIO
 #include "gpio.h"
 #endif // PIXELDMXSTARTSTOP_GPIO
+#ifdef NODE_RDMNET_LLRP_ONLY
+#include "rdm_slotinfo.h"
+#endif
 #include "firmware/debug/debug_debug.h"
 
 namespace pixeldmxmulti {
@@ -132,7 +128,7 @@ class PixelDmxMulti final : public PixelDmxConfiguration {
 #endif // PIXELDMXSTARTSTOP_GPIO
     }
 
-    template <bool kDoUpdate> 
+    template <bool kDoUpdate>
     void SetData(uint32_t port_index, const uint8_t* data, uint32_t length) {
         logic_analyzer::Ch0Set();
 
@@ -183,7 +179,7 @@ class PixelDmxMulti final : public PixelDmxConfiguration {
 
 #ifdef OUTPUT_HAVE_STYLESWITCH
     void SetOutputStyle([[maybe_unused]] uint32_t port_index, [[maybe_unused]] dmxnode::OutputStyle output_style) {}
-    dmxnode::OutputStyle GetOutputStyle([[maybe_unused]] uint32_t port_index) const { return dmxnode::OutputStyle::kDelta; }
+    [[nodiscard]] dmxnode::OutputStyle GetOutputStyle([[maybe_unused]] uint32_t port_index) const { return dmxnode::OutputStyle::kDelta; }
 #endif // OUTPUT_HAVE_STYLESWITCH
 
     void Blackout(bool blackout = true) {
@@ -215,17 +211,19 @@ class PixelDmxMulti final : public PixelDmxConfiguration {
 
     uint32_t GetRefreshRate() { return PixelConfiguration::GetRefreshRate(); }
 
+#ifdef NODE_RDMNET_LLRP_ONLY
     // RDMNet LLRP Device Only
     bool SetDmxStartAddress([[maybe_unused]] uint16_t dmx_start_address) { return false; }
     uint16_t GetDmxStartAddress() { return dmxnode::kAddressInvalid; }
 
     uint16_t GetDmxFootprint() { return 0; }
 
-    bool GetSlotInfo([[maybe_unused]] uint16_t slot_offset, dmxnode::SlotInfo& slot_info) {
-        slot_info.type = 0x00;       // ST_PRIMARY
-        slot_info.category = 0x0001; // SD_INTENSITY
+    bool GetSlotInfo([[maybe_unused]] uint16_t slot_offset, rdm::slotinfo::SlotInfo& slot_info) {
+        slot_info.type = rdm::slotinfo::SlotType::kStPrimary;
+        slot_info.category = rdm::slotinfo::SlotDefinition::kSdIntensity;
         return true;
     }
+#endif
 
     static PixelDmxMulti& Get() {
         assert(s_this != nullptr); // Ensure that s_this is valid
@@ -250,7 +248,7 @@ class PixelDmxMulti final : public PixelDmxConfiguration {
         const auto kGroups = PixelDmxConfiguration::GetGroups();
         const auto kBeginIndex = port_info.begin_index_port[kSwitch];
         const auto kChannelsPerPixel = PixelDmxConfiguration::GetLedsPerPixel();
-        const auto kEndIndex =std::min(kGroups, (kBeginIndex + (length / kChannelsPerPixel)));
+        const auto kEndIndex = std::min(kGroups, (kBeginIndex + (length / kChannelsPerPixel)));
         const auto kGroupingCount = PixelDmxConfiguration::GetGroupingCount();
         const auto kPixelType = PixelDmxConfiguration::GetType();
         const auto kIsRtzProtocol = PixelDmxConfiguration::IsRTZProtocol();
@@ -303,7 +301,7 @@ class PixelDmxMulti final : public PixelDmxConfiguration {
                 {1, 0, 2}, // GRB
                 {2, 0, 1}, // GBR
                 {1, 2, 0}, // BRG
-                {2, 1, 0}  // BGR
+                {2, 1, 0}, // BGR
             };
 
             const auto kMapIndex = static_cast<uint32_t>(PixelDmxConfiguration::GetMap());
@@ -351,9 +349,4 @@ class PixelDmxMulti final : public PixelDmxConfiguration {
 };
 
 #pragma GCC pop_options
-#ifdef _NDEBUG
-#undef _NDEBUG
-#define NDEBUG
-#endif // _NDEBUG
-
 #endif // PIXELDMXMULTI_H_

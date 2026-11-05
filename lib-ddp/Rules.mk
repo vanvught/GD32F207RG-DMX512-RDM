@@ -4,4 +4,4 @@ else
 	DEFINES+=DMXNODE_PORTS=32
 endif
 
-EXTRA_INCLUDES=../lib-dmx/include  ../lib-network/include ../lib-pixel/include ../lib-pixeldmx/include
+EXTRA_INCLUDES=../lib-dmx/include ../lib-rdm/include  ../lib-network/include ../lib-pixel/include ../lib-pixeldmx/include
