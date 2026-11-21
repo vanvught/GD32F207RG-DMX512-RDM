@@ -56,7 +56,7 @@ static constexpr char kConfigReply[] =
     "{\"port\":\"7\",\"ts\":\"0\",\"l\":\"%u\",\"ss\":\"0\"},"
     "{\"port\":\"8\",\"ts\":\"0\",\"l\":\"%u\",\"ss\":\"0\"},"
     "{\"port\":\"9\",\"ts\":\"0\",\"l\":\"%u\",\"ss\":\"0\"}"
-#endif
+#endif // CONFIG_DMXNODE_PIXEL_MAX_PORTS > 2
 #if CONFIG_DMXNODE_PIXEL_MAX_PORTS == 16
     ","
     "{\"port\":\"10\",\"ts\":\"0\",\"l\":\"%u\",\"ss\":\"0\"},"
@@ -68,7 +68,7 @@ static constexpr char kConfigReply[] =
     "{\"port\":\"16\",\"ts\":\"0\",\"l\":\"%u\",\"ss\":\"0\"},"
     "{\"port\":\"17\",\"ts\":\"0\",\"l\":\"%u\",\"ss\":\"0\"}"
 
-#endif
+#endif // CONFIG_DMXNODE_PIXEL_MAX_PORTS == 16
     "]}}";
 
 namespace size {
@@ -110,7 +110,7 @@ void DdpDisplay::CalculateOffsets() {
 #if __GNUC__ < 10
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wtype-limits" // FIXME ignored "-Wtype-limits"
-#endif
+#endif // __GNUC__ < 10
 
     for (uint32_t dmx_port_index = 0; dmx_port_index < ddpdisplay::configuration::dmx::kMaxPorts; dmx_port_index++) {
         sum = sum + dmxnode::kUniverseSize;
@@ -120,7 +120,7 @@ void DdpDisplay::CalculateOffsets() {
 
 #if __GNUC__ < 10
 #pragma GCC diagnostic pop
-#endif
+#endif // __GNUC__ < 10
 }
 
 void DdpDisplay::Start() {
@@ -185,11 +185,11 @@ void DdpDisplay::HandleQuery() {
 #if CONFIG_DMXNODE_PIXEL_MAX_PORTS > 2
             active_ports_ > 2 ? static_cast<unsigned>(count_) : 0, active_ports_ > 3 ? static_cast<unsigned>(count_) : 0, active_ports_ > 4 ? static_cast<unsigned>(count_) : 0, active_ports_ > 5 ? static_cast<unsigned>(count_) : 0,
             active_ports_ > 6 ? static_cast<unsigned>(count_) : 0, active_ports_ > 7 ? static_cast<unsigned>(count_) : 0,
-#endif
+#endif // CONFIG_DMXNODE_PIXEL_MAX_PORTS > 2
 #if CONFIG_DMXNODE_PIXEL_MAX_PORTS == 16
             active_ports_ > 8 ? static_cast<unsigned>(count_) : 0, active_ports_ > 9 ? static_cast<unsigned>(count_) : 0, active_ports_ > 10 ? static_cast<unsigned>(count_) : 0, active_ports_ > 11 ? static_cast<unsigned>(count_) : 0,
             active_ports_ > 12 ? static_cast<unsigned>(count_) : 0, active_ports_ > 13 ? static_cast<unsigned>(count_) : 0, active_ports_ > 14 ? static_cast<unsigned>(count_) : 0, active_ports_ > 15 ? static_cast<unsigned>(count_) : 0,
-#endif
+#endif // CONFIG_DMXNODE_PIXEL_MAX_PORTS == 16
             ddpdisplay::configuration::dmx::kMaxPorts == 0 ? 0 : static_cast<unsigned>(dmxnode::kUniverseSize), ddpdisplay::configuration::dmx::kMaxPorts == 0 ? 0 : static_cast<unsigned>(dmxnode::kUniverseSize)));
 
         packet->header.flags1 = ddp::flags1::VER1 | ddp::flags1::REPLY | ddp::flags1::PUSH;
