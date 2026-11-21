@@ -41,7 +41,7 @@
 #include "firmware/pixeldmx/show.h"
 #if defined(NODE_RDMNET_LLRP_ONLY)
 #include "rdmnetdevice.h"
-#endif
+#endif // NODE_RDMNET_LLRP_ONLY
 #include "remoteconfig.h"
 #include "configstore.h"
 #include "firmware/firmwareversion.h"
@@ -89,7 +89,7 @@ int main() // NOLINT
 #if defined(NODE_RDMNET_LLRP_ONLY)
     RdmNetDevice llrp_only_device;
     llrp_only_device.Print();
-#endif
+#endif // NODE_RDMNET_LLRP_ONLY
 
     display.SetTitle("DDP Pixel %d", kActivePorts);
     display.Set(2, displayudf::Labels::kVersion);
